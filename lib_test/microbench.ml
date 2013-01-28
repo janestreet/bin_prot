@@ -13,8 +13,8 @@ type t7 = t6 with bin_io
 
 let io
     { Type_class.
-      writer = { Type_class.write; size; _ };
-      reader = { Type_class.read; _ };
+      writer = { Type_class.write; size; unsafe_write=_ };
+      reader = { Type_class.read; unsafe_read=_; unsafe_vtag_read=_ };
     }
     v
     =
