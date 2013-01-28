@@ -1,6 +1,5 @@
 (* Unsafe_read_c: reading values from the binary protocol using unsafe C. *)
 
-open Bigarray
 open Common
 open Unsafe_common
 
@@ -61,7 +60,7 @@ let bin_read_triple bin_read_a bin_read_b bin_read_c sptr_ptr eptr =
   let c = bin_read_c sptr_ptr eptr in
   a, b, c
 
-let rec bin_read_n_rev_list bin_read_el sptr_ptr eptr len =
+let bin_read_n_rev_list bin_read_el sptr_ptr eptr len =
   let rec loop n acc =
     if n = 0 then acc
     else loop (n - 1) (bin_read_el sptr_ptr eptr :: acc)

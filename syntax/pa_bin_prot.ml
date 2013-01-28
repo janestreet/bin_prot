@@ -1,7 +1,6 @@
 (** Pa_bin_prot: Preprocessing Module for a Type Safe Binary Protocol *)
 
 open Printf
-open Lexing
 
 open Camlp4
 open PreCast
@@ -12,23 +11,21 @@ open Pa_type_conv
 
 let ( *** ) f g x = f (g x)
 
-let get_n_vars _loc name n =
-  let rec loop patts exprs n =
-    if n <= 0 then patts, exprs
-    else
-      let var = name ^ string_of_int n in
-      let patts = <:patt< $lid:var$ >> :: patts in
-      let exprs = <:expr< $lid:var$ >> :: exprs in
-      loop patts exprs (n - 1)
-  in
-  loop [] [] n
-
 let rec sig_of_tds cnv = function
   | TyDcl (_loc, type_name, tps, _rhs, _cl) -> cnv _loc type_name tps
   | TyAnd (_loc, tp1, tp2) ->
       <:sig_item< $sig_of_tds cnv tp1$; $sig_of_tds cnv tp2$ >>
   | _ -> assert false  (* impossible *)
 
+let mk_ignore_binding = function
+  | <:binding@loc< $lid:name$ = $_$ >> -> <:binding@loc< _ = $lid:name$ >>
+  | _ -> assert false  (* impossible *)
+
+let mk_full_type loc type_name tps =
+  let coll_args tp param =
+    <:ctyp@loc< $tp$ $Gen.drop_variance_annotations param$ >>
+  in
+  List.fold_left coll_args <:ctyp@loc< $lid:type_name$ >> tps
 
 (* Generators for the binary protocol *)
 
@@ -90,7 +87,7 @@ module Sig_generate_reader = struct
       loop <:ctyp< $lid:type_name$ >> tps
     in
     <:sig_item<
-      value $lid:"bin_read_" ^ type_name$: $bin_read$;
+      value $lid:"bin_read_" ^ type_name$ : $bin_read$;
       value $lid:"bin_read_" ^ type_name ^ "_"$ : $bin_read_$;
       value $lid:"bin_read_" ^ type_name ^ "__"$ : $bin_read__$;
       value $lid:"bin_reader_" ^ type_name$ : $bin_reader$
@@ -600,6 +597,7 @@ module Generate_bin_write = struct
   (* Generate code from type definitions *)
   let bin_write_td _loc type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
+    let full_type = mk_full_type _loc type_name tps in
     let is_nil = ref false in
     let int_body =
       let rec loop _loc =
@@ -646,16 +644,14 @@ module Generate_bin_write = struct
                   Bin_prot.Unsafe_common.get_safe_buf_pos buf ~start ~cur
             >>
       in
-      <:expr< fun buf ~pos v -> $ext_body$ >>
+      <:expr< fun buf ~pos (v : $full_type$) -> $ext_body$ >>
     in
     let ext_name = "bin_write_" ^ type_name in
     let size_name = "bin_size_" ^ type_name in
     (
       <:binding< $lid:int_call$ = $Gen.abstract _loc tparam_patts int_body$ >>,
       (
-        <:binding<
-          $lid:ext_name$ = $Gen.abstract _loc tparam_patts ext_fun$
-        >>,
+        <:binding< $lid:ext_name$ = $Gen.abstract _loc tparam_patts ext_fun$ >>,
         let size =
           let tparam_size_exprs =
             List.map (fun tp ->
@@ -734,6 +730,8 @@ module Generate_bin_write = struct
           internals, externals1, externals2, true, _loc
       | _ -> assert false  (* impossible *)
     in
+    let ignore_externals1 = List.map mk_ignore_binding externals1 in
+    let ignore_externals2 = List.map mk_ignore_binding externals2 in
     let internals_item =
       if recursive then <:str_item< value rec $list:internals$ >>
       else <:str_item< value $list:internals$ >>
@@ -743,6 +741,8 @@ module Generate_bin_write = struct
       $internals_item$;
       value $list:externals1$;
       value $list:externals2$;
+      value $list:ignore_externals1$;
+      value $list:ignore_externals2$;
     >>
 
   (* Add code generator to the set of known generators *)
@@ -1057,10 +1057,7 @@ module Generate_bin_read = struct
 
   let bin_read_td _loc type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
-    let coll_args tp param =
-      <:ctyp< $tp$ $Gen.drop_variance_annotations param$ >>
-    in
-    let full_type = List.fold_left coll_args <:ctyp< $lid:type_name$ >> tps in
+    let full_type = mk_full_type _loc type_name tps in
     let is_alias_ref = ref false in
     let handle_alias _loc tp =
       is_alias_ref := true;
@@ -1164,7 +1161,7 @@ module Generate_bin_read = struct
         let user_body =
           match abst_call with
           | <:expr< Bin_prot.Unsafe_read_c.$call$ sptr_ptr eptr >> ->
-              <:expr< Bin_prot.Read_ml.$call$ buf ~pos_ref >>
+              <:expr< ((Bin_prot.Read_ml.$call$ buf ~pos_ref) : $full_type$) >>
           | _ ->
               <:expr<
                 let pos = !pos_ref in
@@ -1185,7 +1182,7 @@ module Generate_bin_read = struct
                     let cur =
                       Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
                     in
-                    do { pos_ref.contents := cur; v }
+                    do { pos_ref.contents := cur; (v : $full_type$) }
               >>
         in
         Gen.abstract _loc arg_patts <:expr< fun buf ~pos_ref -> $user_body$ >>
@@ -1322,7 +1319,7 @@ module Generate_bin_read = struct
     in
     let reader_binding =
       <:binding< $lid:"bin_reader_" ^ type_name$ =
-        $Gen.abstract _loc tparam_reader_patts reader$
+        ($Gen.abstract _loc tparam_reader_patts reader$)
       >>
     in
     (
@@ -1354,28 +1351,29 @@ module Generate_bin_read = struct
     in
     let poly_abst, user_bindings_readers = List.split res in
     let user_bindings, readers = List.split user_bindings_readers in
-    if recursive then
-      (* Improve code locality *)
-      let cnv (maybe_poly_var_binding, abst_binding) =
-        <:binding< $maybe_poly_var_binding$ and $abst_binding$ >>
-      in
-      let internal_bindings = List.map cnv poly_abst in
-      <:str_item<
-        value rec $list:internal_bindings$;
-        value $list:user_bindings$;
-        value $list:readers$
-      >>
-    else
-      (* Improve code locality *)
-      let cnv (maybe_poly_var_binding, abst_binding) =
-        <:str_item< value $maybe_poly_var_binding$; value $abst_binding$ >>
-      in
-      let internal_items = List.map cnv poly_abst in
-      <:str_item<
-        $list:internal_items$;
-        value $list:user_bindings$;
-        value $list:readers$
-      >>
+    let ignore_readers = List.map mk_ignore_binding readers in
+    let internal_str_item =
+      if recursive then
+        (* Improve code locality *)
+        let cnv (maybe_poly_var_binding, abst_binding) =
+          <:binding< $maybe_poly_var_binding$ and $abst_binding$ >>
+        in
+        let internal_bindings = List.map cnv poly_abst in
+        <:str_item< value rec $list:internal_bindings$ >>
+      else
+        (* Improve code locality *)
+        let cnv (maybe_poly_var_binding, abst_binding) =
+          <:str_item< value $maybe_poly_var_binding$; value $abst_binding$ >>
+        in
+        let internal_items = List.map cnv poly_abst in
+        <:str_item< $list:internal_items$ >>
+    in
+    <:str_item<
+      $internal_str_item$;
+      value $list:user_bindings$;
+      value $list:readers$;
+      value $list:ignore_readers$;
+    >>
 
   (* Add code generator to the set of known generators *)
   let () = add_generator "bin_read" bin_read
@@ -1435,7 +1433,12 @@ module Generate_tp_class = struct
   (* Generate code from type definitions *)
   let bin_tp_class tds =
     let _loc = Loc.ghost in
-    <:str_item< value rec $list:bin_tp_class_tds [] tds$ >>
+    let tp_classes = bin_tp_class_tds [] tds in
+    let ignore_tp_classes = List.map mk_ignore_binding tp_classes in
+    <:str_item<
+      value $list:tp_classes$;
+      value $list:ignore_tp_classes$
+    >>
 
   (* Add code generator to the set of known generators *)
   let () = add_generator "bin_type_class" bin_tp_class

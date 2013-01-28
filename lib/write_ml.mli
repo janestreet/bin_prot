@@ -1,7 +1,5 @@
 (** Writing values to the binary protocol using (mostly) OCaml. *)
 
-open Bigarray
-
 open Common
 
 type 'a writer = buf -> pos : pos -> 'a -> pos

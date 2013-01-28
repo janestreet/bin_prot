@@ -2,8 +2,6 @@
 
 #include "int_codes.mlh"
 
-open Bigarray
-
 open Common
 
 external init : unit -> unit = "bin_prot_read_ml_init_stub"
@@ -361,7 +359,7 @@ let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
   let c = bin_read_c buf ~pos_ref in
   a, b, c
 
-let rec bin_read_n_rev_list bin_read_el buf ~pos_ref len =
+let bin_read_n_rev_list bin_read_el buf ~pos_ref len =
   let rec loop n acc =
     if n = 0 then acc
     else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)

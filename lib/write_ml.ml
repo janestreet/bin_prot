@@ -2,8 +2,6 @@
 
 #include "int_codes.mlh"
 
-open Bigarray
-
 open Common
 
 type 'a writer = buf -> pos : pos -> 'a -> pos

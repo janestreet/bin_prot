@@ -1,6 +1,5 @@
 (* Utils: utility functions for user convenience *)
 
-open Bigarray
 open Common
 open Read_ml
 open Write_ml
@@ -75,8 +74,6 @@ end
 module Make_binable (S : Make_binable_spec) = struct
   module B = S.Binable
 
-  type t = S.t
-
   let bin_size_t t = B.bin_size_t (S.to_binable t)
   let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
   let bin_write_t_ sptr eptr t = B.bin_write_t_ sptr eptr (S.to_binable t)
@@ -118,8 +115,6 @@ end
 
 module Make_binable1 (S : Make_binable1_spec) = struct
   module B = S.Binable
-
-  type 'a t = 'a S.t
 
   let bin_size_t bin_size_el t = B.bin_size_t bin_size_el (S.to_binable t)
 
@@ -176,8 +171,6 @@ end
 
 module Make_binable2 (S : Make_binable2_spec) = struct
   module B = S.Binable
-
-  type ('a, 'b) t = ('a, 'b) S.t
 
   let bin_size_t bin_size_el1 bin_size_el2 t =
     B.bin_size_t bin_size_el1 bin_size_el2 (S.to_binable t)
@@ -247,8 +240,6 @@ end
 module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
   open S
 
-  type t = S.t
-
   let raise_concurrent_modification =
     match module_name with
     | None -> raise_concurrent_modification
@@ -314,13 +305,6 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
       unsafe_write = bin_write_t_;
     }
 
-  let bin_writer_t =
-    {
-      size = bin_size_t;
-      write = bin_write_t;
-      unsafe_write = bin_write_t_;
-    }
-
   let bin_reader_t =
     {
       read = bin_read_t;
@@ -353,8 +337,6 @@ end
 
 module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
   open S
-
-  type 'a t = 'a S.t
 
   let raise_concurrent_modification =
     match module_name with
@@ -423,15 +405,6 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
         bin_write_t_ bin_writer.unsafe_write sptr eptr v);
     }
 
-  let bin_writer_t bin_writer =
-    {
-      size = (fun v -> bin_size_t bin_writer.size v);
-      write = (fun buf ~pos v ->
-        bin_write_t bin_writer.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-        bin_write_t_ bin_writer.unsafe_write sptr eptr v);
-    }
-
   let bin_reader_t bin_reader =
     {
       read = (fun buf ~pos_ref ->
@@ -466,8 +439,6 @@ end
 
 module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
   open S
-
-  type ('a, 'b) t = ('a, 'b) S.t
 
   let raise_concurrent_modification =
     match module_name with
@@ -528,17 +499,6 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
 
   let bin_read_t__ _sptr_ptr _eptr _n =
     Unsafe_read_c.raise_variant_wrong_type "t"
-
-  let bin_writer_t bin_writer1 bin_writer2 =
-    {
-      size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v);
-      write = (fun buf ~pos v ->
-        bin_write_t
-          bin_writer1.unsafe_write bin_writer2.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-          bin_write_t_
-            bin_writer1.unsafe_write bin_writer2.unsafe_write sptr eptr v);
-    }
 
   let bin_writer_t bin_writer1 bin_writer2 =
     {

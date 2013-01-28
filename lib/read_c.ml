@@ -1,7 +1,5 @@
 (* Read_c: wrapping unsafe C-style readers to safe ML-style ones. *)
 
-open Bigarray
-
 open Common
 open Unsafe_common
 open Unsafe_read_c

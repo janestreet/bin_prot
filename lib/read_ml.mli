@@ -1,7 +1,5 @@
 (** Reading values from the binary protocol using (mostly) OCaml. *)
 
-open Bigarray
-
 open Common
 
 type 'a reader = buf -> pos_ref : pos_ref -> 'a

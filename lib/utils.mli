@@ -1,8 +1,6 @@
 (** Utility functions for user convenience *)
 
-open Bigarray
 open Common
-open Read_ml
 open Type_class
 
 val bin_dump : ?header : bool -> 'a writer -> 'a -> buf

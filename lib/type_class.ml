@@ -1,7 +1,5 @@
 (* Tp_class: sizers, writers, and readers in records *)
 
-open Common
-
 type 'a writer =
   {
     size : 'a Size.sizer;

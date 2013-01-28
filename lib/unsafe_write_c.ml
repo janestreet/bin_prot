@@ -1,7 +1,5 @@
 (* Unsafe_write_c: writing values to the binary protocol using unsafe C. *)
 
-open Bigarray
-
 open Common
 open Unsafe_common
 
