@@ -78,7 +78,8 @@ let bin_size_nativeint n =
 #endif
 
 let bin_size_ref bin_size_el r = bin_size_el !r
-let bin_size_lazy bin_size_el lv = bin_size_el (Lazy.force lv)
+let bin_size_lazy_t bin_size_el lv = bin_size_el (Lazy.force lv)
+let bin_size_lazy = bin_size_lazy_t
 
 let bin_size_option bin_size_el = function
   | None -> 1

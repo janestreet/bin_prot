@@ -1,8 +1,6 @@
 open Printf
-open Bigarray
 open Bin_prot
 open Common
-open Utils
 open Bin_prot.Std
 
 
@@ -72,7 +70,7 @@ let main () =
 
   (* Write n times *)
   let t1 = Unix.gettimeofday () in
-  for i = 1 to n do
+  for _i = 1 to n do
     ignore (bin_write_els buf ~pos:0 x)
   done;
   let t2 = Unix.gettimeofday () in
@@ -80,7 +78,7 @@ let main () =
 
   (* Read n times *)
   let t1 = Unix.gettimeofday () in
-  for i = 1 to n do
+  for _i = 1 to n do
     let pos_ref = ref 0 in
     ignore (bin_read_els buf ~pos_ref)
   done;

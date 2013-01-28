@@ -13,21 +13,21 @@ type t7 = t6 with bin_io
 
 let io
     { Type_class.
-      writer = { Type_class.write; size };
-      reader = { Type_class.read }
+      writer = { Type_class.write; size; _ };
+      reader = { Type_class.read; _ };
     }
     v
     =
   let buf = Common.create_buf (size v) in
   let before = Unix.gettimeofday () in
-  for i = 1 to 10_000_000 do
+  for _i = 1 to 10_000_000 do
     ignore (write buf v ~pos:0 : int)
   done;
   Printf.printf "Write took %f sec\n%!" (Unix.gettimeofday () -. before);
 
   let before = Unix.gettimeofday () in
   let pos_ref = ref 0 in
-  for i=1 to 10_000_000 do
+  for _i=1 to 10_000_000 do
     pos_ref := 0;
     ignore (read ~pos_ref buf)
   done;

@@ -17,10 +17,6 @@ let rec sig_of_tds cnv = function
       <:sig_item< $sig_of_tds cnv tp1$; $sig_of_tds cnv tp2$ >>
   | _ -> assert false  (* impossible *)
 
-let mk_ignore_binding = function
-  | <:binding@loc< $lid:name$ = $_$ >> -> <:binding@loc< _ = $lid:name$ >>
-  | _ -> assert false  (* impossible *)
-
 let mk_full_type loc type_name tps =
   let coll_args tp param =
     <:ctyp@loc< $tp$ $Gen.drop_variance_annotations param$ >>
@@ -58,9 +54,8 @@ module Sig_generate_writer = struct
       value $lid:"bin_writer_" ^ type_name$ : $bin_writer$
     >>
 
-  let mk_sig tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
-
-  let () = add_sig_generator "bin_write" mk_sig
+  let mk_sig _rec tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
+  let () = add_sig_generator ~delayed:true "bin_write" mk_sig;
 end
 
 
@@ -93,9 +88,8 @@ module Sig_generate_reader = struct
       value $lid:"bin_reader_" ^ type_name$ : $bin_reader$
     >>
 
-  let mk_sig tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
-
-  let () = add_sig_generator "bin_read" mk_sig
+  let mk_sig _rec tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
+  let () = add_sig_generator ~delayed:true "bin_read" mk_sig;
 end
 
 
@@ -112,21 +106,15 @@ module Sig_generate_tp_class = struct
     let bin_tp_class = loop <:ctyp< $lid:type_name$ >> tps in
     <:sig_item< value $lid:"bin_" ^ type_name$ : $bin_tp_class$ >>
 
-  let mk_sig tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
-  let () = add_sig_generator "bin_type_class" mk_sig
+  let mk_sig _rec tds = <:sig_item< $sig_of_tds sig_of_td tds$ >>
+  let () = add_sig_generator ~delayed:true "bin_type_class" mk_sig
 end
 
 
 (* Generates the signature for binary protocol *)
 module Sig_generate = struct
   let () =
-    add_sig_generator "bin_io" (fun tds ->
-      let _loc = Loc.ghost in
-      <:sig_item<
-        $Sig_generate_writer.mk_sig tds$;
-        $Sig_generate_reader.mk_sig tds$;
-        $Sig_generate_tp_class.mk_sig tds$;
-      >>)
+    add_sig_set "bin_io" ~set:["bin_write"; "bin_read"; "bin_type_class"];
 end
 
 
@@ -370,23 +358,38 @@ module Generate_bin_size = struct
     | TyAnd (_loc, tp1, tp2) -> bin_size_tds (bin_size_tds acc tp2) tp1
     | _ -> assert false  (* impossible *)
 
-  let bin_size tds =
+  let bin_size rec_ tds =
     let bindings, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
           let binding = bin_size_td _loc type_name tps rhs in
-          [binding], Gen.type_is_recursive type_name rhs, _loc
-      | TyAnd (_loc, _, _) -> bin_size_tds [] tds, true, _loc
+          [binding], rec_ && Gen.type_is_recursive type_name rhs, _loc
+      | TyAnd (_loc, _, _) -> bin_size_tds [] tds, rec_, _loc
       | _ -> assert false  (* impossible *)
     in
     if recursive then <:str_item< value rec $list:bindings$ >>
     else <:str_item< value $list:bindings$ >>
 end
 
+module Component_set = Set.Make(struct
+  type t = string list (* module path *) * string (* type name *)
+  let rec compare (p,tn) (p',tn') =
+    match (p, p') with
+    | x::xs, x'::xs' ->
+      let res = String.compare x x' in
+      if res = 0 then compare (xs,tn) (xs',tn') else res
+    | [], _::_ ->  1
+    | _::_, [] -> -1
+    | [], [] -> String.compare tn tn'
+end)
 
 (* Generator for converters of OCaml-values to the binary protocol *)
 module Generate_bin_write = struct
+  let component_writes = ref Component_set.empty
+
   let mk_abst_call _loc tn rev_path =
+    component_writes :=
+      Component_set.add (List.rev rev_path, tn) !component_writes;
     <:expr<
       $id:Gen.ident_of_rev_path _loc (("bin_write_" ^ tn ^ "_") :: rev_path)$
     >>
@@ -597,7 +600,6 @@ module Generate_bin_write = struct
   (* Generate code from type definitions *)
   let bin_write_td _loc type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
-    let full_type = mk_full_type _loc type_name tps in
     let is_nil = ref false in
     let int_body =
       let rec loop _loc =
@@ -644,14 +646,16 @@ module Generate_bin_write = struct
                   Bin_prot.Unsafe_common.get_safe_buf_pos buf ~start ~cur
             >>
       in
-      <:expr< fun buf ~pos (v : $full_type$) -> $ext_body$ >>
+      <:expr< fun buf ~pos v -> $ext_body$ >>
     in
     let ext_name = "bin_write_" ^ type_name in
     let size_name = "bin_size_" ^ type_name in
     (
       <:binding< $lid:int_call$ = $Gen.abstract _loc tparam_patts int_body$ >>,
       (
-        <:binding< $lid:ext_name$ = $Gen.abstract _loc tparam_patts ext_fun$ >>,
+        <:binding<
+          $lid:ext_name$ = $Gen.abstract _loc tparam_patts ext_fun$
+        >>,
         let size =
           let tparam_size_exprs =
             List.map (fun tp ->
@@ -714,7 +718,8 @@ module Generate_bin_write = struct
     | TyAnd (_loc, tp1, tp2) -> bin_write_tds (bin_write_tds acc tp2) tp1
     | _ -> assert false  (* impossible *)
 
-  let bin_write tds =
+  let bin_write rec_ tds =
+    component_writes := Component_set.empty;
     let internals, externals1, externals2, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
@@ -722,27 +727,35 @@ module Generate_bin_write = struct
             bin_write_td _loc type_name tps rhs
           in
           [internal], [external1], [external2],
-          Gen.type_is_recursive type_name rhs, _loc
+          rec_ && Gen.type_is_recursive type_name rhs, _loc
       | TyAnd (_loc, _, _) ->
           let res = bin_write_tds [] tds in
           let internals, many_externals = List.split res in
           let externals1, externals2 = List.split many_externals in
-          internals, externals1, externals2, true, _loc
+          internals, externals1, externals2, rec_, _loc
       | _ -> assert false  (* impossible *)
     in
-    let ignore_externals1 = List.map mk_ignore_binding externals1 in
-    let ignore_externals2 = List.map mk_ignore_binding externals2 in
     let internals_item =
       if recursive then <:str_item< value rec $list:internals$ >>
       else <:str_item< value $list:internals$ >>
     in
+    let use_component_writes =
+      let ensure_used (path, tn) acc =
+        List.map (fun fn ->
+          <:str_item< value _ = $id:Gen.ident_of_rev_path _loc (fn :: List.rev path)$ >>)
+          [ "bin_write_" ^ tn;
+            "bin_write_" ^ tn ^ "_";
+            "bin_writer_" ^ tn ]
+        @ acc
+      in
+      Component_set.fold ensure_used !component_writes []
+    in
     <:str_item<
-      $Generate_bin_size.bin_size tds$;
+      $Generate_bin_size.bin_size rec_ tds$;
       $internals_item$;
       value $list:externals1$;
       value $list:externals2$;
-      value $list:ignore_externals1$;
-      value $list:ignore_externals2$;
+      $list:use_component_writes$;
     >>
 
   (* Add code generator to the set of known generators *)
@@ -752,7 +765,11 @@ end
 
 (* Generator for converters of binary protocol to OCaml-values *)
 module Generate_bin_read = struct
+  let component_reads = ref Component_set.empty
+
   let mk_abst_call _loc tn ?(internal = false) rev_path =
+    component_reads :=
+      Component_set.add (List.rev rev_path, tn) !component_reads;
     let tnp =
       let tnn = "bin_read_" ^ tn in
       if internal then tnn ^ "__" else tnn ^ "_"
@@ -1055,7 +1072,7 @@ module Generate_bin_read = struct
 
   (* Generate code from type definitions *)
 
-  let bin_read_td _loc type_name tps rhs =
+  let bin_read_td _loc rec_ type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
     let full_type = mk_full_type _loc type_name tps in
     let is_alias_ref = ref false in
@@ -1147,7 +1164,9 @@ module Generate_bin_read = struct
       in
 
       let abst_call =
-        if !is_alias_ref then
+        if !is_alias_ref && rec_ then
+          (* this inlining is provoking captures in the generated code
+             when using nonrec, so disabling it *)
           match oc_body with
           | `Closed expr -> <:expr< $expr$ sptr_ptr eptr >>
           | `Open body -> body
@@ -1333,25 +1352,26 @@ module Generate_bin_read = struct
       )
     )
 
-  let rec bin_read_tds acc = function
+  let rec bin_read_tds rec_ acc = function
     | TyDcl (_loc, type_name, tps, rhs, _cl) ->
-        bin_read_td _loc type_name tps rhs :: acc
-    | TyAnd (_loc, tp1, tp2) -> bin_read_tds (bin_read_tds acc tp2) tp1
+        bin_read_td _loc rec_ type_name tps rhs :: acc
+    | TyAnd (_loc, tp1, tp2) ->
+      bin_read_tds rec_ (bin_read_tds rec_ acc tp2) tp1
     | _ -> assert false  (* impossible *)
 
   (* Generate code from type definitions *)
-  let bin_read tds =
+  let bin_read rec_ tds =
+    component_reads := Component_set.empty;
     let res, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
-          let res = bin_read_td _loc type_name tps rhs in
-          [res], Gen.type_is_recursive type_name rhs, _loc
-      | TyAnd (_loc, _, _) -> bin_read_tds [] tds, true, _loc
+          let res = bin_read_td _loc rec_ type_name tps rhs in
+          [res], rec_ && Gen.type_is_recursive type_name rhs, _loc
+      | TyAnd (_loc, _, _) -> bin_read_tds rec_ [] tds, rec_, _loc
       | _ -> assert false  (* impossible *)
     in
     let poly_abst, user_bindings_readers = List.split res in
     let user_bindings, readers = List.split user_bindings_readers in
-    let ignore_readers = List.map mk_ignore_binding readers in
     let internal_str_item =
       if recursive then
         (* Improve code locality *)
@@ -1368,11 +1388,23 @@ module Generate_bin_read = struct
         let internal_items = List.map cnv poly_abst in
         <:str_item< $list:internal_items$ >>
     in
+    let use_component_reads =
+      let ensure_used (path, tn) acc =
+        List.map (fun fn ->
+          <:str_item< value _ = $id:Gen.ident_of_rev_path _loc (fn :: List.rev path)$ >>)
+          [ "bin_read_" ^ tn;
+            "bin_read_" ^ tn ^ "_";
+            "bin_read_" ^ tn ^ "__";
+            "bin_reader_" ^ tn ]
+        @ acc
+      in
+      Component_set.fold ensure_used !component_reads []
+    in
     <:str_item<
       $internal_str_item$;
       value $list:user_bindings$;
       value $list:readers$;
-      value $list:ignore_readers$;
+      $list:use_component_reads$;
     >>
 
   (* Add code generator to the set of known generators *)
@@ -1431,28 +1463,35 @@ module Generate_tp_class = struct
     | _ -> assert false  (* impossible *)
 
   (* Generate code from type definitions *)
-  let bin_tp_class tds =
+  let bin_tp_class _rec tds =
     let _loc = Loc.ghost in
-    let tp_classes = bin_tp_class_tds [] tds in
-    let ignore_tp_classes = List.map mk_ignore_binding tp_classes in
-    <:str_item<
-      value $list:tp_classes$;
-      value $list:ignore_tp_classes$
-    >>
+    <:str_item< value $list:bin_tp_class_tds [] tds$ >>
 
   (* Add code generator to the set of known generators *)
   let () = add_generator "bin_type_class" bin_tp_class
 end
 
-(* Add "bin_read", "bin_write" and "bin_tp_class" as "bin_io" to the
+(* Add "bin_read", "bin_write" and "bin_type_class" as "bin_io" to the
    set of generators *)
-let () =
-  add_generator
-    "bin_io"
-    (fun tds ->
-      let _loc = Loc.ghost in
-      <:str_item<
-        $Generate_bin_write.bin_write tds$;
-        $Generate_bin_read.bin_read tds$;
-        $Generate_tp_class.bin_tp_class tds$;
-      >>)
+module Str_generate = struct
+  let () =
+    add_generator
+      "bin_io"
+      (fun rec_ tds ->
+        let _loc = Loc.ghost in
+        let bin_write  = Generate_bin_write.bin_write rec_ tds in
+        let bin_read   = Generate_bin_read.bin_read rec_ tds in
+        let type_class = Generate_tp_class.bin_tp_class rec_ tds in
+        let component_type_classes =
+          Component_set.inter
+            !Generate_bin_write.component_writes
+            !Generate_bin_read.component_reads
+        in
+        Component_set.fold
+          (fun (path, tn) acc ->
+            <:str_item< $acc$;
+              value _ = $id:Gen.ident_of_rev_path _loc (("bin_" ^ tn) :: List.rev path)$
+            >>)
+          component_type_classes
+          (<:str_item< $bin_write$; $bin_read$; $type_class$ >>))
+end

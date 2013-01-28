@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdint.h>
 
 #include <caml/config.h>
 #include <caml/memory.h>
