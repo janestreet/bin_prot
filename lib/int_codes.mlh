@@ -1,0 +1,6 @@
+(** Int_codes: integer codes used by the binary protocol *)
+
+let code_neg_int8 = -1
+let code_int16 = -2
+let code_int32 = -3
+let code_int64 = -4
