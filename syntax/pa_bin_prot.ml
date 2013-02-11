@@ -371,25 +371,10 @@ module Generate_bin_size = struct
     else <:str_item< value $list:bindings$ >>
 end
 
-module Component_set = Set.Make(struct
-  type t = string list (* module path *) * string (* type name *)
-  let rec compare (p,tn) (p',tn') =
-    match (p, p') with
-    | x::xs, x'::xs' ->
-      let res = String.compare x x' in
-      if res = 0 then compare (xs,tn) (xs',tn') else res
-    | [], _::_ ->  1
-    | _::_, [] -> -1
-    | [], [] -> String.compare tn tn'
-end)
-
 (* Generator for converters of OCaml-values to the binary protocol *)
 module Generate_bin_write = struct
-  let component_writes = ref Component_set.empty
 
   let mk_abst_call _loc tn rev_path =
-    component_writes :=
-      Component_set.add (List.rev rev_path, tn) !component_writes;
     <:expr<
       $id:Gen.ident_of_rev_path _loc (("bin_write_" ^ tn ^ "_") :: rev_path)$
     >>
@@ -719,7 +704,6 @@ module Generate_bin_write = struct
     | _ -> assert false  (* impossible *)
 
   let bin_write rec_ tds =
-    component_writes := Component_set.empty;
     let internals, externals1, externals2, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
@@ -739,23 +723,11 @@ module Generate_bin_write = struct
       if recursive then <:str_item< value rec $list:internals$ >>
       else <:str_item< value $list:internals$ >>
     in
-    let use_component_writes =
-      let ensure_used (path, tn) acc =
-        List.map (fun fn ->
-          <:str_item< value _ = $id:Gen.ident_of_rev_path _loc (fn :: List.rev path)$ >>)
-          [ "bin_write_" ^ tn;
-            "bin_write_" ^ tn ^ "_";
-            "bin_writer_" ^ tn ]
-        @ acc
-      in
-      Component_set.fold ensure_used !component_writes []
-    in
     <:str_item<
       $Generate_bin_size.bin_size rec_ tds$;
       $internals_item$;
       value $list:externals1$;
       value $list:externals2$;
-      $list:use_component_writes$;
     >>
 
   (* Add code generator to the set of known generators *)
@@ -765,11 +737,8 @@ end
 
 (* Generator for converters of binary protocol to OCaml-values *)
 module Generate_bin_read = struct
-  let component_reads = ref Component_set.empty
 
   let mk_abst_call _loc tn ?(internal = false) rev_path =
-    component_reads :=
-      Component_set.add (List.rev rev_path, tn) !component_reads;
     let tnp =
       let tnn = "bin_read_" ^ tn in
       if internal then tnn ^ "__" else tnn ^ "_"
@@ -1361,7 +1330,6 @@ module Generate_bin_read = struct
 
   (* Generate code from type definitions *)
   let bin_read rec_ tds =
-    component_reads := Component_set.empty;
     let res, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
@@ -1388,23 +1356,10 @@ module Generate_bin_read = struct
         let internal_items = List.map cnv poly_abst in
         <:str_item< $list:internal_items$ >>
     in
-    let use_component_reads =
-      let ensure_used (path, tn) acc =
-        List.map (fun fn ->
-          <:str_item< value _ = $id:Gen.ident_of_rev_path _loc (fn :: List.rev path)$ >>)
-          [ "bin_read_" ^ tn;
-            "bin_read_" ^ tn ^ "_";
-            "bin_read_" ^ tn ^ "__";
-            "bin_reader_" ^ tn ]
-        @ acc
-      in
-      Component_set.fold ensure_used !component_reads []
-    in
     <:str_item<
       $internal_str_item$;
       value $list:user_bindings$;
       value $list:readers$;
-      $list:use_component_reads$;
     >>
 
   (* Add code generator to the set of known generators *)
@@ -1482,16 +1437,5 @@ module Str_generate = struct
         let bin_write  = Generate_bin_write.bin_write rec_ tds in
         let bin_read   = Generate_bin_read.bin_read rec_ tds in
         let type_class = Generate_tp_class.bin_tp_class rec_ tds in
-        let component_type_classes =
-          Component_set.inter
-            !Generate_bin_write.component_writes
-            !Generate_bin_read.component_reads
-        in
-        Component_set.fold
-          (fun (path, tn) acc ->
-            <:str_item< $acc$;
-              value _ = $id:Gen.ident_of_rev_path _loc (("bin_" ^ tn) :: List.rev path)$
-            >>)
-          component_type_classes
-          (<:str_item< $bin_write$; $bin_read$; $type_class$ >>))
+        <:str_item< $bin_write$; $bin_read$; $type_class$ >>)
 end
