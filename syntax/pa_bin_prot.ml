@@ -310,7 +310,9 @@ module Generate_bin_size = struct
             let size = $size_tag$ in
             $size_args$
           >>
-      | _ -> failwith "branch_sum: unknown type"
+      | <:ctyp< $_$ : $_$ >> as tp -> Gen.error tp ~fn:"bin_size_sum"
+        ~msg:"GADTs are not supported by bin_prot"
+      | tp -> Gen.unknown_type tp "bin_size_sum"
     in
     let nonatom_matchings = loop alts in
     let matchings =
@@ -572,7 +574,9 @@ module Generate_bin_write = struct
             >>
           in
           i + 1, case
-      | _ -> failwith "branch_sum: unknown type"
+      | <:ctyp< $_$ : $_$ >> as tp -> Gen.error tp ~fn:"bin_write_sum"
+        ~msg:"GADTs are not supported by bin_prot"
+      | tp -> Gen.unknown_type tp "bin_write_sum"
     in
     `Match (snd (loop 0 alts))
 
@@ -979,7 +983,9 @@ module Generate_bin_read = struct
           let bindings, args_expr = handle_arg_tp _loc full_type_name arg_tp in
           let rhs = <:expr< let $bindings$ in $uid:atom$ $args_expr$ >> in
           mi + 1, <:match_case< $`int:mi$ -> $rhs$ >>
-      | _ -> assert false  (* impossible *)
+      | <:ctyp< $_$ : $_$ >> as tp -> Gen.error tp ~fn:"bin_read_sum"
+        ~msg:"GADTs are not supported by bin_prot"
+      | tp -> Gen.unknown_type tp "bin_read_sum"
     in
     let n_alts, mcs = loop 0 alts in
     let read_fun =
