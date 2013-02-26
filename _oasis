@@ -53,7 +53,6 @@ Library pa_bin_prot
   FindlibParent:      bin_prot
   Modules:            Pa_bin_prot
   BuildDepends:       camlp4.quotations,camlp4.extend,type_conv (>= 3.0.5)
-  CompiledObject:     byte
   XMETAType:          syntax
   XMETARequires:      camlp4,type_conv,bin_prot
   XMETADescription:   Syntax extension for binary protocol generator
