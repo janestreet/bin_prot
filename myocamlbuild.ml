@@ -1,131 +1,32 @@
 (* OASIS_START *)
 (* OASIS_STOP *)
 
+let dispatch = function
+  | After_rules ->
+    let env = BaseEnvLight.load () in
+    let system = BaseEnvLight.var_get "system" env in
 
-let protectx x ~f ~finally =
-  let r = try f x with exn -> finally x; raise exn in
-  finally x; r
+    let is_darwin = String.is_prefix "macos" system in
 
-let rm_rf dir =
-  ignore (Printf.ksprintf Sys.command "/bin/rm -rf %S" dir : int)
+    let cpp = S [A "-pp"; P "cpp -traditional -undef -w"] in
 
-let temp_dir ?(in_dir = Filename.temp_dir_name) prefix suffix =
-  let base = Filename.concat in_dir prefix in
-  let rec loop i =
-     let dir = base ^ string_of_int i ^ suffix in
-     let ret = Printf.ksprintf Sys.command "/bin/mkdir %S 2>/dev/null" dir in
-     if ret = 0 then dir
-     else if Sys.file_exists dir then loop (i + 1)
-     else failwith ("mkdir failed on " ^ dir)
-   in loop 0
+    dep ["ocaml"; "ocamldep"; "mlh"] ["lib/int_codes.mlh"];
 
-let read_lines ic =
-  let rec loop acc =
-    match try Some (input_line ic) with End_of_file -> None with
-    | Some line -> loop (line :: acc)
-    | None -> List.rev acc
-  in loop []
+    flag ["ocamldep"; "ocaml"; "use_pa_bin_prot"]
+      (S [A "-ppopt"; P "syntax/pa_bin_prot.cma"]);
 
-let test cmd =
-  match Sys.command cmd with
-  | 0 -> true
-  | 1 -> false
-  | _ -> failwith ("command ^cmd^ failed.")
+    flag ["compile"; "ocaml"; "use_pa_bin_prot"]
+      (S [A "-ppopt"; P "syntax/pa_bin_prot.cma"]);
 
-let sh_lines cmd =
-  protectx (Filename.temp_file "ocamlbuild_cmd" ".txt")
-    ~f:(fun fn ->
-      ignore (Sys.command ("(" ^ cmd ^ ") >" ^ fn) : int);
-      protectx (open_in fn) ~f:read_lines ~finally:close_in)
-    ~finally:Sys.remove
+    flag ["ocamldep"; "ocaml"; "cpp"] cpp;
 
-let getconf var =
-  let cmd = Printf.sprintf "getconf %S" var in
-  match sh_lines cmd with
-  | []  -> None
-  | [x] -> Some x
-  | _   -> failwith ("`"^cmd^"` returned multiple lines")
+    flag ["compile"; "ocaml"; "cpp"] cpp;
 
-let endswith x s =
-  let len_x = String.length x and len_s = String.length s in
-  (len_x <= len_s) && x = String.sub s (len_s - len_x) len_x
+    flag ["doc"; "ocaml"; "cpp"] cpp;
 
-let select_files dir ext =
-  List.map (Filename.concat dir)
-    (List.filter (endswith ext)
-      (Array.to_list (Sys.readdir dir)))
-;;
+    if is_darwin then
+      flag ["compile"; "c"] (S [A "-ccopt"; A "-DOS_DARWIN"])
+  | _ ->
+    ()
 
-
-let setup_standard_build_flags () =
-    begin match getconf "LFS64_CFLAGS" with
-    | None -> ()
-    | Some flags -> flag ["compile"; "c"] (S[A"-ccopt"; A flags])
-    end;
-    let cflags =
-      let flags =
-        [
-          "-pipe";
-          "-g";
-          "-fPIC";
-          "-O2";
-          "-fomit-frame-pointer";
-          "-fsigned-char";
-          "-Wall";
-          "-pedantic";
-          "-Wextra";
-          "-Wunused";
-(*          "-Werror"; *)
-          "-Wno-long-long";
-        ]
-      in
-      let f flag = [A "-ccopt"; A flag] in
-      List.concat (List.map f flags)
-    in
-    flag ["compile"; "c"] (S cflags);
-
-    (* enable warnings; make sure the '@' character isn't in the beginning;
-       ms-dos interprets that character specially *)
-    flag ["compile"; "ocaml"] (S [A "-w"; A "Aemr-28"; A "-strict-sequence" ])
-;;
-
-(* We probably will want to set this up in the `configure` script at some
-   point. *)
-let is_darwin =
-  Ocamlbuild_pack.My_unix.run_and_open "uname -s" input_line = "Darwin"
-
-let cpp =
-  let base_cpp = "cpp -traditional -undef -w" in
-  match Sys.word_size with
-  | 64 -> S [A "-pp"; P (base_cpp ^ " -DARCH_SIXTYFOUR")]
-  | 32 -> S [A "-pp"; P base_cpp]
-  | _ -> assert false
-;;
-
-Ocamlbuild_plugin.dispatch
-  begin
-    function
-      | After_rules as e ->
-          setup_standard_build_flags ();
-
-          dep ["ocaml"; "ocamldep"; "mlh"] ["lib/int_codes.mlh"];
-
-          flag ["ocamldep"; "ocaml"; "use_pa_bin_prot"]
-            (S [A "-ppopt"; P "syntax/pa_bin_prot.cma"]);
-
-          flag ["compile"; "ocaml"; "use_pa_bin_prot"]
-            (S [A "-ppopt"; P "syntax/pa_bin_prot.cma"]);
-
-          flag ["ocamldep"; "ocaml"; "cpp"] cpp;
-
-          flag ["compile"; "ocaml"; "cpp"] cpp;
-
-          flag ["doc"; "ocaml"; "cpp"] cpp;
-
-          if is_darwin then
-            flag ["compile"; "c"] (S [A "-ccopt"; A "-DOS_DARWIN"]);
-
-          dispatch_default e
-      | e -> dispatch_default e
-  end
-;;
+let () = Ocamlbuild_plugin.dispatch (fun hook -> dispatch hook; dispatch_default hook)
