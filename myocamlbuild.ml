@@ -5,10 +5,13 @@ let dispatch = function
   | After_rules ->
     let env = BaseEnvLight.load () in
     let system = BaseEnvLight.var_get "system" env in
-
     let is_darwin = String.is_prefix "macos" system in
+    let arch_sixtyfour = BaseEnvLight.var_get "arch_sixtyfour" env = "true" in
 
-    let cpp = S [A "-pp"; P "cpp -traditional -undef -w"] in
+    let cpp = "cpp -traditional -undef -w" in
+    let cpp = if arch_sixtyfour then cpp ^ " -DARCH_SIXTYFOUR" else cpp in
+
+    let cpp = S [A "-pp"; P cpp] in
 
     dep ["ocaml"; "ocamldep"; "mlh"] ["lib/int_codes.mlh"];
 
@@ -25,7 +28,7 @@ let dispatch = function
     flag ["doc"; "ocaml"; "cpp"] cpp;
 
     if is_darwin then
-      flag ["compile"; "c"] (S [A "-ccopt"; A "-DOS_DARWIN"])
+      flag ["compile"; "c"] (S [A "-ccopt"; A "-DOS_DARWIN"]);
   | _ ->
     ()
 

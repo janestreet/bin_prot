@@ -19,7 +19,8 @@ Plugins:          StdFiles (0.3), DevFiles (0.3), META (0.3)
 XStdFilesAUTHORS: false
 XStdFilesREADME:  false
 
-PreBuildCommand:  mkdir -p _build; cp lib/*.mlh lib/*.h _build/
+PostConfCommand: config/arch.sh $ocamlc
+PreBuildCommand: mkdir -p _build; cp lib/*.mlh lib/*.h _build/
 
 Library bin_prot
   Path:               lib
