@@ -43,24 +43,24 @@ module S3 = struct
 end
 
 #define MK_BASE(NAME) \
-  let bin_writer_/**/NAME = \
+  let bin_writer_##NAME = \
     { \
-      size = Size.bin_size_/**/NAME; \
-      write = Write_ml.bin_write_/**/NAME; \
-      unsafe_write = Unsafe_write_c.bin_write_/**/NAME; \
+      size = Size.bin_size_##NAME; \
+      write = Write_ml.bin_write_##NAME; \
+      unsafe_write = Unsafe_write_c.bin_write_##NAME; \
     } \
-  let bin_reader_/**/NAME = \
+  let bin_reader_##NAME = \
     { \
-      read = Read_ml.bin_read_/**/NAME; \
-      unsafe_read = Unsafe_read_c.bin_read_/**/NAME; \
+      read = Read_ml.bin_read_##NAME; \
+      unsafe_read = Unsafe_read_c.bin_read_##NAME; \
       unsafe_vtag_read = fun _sptr_ptr _eptr _vint -> \
         Unsafe_read_c.raise_variant_wrong_type \
           "NAME"; \
     } \
-  let bin_/**/NAME = \
+  let bin_##NAME = \
     { \
-      writer = bin_writer_/**/NAME; \
-      reader = bin_reader_/**/NAME; \
+      writer = bin_writer_##NAME; \
+      reader = bin_reader_##NAME; \
     }
 
 MK_BASE(unit)
@@ -75,99 +75,99 @@ MK_BASE(nativeint)
 MK_BASE(nat0)
 
 #define MK_WRITER_BASE1(NAME) \
-  let bin_writer_/**/NAME bin_writer_el = \
+  let bin_writer_##NAME bin_writer_el = \
     { \
-      size = (fun v -> Size.bin_size_/**/NAME bin_writer_el.size v); \
+      size = (fun v -> Size.bin_size_##NAME bin_writer_el.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_/**/NAME bin_writer_el.write buf ~pos v); \
+        Write_ml.bin_write_##NAME bin_writer_el.write buf ~pos v); \
       unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_/**/NAME \
+        Unsafe_write_c.bin_write_##NAME \
           bin_writer_el.unsafe_write sptr eptr v); \
     }
 
 #define MK_BASE1(NAME) \
   MK_WRITER_BASE1(NAME) \
-  let bin_reader_/**/NAME bin_reader_el = \
+  let bin_reader_##NAME bin_reader_el = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_/**/NAME bin_reader_el.read buf ~pos_ref); \
+        Read_ml.bin_read_##NAME bin_reader_el.read buf ~pos_ref); \
       unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_/**/NAME \
+        Unsafe_read_c.bin_read_##NAME \
           bin_reader_el.unsafe_read sptr_ptr eptr); \
       unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
         Unsafe_read_c.raise_variant_wrong_type "NAME"); \
     } \
-  let bin_/**/NAME bin_el = \
+  let bin_##NAME bin_el = \
     { \
-      writer = bin_writer_/**/NAME bin_el.writer; \
-      reader = bin_reader_/**/NAME bin_el.reader; \
+      writer = bin_writer_##NAME bin_el.writer; \
+      reader = bin_reader_##NAME bin_el.reader; \
     }
 
 #define MK_BASE2(NAME) \
-  let bin_writer_/**/NAME bin_writer_el1 bin_writer_el2 = \
+  let bin_writer_##NAME bin_writer_el1 bin_writer_el2 = \
     { \
       size = (fun v -> \
-        Size.bin_size_/**/NAME bin_writer_el1.size bin_writer_el2.size v); \
+        Size.bin_size_##NAME bin_writer_el1.size bin_writer_el2.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_/**/NAME \
+        Write_ml.bin_write_##NAME \
           bin_writer_el1.write bin_writer_el2.write buf ~pos v); \
       unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_/**/NAME \
+        Unsafe_write_c.bin_write_##NAME \
           bin_writer_el1.unsafe_write bin_writer_el2.unsafe_write \
           sptr eptr v); \
     } \
-  let bin_reader_/**/NAME bin_reader_el1 bin_reader_el2 = \
+  let bin_reader_##NAME bin_reader_el1 bin_reader_el2 = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_/**/NAME \
+        Read_ml.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read buf ~pos_ref); \
       unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_/**/NAME \
+        Unsafe_read_c.bin_read_##NAME \
           bin_reader_el1.unsafe_read bin_reader_el2.unsafe_read \
           sptr_ptr eptr); \
       unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
         Unsafe_read_c.raise_variant_wrong_type "NAME"); \
     } \
-  let bin_/**/NAME bin_el1 bin_el2 = \
+  let bin_##NAME bin_el1 bin_el2 = \
     { \
-      writer = bin_writer_/**/NAME bin_el1.writer bin_el2.writer; \
-      reader = bin_reader_/**/NAME bin_el1.reader bin_el2.reader; \
+      writer = bin_writer_##NAME bin_el1.writer bin_el2.writer; \
+      reader = bin_reader_##NAME bin_el1.reader bin_el2.reader; \
     }
 
 #define MK_BASE3(NAME) \
-  let bin_writer_/**/NAME bin_writer_el1 bin_writer_el2 bin_writer_el3 = \
+  let bin_writer_##NAME bin_writer_el1 bin_writer_el2 bin_writer_el3 = \
     { \
       size = (fun v -> \
-        Size.bin_size_/**/NAME \
+        Size.bin_size_##NAME \
           bin_writer_el1.size bin_writer_el2.size bin_writer_el3.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_/**/NAME \
+        Write_ml.bin_write_##NAME \
           bin_writer_el1.write bin_writer_el2.write \
           bin_writer_el3.write buf ~pos v); \
       unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_/**/NAME \
+        Unsafe_write_c.bin_write_##NAME \
           bin_writer_el1.unsafe_write bin_writer_el2.unsafe_write \
           bin_writer_el3.unsafe_write sptr eptr v); \
     } \
-  let bin_reader_/**/NAME bin_reader_el1 bin_reader_el2 bin_reader_el3 = \
+  let bin_reader_##NAME bin_reader_el1 bin_reader_el2 bin_reader_el3 = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_/**/NAME \
+        Read_ml.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read \
           bin_reader_el3.read buf ~pos_ref); \
       unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_/**/NAME \
+        Unsafe_read_c.bin_read_##NAME \
           bin_reader_el1.unsafe_read bin_reader_el2.unsafe_read \
           bin_reader_el3.unsafe_read sptr_ptr eptr); \
       unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
         Unsafe_read_c.raise_variant_wrong_type "NAME"); \
     } \
-  let bin_/**/NAME bin_el1 bin_el2 bin_el3 = \
+  let bin_##NAME bin_el1 bin_el2 bin_el3 = \
     { \
       writer = \
-        bin_writer_/**/NAME bin_el1.writer bin_el2.writer bin_el3.writer; \
+        bin_writer_##NAME bin_el1.writer bin_el2.writer bin_el3.writer; \
       reader = \
-        bin_reader_/**/NAME bin_el1.reader bin_el2.reader bin_el3.reader; \
+        bin_reader_##NAME bin_el1.reader bin_el2.reader bin_el3.reader; \
     }
 
 MK_BASE1(ref)
