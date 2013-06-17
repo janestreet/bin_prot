@@ -45,23 +45,23 @@ module S3 : sig
 end
 
 #define MK_BASE_TP(NAME, TP) \
-  val bin_writer_/**/NAME : TP writer \
-  val bin_reader_/**/NAME : TP reader \
-  val bin_/**/NAME : TP t
+  val bin_writer_##NAME : TP writer \
+  val bin_reader_##NAME : TP reader \
+  val bin_##NAME : TP t
 
 #define MK_BASE(NAME) MK_BASE_TP(NAME, NAME)
 
 #define MK_BASE1_TP(NAME, TP) \
-  val bin_writer_/**/NAME : ('a, 'a TP) S1.writer \
-  val bin_reader_/**/NAME : ('a, 'a TP) S1.reader \
-  val bin_/**/NAME : ('a, 'a TP) S1.t
+  val bin_writer_##NAME : ('a, 'a TP) S1.writer \
+  val bin_reader_##NAME : ('a, 'a TP) S1.reader \
+  val bin_##NAME : ('a, 'a TP) S1.t
 
 #define MK_BASE1(NAME) MK_BASE1_TP(NAME, NAME)
 
 #define MK_BASE2_TP(NAME, TP) \
-  val bin_writer_/**/NAME : ('a, 'b, ('a, 'b) TP) S2.writer \
-  val bin_reader_/**/NAME : ('a, 'b, ('a, 'b) TP) S2.reader \
-  val bin_/**/NAME : ('a, 'b, ('a, 'b) TP) S2.t
+  val bin_writer_##NAME : ('a, 'b, ('a, 'b) TP) S2.writer \
+  val bin_reader_##NAME : ('a, 'b, ('a, 'b) TP) S2.reader \
+  val bin_##NAME : ('a, 'b, ('a, 'b) TP) S2.t
 
 #define MK_BASE2(NAME) MK_BASE2_TP(NAME, NAME)
 
