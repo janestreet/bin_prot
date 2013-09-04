@@ -60,12 +60,12 @@ module ReadError = struct
 end
 
 exception Read_error of ReadError.t * pos
-exception Read_exc of exn * pos
 exception Poly_rec_write of string
 exception Empty_type of string
 
 let raise_read_error err pos = raise (Read_error (err, pos))
-let raise_read_exc exc pos = raise (Read_exc (exc, pos))
+let raise_variant_wrong_type name pos =
+  raise (Read_error (ReadError.Variant_wrong_type name, pos))
 
 let raise_concurrent_modification loc =
   failwith (loc ^ ": concurrent modification")
@@ -79,6 +79,9 @@ type pos_ref = pos ref
 type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 
 let create_buf n = Array1.create Bigarray.char c_layout n
+
+let assert_pos pos =
+  if pos < 0 then array_bound_error ()
 
 let check_pos (buf : buf) pos =
   if pos >= Array1.dim buf then raise Buffer_short
@@ -182,10 +185,12 @@ type mat64 = (float, float64_elt, fortran_layout) Array2.t
 type mat = mat64
 
 
-(* Initialisation *)
+(* Float arrays *)
 
-external init : unit -> unit = "bin_prot_common_init_stub"
+external unsafe_blit_float_array_buf :
+  src_pos : int -> float array -> dst_pos : int -> buf -> len : int -> unit
+  = "bin_prot_blit_float_array_buf_stub" "noalloc"
 
-let () =
-  Callback.register_exception "Bin_prot.Common.Buffer_short" Buffer_short;
-  init ()
+external unsafe_blit_buf_float_array :
+  src_pos : int -> buf -> dst_pos : int -> float array -> len : int -> unit
+  = "bin_prot_blit_buf_float_array_stub" "noalloc"

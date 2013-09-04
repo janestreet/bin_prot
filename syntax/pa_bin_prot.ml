@@ -23,6 +23,10 @@ let mk_full_type loc type_name tps =
   in
   List.fold_left coll_args <:ctyp@loc< $lid:type_name$ >> tps
 
+let rec_flag_of_bool = function
+  | true -> Ast.ReRecursive
+  | false -> Ast.ReNil
+
 (* Generators for the binary protocol *)
 
 (* Generates the signature for binary protocol writers *)
@@ -30,27 +34,24 @@ module Sig_generate_writer = struct
   let sig_of_td _loc type_name tps =
     let rec loop this_type = function
       | [] ->
-          <:ctyp< Bin_prot.Write_ml.writer $this_type$ >>,
-          <:ctyp< Bin_prot.Unsafe_write_c.writer $this_type$ >>,
+          <:ctyp< Bin_prot.Write.writer $this_type$ >>,
           <:ctyp< Bin_prot.Size.sizer $this_type$ >>,
           <:ctyp< Bin_prot.Type_class.writer $this_type$ >>
       | tp :: tps ->
           let tp = Gen.drop_variance_annotations tp in
-          let bin_write, bin_write_low, bin_size, bin_writer =
+          let bin_write, bin_size, bin_writer =
             loop <:ctyp< $this_type$ $tp$ >> tps
           in
-          <:ctyp< Bin_prot.Unsafe_write_c.writer $tp$ -> $bin_write$ >>,
-          <:ctyp< Bin_prot.Unsafe_write_c.writer $tp$ -> $bin_write_low$ >>,
+          <:ctyp< Bin_prot.Write.writer $tp$ -> $bin_write$ >>,
           <:ctyp< Bin_prot.Size.sizer $tp$ -> $bin_size$ >>,
           <:ctyp< Bin_prot.Type_class.writer $tp$ -> $bin_writer$ >>
     in
-    let bin_write, bin_write_low, bin_size, bin_writer =
+    let bin_write, bin_size, bin_writer =
       loop <:ctyp< $lid:type_name$ >> tps
     in
     <:sig_item<
       value $lid:"bin_size_" ^ type_name$ : $bin_size$;
       value $lid:"bin_write_" ^ type_name$ : $bin_write$;
-      value $lid:"bin_write_" ^ type_name ^ "_"$ : $bin_write_low$;
       value $lid:"bin_writer_" ^ type_name$ : $bin_writer$
     >>
 
@@ -64,27 +65,24 @@ module Sig_generate_reader = struct
   let sig_of_td _loc type_name tps =
     let rec loop this_tp = function
       | [] ->
-          <:ctyp< Bin_prot.Read_ml.reader $this_tp$ >>,
-          <:ctyp< Bin_prot.Unsafe_read_c.reader $this_tp$ >>,
-          <:ctyp< Bin_prot.Unsafe_read_c.reader (int -> $this_tp$) >>,
+          <:ctyp< Bin_prot.Read.reader $this_tp$ >>,
+          <:ctyp< Bin_prot.Read.reader (int -> $this_tp$) >>,
           <:ctyp< Bin_prot.Type_class.reader $this_tp$ >>
       | tp :: tps ->
           let tp = Gen.drop_variance_annotations tp in
-          let bin_read, bin_read_, bin_read__, bin_reader =
+          let bin_read, __bin_read__, bin_reader =
             loop <:ctyp< $this_tp$ $tp$ >> tps
           in
-          <:ctyp< Bin_prot.Unsafe_read_c.reader $tp$ -> $bin_read$ >>,
-          <:ctyp< Bin_prot.Unsafe_read_c.reader $tp$ -> $bin_read_$ >>,
-          <:ctyp< Bin_prot.Unsafe_read_c.reader $tp$ -> $bin_read__$ >>,
+          <:ctyp< Bin_prot.Read.reader $tp$ -> $bin_read$ >>,
+          <:ctyp< Bin_prot.Read.reader $tp$ -> $__bin_read__$ >>,
           <:ctyp< Bin_prot.Type_class.reader $tp$ -> $bin_reader$ >>
     in
-    let bin_read, bin_read_, bin_read__, bin_reader =
+    let bin_read, __bin_read__, bin_reader =
       loop <:ctyp< $lid:type_name$ >> tps
     in
     <:sig_item<
       value $lid:"bin_read_" ^ type_name$ : $bin_read$;
-      value $lid:"bin_read_" ^ type_name ^ "_"$ : $bin_read_$;
-      value $lid:"bin_read_" ^ type_name ^ "__"$ : $bin_read__$;
+      value $lid:"__bin_read_" ^ type_name ^ "__"$ : $__bin_read__$;
       value $lid:"bin_reader_" ^ type_name$ : $bin_reader$
     >>
 
@@ -378,7 +376,7 @@ module Generate_bin_write = struct
 
   let mk_abst_call _loc tn rev_path =
     <:expr<
-      $id:Gen.ident_of_rev_path _loc (("bin_write_" ^ tn ^ "_") :: rev_path)$
+      $id:Gen.ident_of_rev_path _loc (("bin_write_" ^ tn) :: rev_path)$
     >>
 
   (* Conversion of type paths *)
@@ -412,13 +410,13 @@ module Generate_bin_write = struct
       bin_write_type full_type_name _loc tp1,
       bin_write_type full_type_name _loc tp2
     with
-    | `Fun <:expr< Bin_prot.Unsafe_write_c.bin_write_array >>,
-      `Fun <:expr< Bin_prot.Unsafe_write_c.bin_write_float >>
+    | `Fun <:expr< Bin_prot.Write.bin_write_array >>,
+      `Fun <:expr< Bin_prot.Write.bin_write_float >>
         ->
-        <:expr< Bin_prot.Unsafe_write_c.bin_write_float_array >>
+        <:expr< Bin_prot.Write.bin_write_float_array >>
     | `Fun fun_expr1, `Fun fun_expr2 -> <:expr< $fun_expr1$ $fun_expr2$ >>
     | `Fun fun_expr, `Match matching ->
-        <:expr< $fun_expr$ (fun sptr eptr -> fun [ $matching$ ]) >>
+        <:expr< $fun_expr$ (fun buf ~pos -> fun [ $matching$ ]) >>
     | _ -> assert false  (* impossible *)
 
 
@@ -431,7 +429,7 @@ module Generate_bin_write = struct
           let v_name = "v" ^ string_of_int i in
           let v_expr =
             match bin_write_type full_type_name _loc tp with
-            | `Fun fun_expr -> <:expr< $fun_expr$ sptr eptr $lid:v_name$ >>
+            | `Fun fun_expr -> <:expr< $fun_expr$ buf ~pos $lid:v_name$ >>
             | `Match matchings ->
                 <:expr< match $lid:v_name$ with [ $matchings$ ] >>
           in
@@ -439,7 +437,7 @@ module Generate_bin_write = struct
           if rest = [] then [patt], v_expr
           else
             let patts, in_expr = loop (i + 1) rest in
-            patt :: patts, <:expr< let sptr = $v_expr$ in $in_expr$ >>
+            patt :: patts, <:expr< let pos = $v_expr$ in $in_expr$ >>
       | [] -> assert false  (* impossible *)
     in
     loop 1 (list_of_ctyp tp [])
@@ -476,18 +474,18 @@ module Generate_bin_write = struct
       | <:ctyp< `$cnstr$ >> ->
           <:match_case<
             `$cnstr$ as v ->
-              Bin_prot.Unsafe_write_c.bin_write_variant_tag sptr eptr v
+              Bin_prot.Write.bin_write_variant_tag buf ~pos v
           >>
       | <:ctyp< `$cnstr$ of $tp$ >> ->
           let write_args =
             match bin_write_type full_type_name _loc tp with
-            | `Fun fun_expr -> <:expr< $fun_expr$ sptr eptr args >>
+            | `Fun fun_expr -> <:expr< $fun_expr$ buf ~pos args >>
             | `Match matchings -> <:expr< match args with [ $matchings$ ] >>
           in
           <:match_case<
             `$cnstr$ args as v ->
-              let sptr =
-                Bin_prot.Unsafe_write_c.bin_write_variant_tag sptr eptr v
+              let pos =
+                Bin_prot.Write.bin_write_variant_tag buf ~pos v
               in
               $write_args$
           >>
@@ -496,14 +494,14 @@ module Generate_bin_write = struct
       | <:ctyp< $tp1$ $tp2$ >> ->
           let id_path = Gen.get_appl_path _loc tp1 in
           let call = bin_write_appl_fun full_type_name _loc tp1 tp2 in
-          <:match_case< #$id_path$ as v -> $call$ sptr eptr v >>
+          <:match_case< #$id_path$ as v -> $call$ buf ~pos v >>
       | <:ctyp< $id:id$ >> | <:ctyp< #$id:id$ >> ->
           let call =
             match Gen.get_rev_id_path id [] with
             | tn :: path -> mk_abst_call _loc tn path
             | [] -> assert false  (* impossible *)
           in
-          <:match_case< #$id$ as v -> $call$ sptr eptr v >>
+          <:match_case< #$id$ as v -> $call$ buf ~pos v >>
       | _ -> failwith "bin_write_variant: unknown type"
     in
     `Match (loop row_fields)
@@ -513,7 +511,7 @@ module Generate_bin_write = struct
     let bindings =
       let mk_binding parm =
         <:binding<
-          $lid:"_write_" ^ parm$ = fun _sptr _eptr _v ->
+          $lid:"_write_" ^ parm$ = fun _buf ~pos:_ _v ->
             raise (Bin_prot.Common.Poly_rec_write $str:full_type_name$)
         >>
       in
@@ -541,9 +539,9 @@ module Generate_bin_write = struct
     let n_alts = count_alts alts in
     let write_tag =
       if n_alts <= 256 then
-        <:expr< Bin_prot.Unsafe_write_c.bin_write_int_8bit sptr eptr >>
+        <:expr< Bin_prot.Write.bin_write_int_8bit buf ~pos >>
       else if n_alts <= 65536 then
-        <:expr< Bin_prot.Unsafe_write_c.bin_write_int_16bit sptr eptr >>
+        <:expr< Bin_prot.Write.bin_write_int_16bit buf ~pos >>
       else (
         prerr_endline (
           get_loc_err _loc "bin_write_sum: too many alternatives (> 65536)");
@@ -569,7 +567,7 @@ module Generate_bin_write = struct
           in
           let case =
             <:match_case< $uid:cnstr$ $args$ ->
-              let sptr = $write_tag$ $`int:i$ in
+              let pos = $write_tag$ $`int:i$ in
               $write_args$
             >>
           in
@@ -590,7 +588,7 @@ module Generate_bin_write = struct
   let bin_write_td _loc type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
     let is_nil = ref false in
-    let int_body =
+    let body =
       let rec loop _loc =
         Gen.switch_tp_def
           ~alias:(bin_write_type full_type_name)
@@ -601,104 +599,63 @@ module Generate_bin_write = struct
           ~nil:(fun _loc -> is_nil := true; bin_write_nil full_type_name _loc)
       in
       match loop _loc rhs with
-      | `Fun expr when !is_nil -> <:expr< fun _sptr _eptr _v -> $expr$ >>
-      | `Fun fun_expr -> <:expr< fun sptr eptr v -> $fun_expr$ sptr eptr v >>
-      | `Match matchings -> <:expr< fun sptr eptr -> fun [ $matchings$ ] >>
+      | `Fun expr when !is_nil -> <:expr< fun _buf ~pos:_ _v -> $expr$ >>
+      | `Fun fun_expr -> <:expr< fun buf ~pos v -> $fun_expr$ buf ~pos v >>
+      | `Match matchings -> <:expr< fun buf ~pos -> fun [ $matchings$ ] >>
     in
     let tparam_cnvs = List.map ( (^) "_write_" *** Gen.get_tparam_id) tps in
     let mk_pat id = <:patt< $lid:id$ >> in
     let tparam_patts = List.map mk_pat tparam_cnvs in
-    let int_call = "bin_write_" ^ type_name ^ "_" in
-    let ext_fun =
-      let ext_body =
-        match int_body with
-        | <:expr<
-            fun sptr eptr v -> Bin_prot.Unsafe_write_c.$call$ sptr eptr v >> ->
-            <:expr< Bin_prot.Write_ml.$call$ buf ~pos v >>
-        | _ ->
-            let app_call =
-              let mk_expr name = <:expr< $lid:name$ >> in
-              let tparam_exprs = List.map mk_expr tparam_cnvs in
-              Gen.apply _loc <:expr< $lid:int_call$ >> tparam_exprs
-            in
-            <:expr<
-              if Pervasives.(<) pos 0 then Bin_prot.Common.array_bound_error ()
-              else
-                let buf_len = Bigarray.Array1.dim buf in
-                if Pervasives.(>) pos buf_len then
-                  raise Bin_prot.Common.Buffer_short
-                else
-                  let start = Bin_prot.Unsafe_common.get_sptr buf ~pos:0 in
-                  let sptr = Bin_prot.Unsafe_common.get_sptr buf ~pos in
-                  let eptr = Bin_prot.Unsafe_common.get_eptr buf ~pos:buf_len in
-                  let cur = $app_call$ sptr eptr v in
-                  Bin_prot.Unsafe_common.get_safe_buf_pos buf ~start ~cur
-            >>
-      in
-      <:expr< fun buf ~pos v -> $ext_body$ >>
-    in
-    let ext_name = "bin_write_" ^ type_name in
+    let write_name = "bin_write_" ^ type_name in
     let size_name = "bin_size_" ^ type_name in
     (
-      <:binding< $lid:int_call$ = $Gen.abstract _loc tparam_patts int_body$ >>,
-      (
-        <:binding<
-          $lid:ext_name$ = $Gen.abstract _loc tparam_patts ext_fun$
-        >>,
-        let size =
-          let tparam_size_exprs =
-            List.map (fun tp ->
-              <:expr<
-                $lid:"bin_writer_" ^ Gen.get_tparam_id tp$
-                .Bin_prot.Type_class.size
-              >>)
-              tps
-          in
-          let call =
-            Gen.apply _loc <:expr< $lid:size_name$ >> tparam_size_exprs
-          in
-          <:expr< fun v -> $call$ v >>
-        in
-        let tparam_unsafe_write_exprs =
+      <:binding< $lid:write_name$ = $Gen.abstract _loc tparam_patts body$ >>,
+      let size =
+        let tparam_size_exprs =
           List.map (fun tp ->
             <:expr<
               $lid:"bin_writer_" ^ Gen.get_tparam_id tp$
-              .Bin_prot.Type_class.unsafe_write
+              .Bin_prot.Type_class.size
             >>)
             tps
         in
-        let write =
-          let call =
-            Gen.apply _loc <:expr< $lid:ext_name$ >> tparam_unsafe_write_exprs
-          in
-          <:expr< fun buf ~pos v -> $call$ buf ~pos v >>
+        let call =
+          Gen.apply _loc <:expr< $lid:size_name$ >> tparam_size_exprs
         in
-        let unsafe_write =
-          let call =
-            Gen.apply _loc <:expr< $lid:int_call$ >> tparam_unsafe_write_exprs
-          in
-          <:expr< fun sptr eptr v -> $call$ sptr eptr v >>
-        in
-        let write =
+        <:expr< fun v -> $call$ v >>
+      in
+      let tparam_write_exprs =
+        List.map (fun tp ->
           <:expr<
-            {
-              Bin_prot.Type_class.
-              size = $size$;
-              unsafe_write = $unsafe_write$;
-              write = $write$;
-            }
-          >>
+            $lid:"bin_writer_" ^ Gen.get_tparam_id tp$
+            .Bin_prot.Type_class.write
+          >>)
+          tps
+      in
+      let write =
+        let call =
+          Gen.apply _loc <:expr< $lid:write_name$ >> tparam_write_exprs
         in
-        let tparam_writer_patts =
-          List.map (fun tp ->
-            <:patt< $lid:"bin_writer_" ^ Gen.get_tparam_id tp$ >>)
-            tps
-        in
-        <:binding<
-          $lid:"bin_writer_" ^ type_name$ =
-            $Gen.abstract _loc tparam_writer_patts write$
+        <:expr< fun buf ~pos v -> $call$ buf ~pos v >>
+      in
+      let write =
+        <:expr<
+          {
+            Bin_prot.Type_class.
+            size = $size$;
+            write = $write$;
+          }
         >>
-      )
+      in
+      let tparam_writer_patts =
+        List.map (fun tp ->
+          <:patt< $lid:"bin_writer_" ^ Gen.get_tparam_id tp$ >>)
+          tps
+      in
+      <:binding<
+        $lid:"bin_writer_" ^ type_name$ =
+          $Gen.abstract _loc tparam_writer_patts write$
+      >>
     )
 
   let rec bin_write_tds acc = function
@@ -708,30 +665,24 @@ module Generate_bin_write = struct
     | _ -> assert false  (* impossible *)
 
   let bin_write rec_ tds =
-    let internals, externals1, externals2, recursive, _loc =
+    let write_bindings, writer_bindings, recursive, _loc =
       match tds with
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
-          let internal, (external1, external2) =
+          let write_binding, writer_binding =
             bin_write_td _loc type_name tps rhs
           in
-          [internal], [external1], [external2],
+          [write_binding], [writer_binding],
           rec_ && Gen.type_is_recursive type_name rhs, _loc
       | TyAnd (_loc, _, _) ->
           let res = bin_write_tds [] tds in
-          let internals, many_externals = List.split res in
-          let externals1, externals2 = List.split many_externals in
-          internals, externals1, externals2, rec_, _loc
+          let write_bindings, writer_bindings = List.split res in
+          write_bindings, writer_bindings, rec_, _loc
       | _ -> assert false  (* impossible *)
-    in
-    let internals_item =
-      if recursive then <:str_item< value rec $list:internals$ >>
-      else <:str_item< value $list:internals$ >>
     in
     <:str_item<
       $Generate_bin_size.bin_size rec_ tds$;
-      $internals_item$;
-      value $list:externals1$;
-      value $list:externals2$;
+      value $rec:rec_flag_of_bool recursive$ $list:write_bindings$;
+      value $list:writer_bindings$
     >>
 
   (* Add code generator to the set of known generators *)
@@ -745,7 +696,7 @@ module Generate_bin_read = struct
   let mk_abst_call _loc tn ?(internal = false) rev_path =
     let tnp =
       let tnn = "bin_read_" ^ tn in
-      if internal then tnn ^ "__" else tnn ^ "_"
+      if internal then "__" ^ tnn ^ "__" else tnn
     in
     <:expr< $id:Gen.ident_of_rev_path _loc (tnp :: rev_path)$ >>
 
@@ -756,12 +707,12 @@ module Generate_bin_read = struct
     | [] -> assert false  (* no empty paths *)
 
   let get_closed_expr _loc = function
-    | `Open expr -> <:expr< fun sptr_ptr eptr -> $expr$ >>
+    | `Open expr -> <:expr< fun buf ~pos_ref -> $expr$ >>
     | `Closed expr -> expr
 
   let get_open_expr _loc = function
     | `Open expr -> expr
-    | `Closed expr -> <:expr< $expr$ sptr_ptr eptr >>
+    | `Closed expr -> <:expr< $expr$ buf ~pos_ref >>
 
   (* Conversion of arguments *)
   let rec handle_arg_tp _loc full_type_name arg_tp =
@@ -802,9 +753,9 @@ module Generate_bin_read = struct
         in
         let expr =
           match bin_read_type full_type_name _loc tp1, arg_expr with
-          | `Closed <:expr< Bin_prot.Unsafe_read_c.bin_read_array >>,
-            <:expr< Bin_prot.Unsafe_read_c.bin_read_float >> ->
-              `Closed <:expr< Bin_prot.Unsafe_read_c.bin_read_float_array >>
+          | `Closed <:expr< Bin_prot.Read.bin_read_array >>,
+            <:expr< Bin_prot.Read.bin_read_float >> ->
+              `Closed <:expr< Bin_prot.Read.bin_read_float_array >>
           | `Closed expr, _ -> `Closed <:expr< $expr$ $arg_expr$ >>
           | _ -> assert false  (* impossible *)
         in
@@ -908,7 +859,7 @@ module Generate_bin_read = struct
               <:expr<
                 (
                   $mk_internal_call
-                    full_type_name _loc inh$ sptr_ptr eptr vint
+                    full_type_name _loc inh$ buf ~pos_ref vint
                     :> $full_type$
                 )
               >>
@@ -937,14 +888,12 @@ module Generate_bin_read = struct
         `Open
           <:expr<
             let vint =
-              Bin_prot.Unsafe_read_c.bin_read_variant_int sptr_ptr eptr
+              Bin_prot.Read.bin_read_variant_int buf ~pos_ref
             in
             try $code$
             with
             [ Bin_prot.Common.No_variant_match ->
-                raise (
-                  Bin_prot.Unsafe_read_c.Error (
-                    Bin_prot.Common.ReadError.Variant $str:full_type_name$))
+                Bin_prot.Common.raise_variant_wrong_type $str:full_type_name$ !pos_ref
             ]
           >>
       else `Open code
@@ -958,11 +907,9 @@ module Generate_bin_read = struct
       let mk_binding parm =
         <:binding<
           $lid:"_of__" ^ parm$ =
-            fun _sptr_ptr _eptr ->
-              raise (
-                Bin_prot.Unsafe_read_c.Error (
-                  Bin_prot.Common.ReadError.Poly_rec_bound
-                    $str:full_type_name$))
+            fun _buf ~pos_ref ->
+              Bin_prot.Common.raise_read_error
+                (Bin_prot.Common.ReadError.Poly_rec_bound $str:full_type_name$) !pos_ref
         >>
       in
       List.map mk_binding (Gen.ty_var_list_of_ctyp parms [])
@@ -990,9 +937,9 @@ module Generate_bin_read = struct
     let n_alts, mcs = loop 0 alts in
     let read_fun =
       if n_alts <= 256 then
-        <:expr< Bin_prot.Unsafe_read_c.bin_read_int_8bit >>
+        <:expr< Bin_prot.Read.bin_read_int_8bit >>
       else if n_alts <= 65536 then
-        <:expr< Bin_prot.Unsafe_read_c.bin_read_int_16bit >>
+        <:expr< Bin_prot.Read.bin_read_int_16bit >>
       else (
         prerr_endline (
           get_loc_err _loc "bin_read_sum: more than 65536 constructors");
@@ -1000,12 +947,11 @@ module Generate_bin_read = struct
     in
     `Open
       <:expr<
-        match $read_fun$ sptr_ptr eptr with
+        match $read_fun$ buf ~pos_ref with
         [ $mcs$
         | _ ->
-            raise (
-              Bin_prot.Unsafe_read_c.Error (
-                Bin_prot.Common.ReadError.Sum_tag $str:full_type_name$)) ]
+          Bin_prot.Common.raise_read_error
+            (Bin_prot.Common.ReadError.Sum_tag $str:full_type_name$) !pos_ref ]
       >>
 
   (* Record conversions *)
@@ -1037,17 +983,15 @@ module Generate_bin_read = struct
   (* Empty types *)
   let bin_read_nil full_type_name _loc =
     `Closed
-      <:expr< fun _sptr_ptr _eptr ->
-        raise (
-          Bin_prot.Unsafe_read_c.Error
-            (Bin_prot.Common.ReadError.Empty_type
-              $str:full_type_name$))
+      <:expr< fun _buf ~pos_ref ->
+        Bin_prot.Common.raise_read_error
+          (Bin_prot.Common.ReadError.Empty_type $str:full_type_name$) !pos_ref
       >>
 
 
   (* Generate code from type definitions *)
 
-  let bin_read_td _loc rec_ type_name tps rhs =
+  let bin_read_td _loc _rec_ type_name tps rhs =
     let full_type_name = sprintf "%s.%s" (get_conv_path ()) type_name in
     let full_type = mk_full_type _loc type_name tps in
     let is_alias_ref = ref false in
@@ -1086,140 +1030,45 @@ module Generate_bin_read = struct
       loop _loc rhs
     in
 
-    let variant_int_call =
-      let maybe_poly_var_name = "bin_read_" ^ type_name ^ "__" in
-      let maybe_poly_var_expr = <:expr< $lid:maybe_poly_var_name$ >> in
-      <:expr<
-        let vint =
-          Bin_prot.Unsafe_read_c.bin_read_variant_int sptr_ptr eptr
-        in
-        $Gen.apply _loc maybe_poly_var_expr arg_exprs$ sptr_ptr eptr vint
-      >>
-    in
+    let read_name = "bin_read_" ^ type_name in
+    let vtag_read_name = "__bin_read_" ^ type_name ^ "__" in
 
-    let user_binding_name = "bin_read_" ^ type_name in
-
-    let user_binding =
-      let exc_handling =
-        let normal_exc_handling =
-          <:match_case<
-              Bin_prot.Unsafe_read_c.Error (
-                Bin_prot.Common.ReadError.Variant _ as err) ->
-                let err_pos4 =
-                  Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
-                in
-                let err_pos = Pervasives.(-) err_pos4 4 in
-                Bin_prot.Common.raise_read_error err err_pos
-            | Bin_prot.Unsafe_read_c.Error err ->
-                let err_pos =
-                  Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
-                in
-                Bin_prot.Common.raise_read_error err err_pos
-            | exc ->
-                let err_pos =
-                  Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
-                in
-                Bin_prot.Common.raise_read_exc exc err_pos
-          >>
-        in
+    let read_binding =
+      let body =
         if !is_variant_ref then
-          <:match_case<
+          (* The type is a polymorphic variant: the main bin_read_NAME function reads an
+             integer and calls the __bin_read_NAME__ function wrapped into a try-with. *)
+          let vtag_read_expr = <:expr< $lid:vtag_read_name$ >> in
+          <:expr< fun buf ~pos_ref ->
+            let vint =
+              Bin_prot.Read.bin_read_variant_int buf ~pos_ref
+            in
+            try
+              $Gen.apply _loc vtag_read_expr arg_exprs$ buf ~pos_ref vint
+            with [
               Bin_prot.Common.No_variant_match ->
-                let err_pos4 =
-                  Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
-                in
-                let err_pos = Pervasives.(-) err_pos4 4 in
                 let err =
                   Bin_prot.Common.ReadError.Variant $str:full_type_name$
                 in
-                Bin_prot.Common.raise_read_error err err_pos
-            | $normal_exc_handling$
-          >>
-        else normal_exc_handling
-      in
-
-      let abst_call =
-        if !is_alias_ref && rec_ then
-          (* this inlining is provoking captures in the generated code
-             when using nonrec, so disabling it *)
-          match oc_body with
-          | `Closed expr -> <:expr< $expr$ sptr_ptr eptr >>
-          | `Open body -> body
-        else if !is_variant_ref then variant_int_call
-        else
-          let abst_name = "bin_read_" ^ type_name ^ "_" in
-          let abst_expr = <:expr< $lid:abst_name$ >> in
-          <:expr< $Gen.apply _loc abst_expr arg_exprs$ sptr_ptr eptr >>
-      in
-      let user_fun =
-        let user_body =
-          match abst_call with
-          | <:expr< Bin_prot.Unsafe_read_c.$call$ sptr_ptr eptr >> ->
-              <:expr< ((Bin_prot.Read_ml.$call$ buf ~pos_ref) : $full_type$) >>
-          | _ ->
-              <:expr<
-                let pos = !pos_ref in
-                if Pervasives.(<) pos 0 then
-                  Bin_prot.Common.array_bound_error ()
-                else
-                  let buf_len = Bigarray.Array1.dim buf in
-                  if Pervasives.(>) pos buf_len then
-                    raise Bin_prot.Common.Buffer_short
-                  else
-                    let sptr_ptr =
-                      Bin_prot.Unsafe_common.alloc_sptr_ptr buf ~pos
-                    in
-                    let eptr =
-                      Bin_prot.Unsafe_common.get_eptr buf ~pos:buf_len
-                    in
-                    let v = try $abst_call$ with [ $exc_handling$ ] in
-                    let cur =
-                      Bin_prot.Unsafe_common.dealloc_sptr_ptr buf sptr_ptr
-                    in
-                    do { pos_ref.contents := cur; (v : $full_type$) }
-              >>
-        in
-        Gen.abstract _loc arg_patts <:expr< fun buf ~pos_ref -> $user_body$ >>
-      in
-      <:binding< $lid:user_binding_name$ = $user_fun$ >>
-    in
-
-    let unsafe_read_name = "bin_read_" ^ type_name ^ "_" in
-
-    let abst_binding =
-      let abst_body =
-        if !is_alias_ref then
-          match oc_body with
-          | `Closed f -> <:expr< fun sptr_ptr eptr -> $f$ sptr_ptr eptr >>
-          | `Open body -> <:expr< fun sptr_ptr eptr -> $body$ >>
-        else if !is_variant_ref then
-          <:expr<
-            fun sptr_ptr eptr ->
-              try $variant_int_call$ with
-              [ Bin_prot.Common.No_variant_match ->
-                  raise
-                    (Bin_prot.Unsafe_read_c.Error (
-                      Bin_prot.Common.ReadError.Variant $str:full_type_name$)) ]
+                Bin_prot.Common.raise_read_error err !pos_ref
+            ]
           >>
         else
           match oc_body with
-          | `Open body -> <:expr< fun sptr_ptr eptr -> $body$ >>
-          | `Closed f -> <:expr< $f$ >>
+          | `Closed expr -> <:expr< fun buf ~pos_ref -> $expr$ buf ~pos_ref >>
+          | `Open body -> <:expr< fun buf ~pos_ref -> $body$ >>
       in
-      <:binding<
-        $lid:unsafe_read_name$ = $Gen.abstract _loc arg_patts abst_body$
-      >>
+      let func = Gen.abstract _loc arg_patts body in
+      <:binding< $lid:read_name$ = $func$ >>
     in
 
-    let unsafe_vtag_read_name = "bin_read_" ^ type_name ^ "__" in
-
-    let maybe_poly_var_binding =
-      let maybe_poly_var_body =
+    let vtag_read_binding =
+      let body =
         let wrong_type =
           <:expr<
-            fun _sptr_ptr _eptr _vint ->
-              Bin_prot.Unsafe_read_c.raise_variant_wrong_type
-                $str:full_type_name$
+            fun _buf ~pos_ref _vint ->
+              Bin_prot.Common.raise_variant_wrong_type
+                $str:full_type_name$ !pos_ref
           >>
         in
         if !is_alias_ref then
@@ -1228,14 +1077,13 @@ module Generate_bin_read = struct
               let rec rewrite_call cnv = function
                 | <:expr< $f$ $arg$ >> ->
                     rewrite_call (fun new_f -> cnv (<:expr< $new_f$ $arg$ >>)) f
-                | <:expr< Bin_prot.Unsafe_read_c.$_$ >> -> wrong_type
+                | <:expr< Bin_prot.Read.$_$ >> -> wrong_type
                 | <:expr< $lid:name$ >> when name.[0] = '_' && name.[1] = 'o' ->
                     <:expr<
-                      fun _sptr_ptr _eptr _vint ->
-                        raise (
-                          Bin_prot.Unsafe_read_c.Error
-                            (Bin_prot.Common.ReadError.Silly_type
-                              $str:full_type_name$))
+                      fun buf ~pos_ref _vint ->
+                        Bin_prot.Common.raise_read_error
+                          (Bin_prot.Common.ReadError.Silly_type $str:full_type_name$)
+                          !pos_ref
                     >>
                 | <:expr< $id:id$ >> ->
                     (match Gen.get_rev_id_path id [] with
@@ -1243,12 +1091,12 @@ module Generate_bin_read = struct
                         let expr =
                           <:expr<
                             $id:Gen.ident_of_rev_path
-                              _loc ((call ^ "_") :: rest)$
+                              _loc (("__" ^ call ^ "__") :: rest)$
                           >>
                         in
                         <:expr<
-                          fun sptr_ptr eptr vint ->
-                            $cnv expr$ sptr_ptr eptr vint
+                          fun buf ~pos_ref vint ->
+                            $cnv expr$ buf ~pos_ref vint
                         >>
                     | _ -> assert false)  (* impossible *)
                 | _ -> assert false  (* impossible *)
@@ -1258,51 +1106,43 @@ module Generate_bin_read = struct
         else if !is_variant_ref then
           match oc_body with
           | `Open body when !atoms_only_ref ->
-              <:expr< fun _sptr_ptr _eptr vint -> $body$ >>
-          | `Open body -> <:expr< fun sptr_ptr eptr vint -> $body$ >>
+              <:expr< fun buf ~pos_ref:_ vint -> $body$ >>
+          | `Open body -> <:expr< fun buf ~pos_ref vint -> $body$ >>
           | _ -> assert false  (* impossible *)
         else wrong_type
       in
-      let full_body = Gen.abstract _loc arg_patts maybe_poly_var_body in
-      <:binding< $lid:unsafe_vtag_read_name$ = $full_body$ >>
+      let func = Gen.abstract _loc arg_patts body in
+      <:binding< $lid:vtag_read_name$ = $func$ >>
     in
 
-    let tparam_unsafe_read_exprs =
+    let tparam_read_exprs =
       List.map (fun tp ->
         <:expr<
           $lid:"bin_reader_" ^ Gen.get_tparam_id tp$
-          .Bin_prot.Type_class.unsafe_read
+          .Bin_prot.Type_class.read
         >>)
         tps
     in
     let read =
       let call =
-        Gen.apply _loc <:expr< $lid:user_binding_name$ >>
-          tparam_unsafe_read_exprs
+        Gen.apply _loc <:expr< $lid:read_name$ >>
+          tparam_read_exprs
       in
       <:expr< fun buf ~pos_ref -> $call$ buf ~pos_ref >>
     in
-    let unsafe_read =
+    let vtag_read =
       let call =
-        Gen.apply _loc <:expr< $lid:unsafe_read_name$ >>
-          tparam_unsafe_read_exprs
+        Gen.apply _loc <:expr< $lid:vtag_read_name$ >>
+          tparam_read_exprs
       in
-      <:expr< fun sptr_ptr eptr -> $call$ sptr_ptr eptr >>
-    in
-    let unsafe_vtag_read =
-      let call =
-        Gen.apply _loc <:expr< $lid:unsafe_vtag_read_name$ >>
-          tparam_unsafe_read_exprs
-      in
-      <:expr< fun sptr_ptr eptr vtag -> $call$ sptr_ptr eptr vtag >>
+      <:expr< fun buf ~pos_ref vtag -> $call$ buf ~pos_ref vtag >>
     in
     let reader =
       <:expr<
         {
           Bin_prot.Type_class.
           read = $read$;
-          unsafe_read = $unsafe_read$;
-          unsafe_vtag_read = $unsafe_vtag_read$;
+          vtag_read = $vtag_read$;
         }
       >>
     in
@@ -1316,16 +1156,7 @@ module Generate_bin_read = struct
         ($Gen.abstract _loc tparam_reader_patts reader$)
       >>
     in
-    (
-      (
-        maybe_poly_var_binding,
-        abst_binding
-      ),
-      (
-        user_binding,
-        reader_binding
-      )
-    )
+    (vtag_read_binding, (read_binding, reader_binding))
 
   let rec bin_read_tds rec_ acc = function
     | TyDcl (_loc, type_name, tps, rhs, _cl) ->
@@ -1341,31 +1172,32 @@ module Generate_bin_read = struct
       | TyDcl (_loc, type_name, tps, rhs, _cl) ->
           let res = bin_read_td _loc rec_ type_name tps rhs in
           [res], rec_ && Gen.type_is_recursive type_name rhs, _loc
-      | TyAnd (_loc, _, _) -> bin_read_tds rec_ [] tds, rec_, _loc
+      | TyAnd (_loc, _, _) ->
+        if not rec_ then begin
+          (* there can be captures in the generated code if we allow this *)
+          Loc.raise _loc
+            (Failure "bin_prot doesn't support multiple nonrecursive definitions.")
+        end;
+        bin_read_tds rec_ [] tds, rec_, _loc
       | _ -> assert false  (* impossible *)
     in
-    let poly_abst, user_bindings_readers = List.split res in
-    let user_bindings, readers = List.split user_bindings_readers in
-    let internal_str_item =
+    let vtag_read_bindings, read_and_reader_bindings = List.split res in
+    let read_bindings, reader_bindings = List.split read_and_reader_bindings in
+    let defs =
       if recursive then
-        (* Improve code locality *)
-        let cnv (maybe_poly_var_binding, abst_binding) =
-          <:binding< $maybe_poly_var_binding$ and $abst_binding$ >>
-        in
-        let internal_bindings = List.map cnv poly_abst in
-        <:str_item< value rec $list:internal_bindings$ >>
+        <:str_item<
+          value rec $list:vtag_read_bindings @ read_bindings$;
+        >>
       else
-        (* Improve code locality *)
-        let cnv (maybe_poly_var_binding, abst_binding) =
-          <:str_item< value $maybe_poly_var_binding$; value $abst_binding$ >>
-        in
-        let internal_items = List.map cnv poly_abst in
-        <:str_item< $list:internal_items$ >>
+        let cnv binding = <:str_item< value $binding$ >> in
+        <:str_item<
+          $list:List.map cnv vtag_read_bindings$;
+          $list:List.map cnv read_bindings$;
+        >>
     in
     <:str_item<
-      $internal_str_item$;
-      value $list:user_bindings$;
-      value $list:readers$;
+      $defs$;
+      value $list:reader_bindings$;
     >>
 
   (* Add code generator to the set of known generators *)

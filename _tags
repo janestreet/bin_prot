@@ -1,6 +1,6 @@
 # OASIS_START
 # OASIS_STOP
-<lib/{size,write_ml,read_ml,unsafe_read_c,type_class}.ml{i,}>:cpp
-<lib/{write,read}_ml.ml{,i}>:mlh
+<lib/{size,write,read,type_class}.ml{i,}>:cpp
+<lib/{write,read}.ml{,i}>:mlh
 <lib_test/*.ml{,i}>: syntax_camlp4o,pkg_type_conv.syntax
 <syntax/pa_bin_prot.ml>: syntax_camlp4o
