@@ -5,13 +5,15 @@ open Common
 type 'a writer =
   {
     size : 'a Size.sizer;
-    write : 'a Write.writer;
+    write : 'a Write_ml.writer;
+    unsafe_write : 'a Unsafe_write_c.writer;
   }
 
 type 'a reader =
   {
-    read : 'a Read.reader;
-    vtag_read : (int -> 'a) Read.reader;
+    read : 'a Read_ml.reader;
+    unsafe_read : 'a Unsafe_read_c.reader;
+    unsafe_vtag_read : (int -> 'a) Unsafe_read_c.reader;
   }
 
 type 'a t =

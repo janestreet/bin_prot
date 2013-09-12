@@ -16,9 +16,6 @@ type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 val create_buf : int -> buf
 (** [create_buf n] creates a buffer of size [n]. *)
 
-val assert_pos : pos -> unit
-(** [assert_pos pos] @raise Invalid_argument if position [pos] is negative. *)
-
 val check_pos : buf -> pos -> unit
 (** [check_pos buf pos] @raise Buffer_short if position [pos] exceeds
     the length of buffer [buf]. *)
@@ -103,6 +100,9 @@ end
 exception Read_error of ReadError.t * pos
 (** [ReadError (err, err_pos)] *)
 
+exception Read_exc of exn * pos
+(** [ReadExc (exn, err_pos)] *)
+
 exception Poly_rec_write of string
 (** [PolyRecWrite type] gets raised when the user attempts to write or
     estimate the size of a value of a type that is bound through a
@@ -115,8 +115,8 @@ exception Empty_type of string
 val raise_read_error : ReadError.t -> pos -> 'a
 (** [raise_read_error err pos] *)
 
-val raise_variant_wrong_type : string -> pos -> 'a
-(** [raise_variant_wrong_type name pos] *)
+val raise_read_exc : exn -> pos -> 'a
+(** [raise_read_exc exc pos] *)
 
 val raise_concurrent_modification : string -> 'a
 (** [raise_concurrent_modification loc] @raise Failure if a binary writer
@@ -159,11 +159,3 @@ external unsafe_blit_string_buf :
 external unsafe_blit_buf_string :
   src_pos : int -> buf -> dst_pos : int -> string -> len : int -> unit
   = "bin_prot_blit_buf_string_stub" "noalloc"
-
-external unsafe_blit_float_array_buf :
-  src_pos : int -> float array -> dst_pos : int -> buf -> len : int -> unit
-  = "bin_prot_blit_float_array_buf_stub" "noalloc"
-
-external unsafe_blit_buf_float_array :
-  src_pos : int -> buf -> dst_pos : int -> float array -> len : int -> unit
-  = "bin_prot_blit_buf_float_array_stub" "noalloc"

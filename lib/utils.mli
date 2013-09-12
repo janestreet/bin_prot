@@ -91,8 +91,8 @@ module type Make_iterable_binable_spec = sig
   val insert : acc -> el -> int -> acc
   val finish : acc -> t
   val bin_size_el : el Size.sizer
-  val bin_write_el : el Write.writer
-  val bin_read_el : el Read.reader
+  val bin_write_el_ : el Unsafe_write_c.writer
+  val bin_read_el_ : el Unsafe_read_c.reader
 end
 
 module Make_iterable_binable (Iterable_spec : Make_iterable_binable_spec)
@@ -110,8 +110,8 @@ module type Make_iterable_binable1_spec = sig
   val insert : 'a acc -> 'a el -> int -> 'a acc
   val finish : 'a acc -> 'a t
   val bin_size_el : ('a, 'a el) Size.sizer1
-  val bin_write_el : ('a, 'a el) Write.writer1
-  val bin_read_el : ('a, 'a el) Read.reader1
+  val bin_write_el_ : ('a, 'a el) Unsafe_write_c.writer1
+  val bin_read_el_ : ('a, 'a el) Unsafe_read_c.reader1
 end
 
 module Make_iterable_binable1 (Iterable_spec : Make_iterable_binable1_spec)
@@ -129,8 +129,8 @@ module type Make_iterable_binable2_spec = sig
   val insert : ('a, 'b) acc -> ('a, 'b) el -> int -> ('a, 'b) acc
   val finish : ('a, 'b) acc -> ('a, 'b) t
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
-  val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
-  val bin_read_el : ('a, 'b, ('a, 'b) el) Read.reader2
+  val bin_write_el_ : ('a, 'b, ('a, 'b) el) Unsafe_write_c.writer2
+  val bin_read_el_ : ('a, 'b, ('a, 'b) el) Unsafe_read_c.reader2
 end
 
 module Make_iterable_binable2 (Iterable_spec : Make_iterable_binable2_spec)
