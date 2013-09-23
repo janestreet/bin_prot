@@ -1,8 +1,8 @@
 (* Utils: utility functions for user convenience *)
 
 open Common
-open Read_ml
-open Write_ml
+open Read
+open Write
 open Size
 open Type_class
 
@@ -76,25 +76,21 @@ module Make_binable (S : Make_binable_spec) = struct
 
   let bin_size_t t = B.bin_size_t (S.to_binable t)
   let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
-  let bin_write_t_ sptr eptr t = B.bin_write_t_ sptr eptr (S.to_binable t)
   let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
-  let bin_read_t_ sptr_ptr eptr = S.of_binable (B.bin_read_t_ sptr_ptr eptr)
 
-  let bin_read_t__ sptr_ptr eptr n =
-    S.of_binable (B.bin_read_t__ sptr_ptr eptr n)
+  let __bin_read_t__ buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
 
   let bin_writer_t =
     {
       size = bin_size_t;
       write = bin_write_t;
-      unsafe_write = bin_write_t_;
     }
 
   let bin_reader_t =
     {
       read = bin_read_t;
-      unsafe_read = bin_read_t_;
-      unsafe_vtag_read = bin_read_t__;
+      vtag_read = __bin_read_t__;
     }
 
   let bin_t =
@@ -121,36 +117,27 @@ module Make_binable1 (S : Make_binable1_spec) = struct
   let bin_write_t bin_write_el buf ~pos t =
     B.bin_write_t bin_write_el buf ~pos (S.to_binable t)
 
-  let bin_write_t_ bin_write_el sptr eptr t =
-    B.bin_write_t_ bin_write_el sptr eptr (S.to_binable t)
-
   let bin_read_t bin_read_el buf ~pos_ref =
     S.of_binable (B.bin_read_t bin_read_el buf ~pos_ref)
 
-  let bin_read_t_ bin_read_el sptr_ptr eptr =
-    S.of_binable (B.bin_read_t_ bin_read_el sptr_ptr eptr)
-
-  let bin_read_t__ bin_read_el sptr_ptr eptr n =
-    S.of_binable (B.bin_read_t__ bin_read_el sptr_ptr eptr n)
+  let __bin_read_t__ bin_read_el buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el buf ~pos_ref n)
 
   let bin_writer_t bin_writer =
     {
       size = (fun v -> bin_size_t bin_writer.size v);
       write = (fun buf ~pos v ->
-        bin_write_t bin_writer.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-        bin_write_t_ bin_writer.unsafe_write sptr eptr v);
+        bin_write_t bin_writer.write buf ~pos v);
     }
 
   let bin_reader_t bin_reader =
     {
       read = (fun buf ~pos_ref ->
-        bin_read_t bin_reader.unsafe_read buf ~pos_ref);
-      unsafe_read = (fun sptr_ptr eptr ->
-        bin_read_t_ bin_reader.unsafe_read sptr_ptr eptr);
-      unsafe_vtag_read = (fun _sptr_ptr _eptr _n ->
-        Unsafe_read_c.raise_variant_wrong_type
-          "Bin_prot.Utils.Make_binable1.bin_reader_t")
+        bin_read_t bin_reader.read buf ~pos_ref);
+      vtag_read = (fun _buf ~pos_ref _n ->
+        raise_variant_wrong_type
+          "Bin_prot.Utils.Make_binable1.bin_reader_t"
+          !pos_ref);
     }
 
   let bin_t type_class =
@@ -178,40 +165,29 @@ module Make_binable2 (S : Make_binable2_spec) = struct
   let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
     B.bin_write_t bin_write_el1 bin_write_el2 buf ~pos (S.to_binable t)
 
-  let bin_write_t_ bin_write_el1 bin_write_el2 sptr eptr t =
-    B.bin_write_t_ bin_write_el1 bin_write_el2 sptr eptr (S.to_binable t)
-
   let bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref =
     S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref)
 
-  let bin_read_t_ bin_read_el1 bin_read_el2 sptr_ptr eptr =
-    S.of_binable (B.bin_read_t_ bin_read_el1 bin_read_el2 sptr_ptr eptr)
-
-  let bin_read_t__ bin_read_el1 bin_read_el2 sptr_ptr eptr n =
-    S.of_binable (B.bin_read_t__ bin_read_el1 bin_read_el2 sptr_ptr eptr n)
+  let __bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n)
 
   let bin_writer_t bin_writer1 bin_writer2 =
     {
       size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v);
       write = (fun buf ~pos v ->
         bin_write_t
-          bin_writer1.unsafe_write bin_writer2.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-        bin_write_t_
-          bin_writer1.unsafe_write bin_writer2.unsafe_write sptr eptr v);
+          bin_writer1.write bin_writer2.write buf ~pos v);
     }
 
   let bin_reader_t bin_reader1 bin_reader2 =
     {
       read = (fun buf ~pos_ref ->
         bin_read_t
-          bin_reader1.unsafe_read bin_reader2.unsafe_read buf ~pos_ref);
-      unsafe_read = (fun sptr_ptr eptr ->
-        bin_read_t_
-          bin_reader1.unsafe_read bin_reader2.unsafe_read sptr_ptr eptr);
-      unsafe_vtag_read = (fun _sptr_ptr _eptr _n ->
-        Unsafe_read_c.raise_variant_wrong_type
-          "Bin_prot.Utils.Make_binable2.bin_reader_t")
+          bin_reader1.read bin_reader2.read buf ~pos_ref);
+      vtag_read = (fun _buf ~pos_ref _n ->
+        raise_variant_wrong_type
+          "Bin_prot.Utils.Make_binable2.bin_reader_t"
+          !pos_ref);
     }
 
   let bin_t type_class1 type_class2 =
@@ -233,8 +209,8 @@ module type Make_iterable_binable_spec = sig
   val insert : acc -> el -> int -> acc
   val finish : acc -> t
   val bin_size_el : el Size.sizer
-  val bin_write_el_ : el Unsafe_write_c.writer
-  val bin_read_el_ : el Unsafe_read_c.reader
+  val bin_write_el : el Write.writer
+  val bin_read_el : el Read.reader
 end
 
 module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
@@ -258,58 +234,43 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
     if !cnt_ref = len then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
     else raise_concurrent_modification "bin_size_t"
 
-  let bin_write_t_ sptr eptr t =
+  let bin_write_t buf ~pos t =
     let len = length t in
     let plen = Nat0.unsafe_of_int len in
-    let els_sptr = Unsafe_write_c.bin_write_nat0 sptr eptr plen in
+    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
     let cnt_ref = ref 0 in
-    let cur_ref = ref els_sptr in
     iter t ~f:(fun el ->
-      cur_ref := bin_write_el_ !cur_ref eptr el;
+      pos_ref := bin_write_el buf ~pos:!pos_ref el;
       incr cnt_ref);
-    if !cnt_ref = len then !cur_ref
-    else raise_concurrent_modification "bin_write_t_"
+    if !cnt_ref = len then
+      !pos_ref
+    else
+      raise_concurrent_modification "bin_write_t"
 
-  let bin_write_t buf ~pos t =
-    let start, sptr, eptr = Write_c.unsafe_get_init buf ~pos in
-    let cur = bin_write_t_ sptr eptr t in
-    Unsafe_common.get_safe_buf_pos buf ~start ~cur
-
-  let bin_read_t_ sptr_ptr eptr =
-    let len = (Unsafe_read_c.bin_read_nat0 sptr_ptr eptr :> int) in
+  let bin_read_t buf ~pos_ref =
+    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
     let rec loop acc i =
-      if i = len then finish acc
+      if i = len then
+        finish acc
       else
-        let new_acc = insert acc (bin_read_el_ sptr_ptr eptr) i in
+        let new_acc = insert acc (bin_read_el buf ~pos_ref) i in
         loop new_acc (i + 1)
     in
     loop (init len) 0
 
-  let bin_read_t buf ~pos_ref =
-    let sptr_ptr, eptr = Unsafe_common.get_read_init buf ~pos_ref in
-    let el =
-      try bin_read_t_ sptr_ptr eptr with
-      | Unsafe_read_c.Error read_err ->
-          Read_c.handle_error buf sptr_ptr read_err
-      | exc -> Read_c.handle_exc buf sptr_ptr exc
-    in
-    Read_c.at_end buf sptr_ptr pos_ref el
-
-  let bin_read_t__ _sptr_ptr _eptr _n =
-    Unsafe_read_c.raise_variant_wrong_type "t"
+  let __bin_read_t__ _buf ~pos_ref _n =
+    raise_variant_wrong_type "t" !pos_ref
 
   let bin_writer_t =
     {
       size = bin_size_t;
       write = bin_write_t;
-      unsafe_write = bin_write_t_;
     }
 
   let bin_reader_t =
     {
       read = bin_read_t;
-      unsafe_read = bin_read_t_;
-      unsafe_vtag_read = bin_read_t__;
+      vtag_read = __bin_read_t__;
     }
 
   let bin_t =
@@ -331,8 +292,8 @@ module type Make_iterable_binable1_spec = sig
   val insert : 'a acc -> 'a el -> int -> 'a acc
   val finish : 'a acc -> 'a t
   val bin_size_el : ('a, 'a el) Size.sizer1
-  val bin_write_el_ : ('a, 'a el) Unsafe_write_c.writer1
-  val bin_read_el_ : ('a, 'a el) Unsafe_read_c.reader1
+  val bin_write_el : ('a, 'a el) Write.writer1
+  val bin_read_el : ('a, 'a el) Read.reader1
 end
 
 module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
@@ -353,65 +314,51 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
       size_ref := !size_ref + bin_size_el bin_size_a el;
       incr cnt_ref);
     let len = length t in
-    if !cnt_ref = len then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
-    else raise_concurrent_modification "bin_size_t"
+    if !cnt_ref = len then
+      bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
+    else
+      raise_concurrent_modification "bin_size_t"
 
-  let bin_write_t_ bin_write_a_ sptr eptr t =
+  let bin_write_t bin_write_a buf ~pos t =
     let len = length t in
     let plen = Nat0.unsafe_of_int len in
-    let els_sptr = Unsafe_write_c.bin_write_nat0 sptr eptr plen in
+    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
     let cnt_ref = ref 0 in
-    let cur_ref = ref els_sptr in
     iter t ~f:(fun el ->
-      cur_ref := bin_write_el_ bin_write_a_ !cur_ref eptr el;
+      pos_ref := bin_write_el bin_write_a buf ~pos:!pos_ref el;
       incr cnt_ref);
-    if !cnt_ref = len then !cur_ref
-    else raise_concurrent_modification "bin_write_t_"
+    if !cnt_ref = len then
+      !pos_ref
+    else
+      raise_concurrent_modification "bin_write_t"
 
-  let bin_write_t bin_write_a_ buf ~pos t =
-    let start, sptr, eptr = Write_c.unsafe_get_init buf ~pos in
-    let cur = bin_write_t_ bin_write_a_ sptr eptr t in
-    Unsafe_common.get_safe_buf_pos buf ~start ~cur
-
-  let bin_read_t_ bin_read_a_ sptr_ptr eptr =
-    let len = (Unsafe_read_c.bin_read_nat0 sptr_ptr eptr :> int) in
+  let bin_read_t bin_read_a buf ~pos_ref =
+    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
     let rec loop acc i =
-      if i = len then finish acc
+      if i = len then
+        finish acc
       else
-        let new_acc = insert acc (bin_read_el_ bin_read_a_ sptr_ptr eptr) i in
+        let new_acc = insert acc (bin_read_el bin_read_a buf ~pos_ref) i in
         loop new_acc (i + 1)
     in
     loop (init len) 0
 
-  let bin_read_t bin_read_a_ buf ~pos_ref =
-    let sptr_ptr, eptr = Unsafe_common.get_read_init buf ~pos_ref in
-    let el =
-      try bin_read_t_ bin_read_a_ sptr_ptr eptr with
-      | Unsafe_read_c.Error read_err ->
-          Read_c.handle_error buf sptr_ptr read_err
-      | exc -> Read_c.handle_exc buf sptr_ptr exc
-    in
-    Read_c.at_end buf sptr_ptr pos_ref el
-
-  let bin_read_t__ _sptr_ptr _eptr _n =
-    Unsafe_read_c.raise_variant_wrong_type "t"
+  let __bin_read_t__ _bin_read_a _buf ~pos_ref _n =
+    raise_variant_wrong_type "t" !pos_ref
 
   let bin_writer_t bin_writer =
     {
       size = (fun v -> bin_size_t bin_writer.size v);
       write = (fun buf ~pos v ->
-        bin_write_t bin_writer.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-        bin_write_t_ bin_writer.unsafe_write sptr eptr v);
+        bin_write_t bin_writer.write buf ~pos v);
     }
 
   let bin_reader_t bin_reader =
     {
       read = (fun buf ~pos_ref ->
-        bin_read_t bin_reader.unsafe_read buf ~pos_ref);
-      unsafe_read = (fun sptr_ptr eptr ->
-        bin_read_t_ bin_reader.unsafe_read sptr_ptr eptr);
-      unsafe_vtag_read = (fun sptr_ptr eptr n -> bin_read_t__ sptr_ptr eptr n)
+        bin_read_t bin_reader.read buf ~pos_ref);
+      vtag_read = (fun buf ~pos_ref _n ->
+        __bin_read_t__ bin_reader.read buf ~pos_ref _n);
     }
 
   let bin_t type_class =
@@ -433,8 +380,8 @@ module type Make_iterable_binable2_spec = sig
   val insert : ('a, 'b) acc -> ('a, 'b) el -> int -> ('a, 'b) acc
   val finish : ('a, 'b) acc -> ('a, 'b) t
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
-  val bin_write_el_ : ('a, 'b, ('a, 'b) el) Unsafe_write_c.writer2
-  val bin_read_el_ : ('a, 'b, ('a, 'b) el) Unsafe_read_c.reader2
+  val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
+  val bin_read_el : ('a, 'b, ('a, 'b) el) Read.reader2
 end
 
 module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
@@ -458,68 +405,50 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     if !cnt_ref = len then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
     else raise_concurrent_modification "bin_size_t"
 
-  let bin_write_t_ bin_write_a_ bin_write_b_ sptr eptr t =
+  let bin_write_t bin_write_a bin_write_b buf ~pos t =
     let len = length t in
     let plen = Nat0.unsafe_of_int len in
-    let els_sptr = Unsafe_write_c.bin_write_nat0 sptr eptr plen in
+    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
     let cnt_ref = ref 0 in
-    let cur_ref = ref els_sptr in
     iter t ~f:(fun el ->
-      cur_ref := bin_write_el_ bin_write_a_ bin_write_b_ !cur_ref eptr el;
+      pos_ref := bin_write_el bin_write_a bin_write_b buf ~pos:!pos_ref el;
       incr cnt_ref);
-    if !cnt_ref = len then !cur_ref
-    else raise_concurrent_modification "bin_write_t_"
+    if !cnt_ref = len then
+      !pos_ref
+    else
+      raise_concurrent_modification "bin_write_t"
 
-  let bin_write_t bin_write_a_ bin_write_b_ buf ~pos t =
-    let start, sptr, eptr = Write_c.unsafe_get_init buf ~pos in
-    let cur = bin_write_t_ bin_write_a_ bin_write_b_ sptr eptr t in
-    Unsafe_common.get_safe_buf_pos buf ~start ~cur
-
-  let bin_read_t_ bin_read_a_ bin_read_b_ sptr_ptr eptr =
-    let len = (Unsafe_read_c.bin_read_nat0 sptr_ptr eptr :> int) in
+  let bin_read_t bin_read_a bin_read_b buf ~pos_ref =
+    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
     let rec loop acc i =
-      if i = len then finish acc
+      if i = len then
+        finish acc
       else
         let new_acc =
-          insert acc (bin_read_el_ bin_read_a_ bin_read_b_ sptr_ptr eptr) i
+          insert acc (bin_read_el bin_read_a bin_read_b buf ~pos_ref) i
         in
         loop new_acc (i + 1)
     in
     loop (init len) 0
 
-  let bin_read_t bin_read_a_ bin_read_b_ buf ~pos_ref =
-    let sptr_ptr, eptr = Unsafe_common.get_read_init buf ~pos_ref in
-    let el =
-      try bin_read_t_ bin_read_a_ bin_read_b_ sptr_ptr eptr with
-      | Unsafe_read_c.Error read_err ->
-          Read_c.handle_error buf sptr_ptr read_err
-      | exc -> Read_c.handle_exc buf sptr_ptr exc
-    in
-    Read_c.at_end buf sptr_ptr pos_ref el
-
-  let bin_read_t__ _sptr_ptr _eptr _n =
-    Unsafe_read_c.raise_variant_wrong_type "t"
+  let __bin_read_t__ _bin_read_a _bin_read_b _buf ~pos_ref _n =
+    raise_variant_wrong_type "t" !pos_ref
 
   let bin_writer_t bin_writer1 bin_writer2 =
     {
       size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v);
       write = (fun buf ~pos v ->
         bin_write_t
-          bin_writer1.unsafe_write bin_writer2.unsafe_write buf ~pos v);
-      unsafe_write = (fun sptr eptr v ->
-        bin_write_t_
-          bin_writer1.unsafe_write bin_writer2.unsafe_write sptr eptr v);
+          bin_writer1.write bin_writer2.write buf ~pos v);
     }
 
   let bin_reader_t bin_reader1 bin_reader2 =
     {
       read = (fun buf ~pos_ref ->
         bin_read_t
-          bin_reader1.unsafe_read bin_reader2.unsafe_read buf ~pos_ref);
-      unsafe_read = (fun sptr_ptr eptr ->
-        bin_read_t_
-          bin_reader1.unsafe_read bin_reader2.unsafe_read sptr_ptr eptr);
-      unsafe_vtag_read = (fun sptr_ptr eptr n -> bin_read_t__ sptr_ptr eptr n)
+          bin_reader1.read bin_reader2.read buf ~pos_ref);
+      vtag_read = (fun buf ~pos_ref n ->
+        __bin_read_t__ bin_reader1.read bin_reader2.read buf ~pos_ref n);
     }
 
   let bin_t type_class1 type_class2 =

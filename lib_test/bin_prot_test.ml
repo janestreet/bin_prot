@@ -169,187 +169,104 @@ let mk_gen_float_mat tp m n =
 let mk_float32_mat = mk_gen_float_mat float32
 let mk_float64_mat = mk_gen_float_mat float64
 
-module type SPEC = sig
-  val kind : string
-end
+let test =
+  "Bin_prot" >:::
+    [
+      "unit" >::
+        (fun () ->
+          check_all 1 "unit" Read.bin_read_unit Write.bin_write_unit
+            [
+              ((), "()", 1);
+            ];
+        );
 
-module type Reader_spec = sig
-  open Read_ml
+      "bool" >::
+        (fun () ->
+          check_all 1 "bool" Read.bin_read_bool Write.bin_write_bool
+            [
+              (true, "true", 1);
+              (false, "false", 1);
+            ];
+        );
 
-  val bin_read_unit : unit reader
-  val bin_read_bool : bool reader
-  val bin_read_string : string reader
-  val bin_read_char : char reader
-  val bin_read_int : int reader
-  val bin_read_nat0 : Nat0.t reader
-  val bin_read_float : float reader
-  val bin_read_int32 : int32 reader
-  val bin_read_int64 : int64 reader
-  val bin_read_nativeint : nativeint reader
-  val bin_read_ref : ('a, 'a ref) reader1
-  val bin_read_lazy : ('a, 'a lazy_t) reader1
-  val bin_read_option : ('a, 'a option) reader1
-  val bin_read_pair : ('a, 'b, 'a * 'b) reader2
-  val bin_read_triple : ('a, 'b, 'c, 'a * 'b * 'c) reader3
-  val bin_read_list : ('a, 'a list) reader1
-  val bin_read_array : ('a, 'a array) reader1
-  val bin_read_hashtbl : ('a, 'b, ('a, 'b) Hashtbl.t) reader2
-  val bin_read_float32_vec : vec32 reader
-  val bin_read_float64_vec : vec64 reader
-  val bin_read_vec : vec reader
-  val bin_read_float32_mat : mat32 reader
-  val bin_read_float64_mat : mat64 reader
-  val bin_read_mat : mat reader
-  val bin_read_bigstring : buf reader
-  val bin_read_float_array : float array reader
-  val bin_read_variant_tag : [> ] reader
-  val bin_read_int_64bit : int reader
-  val bin_read_int64_bits : int64 reader
-  val bin_read_network16_int : int reader
-  val bin_read_network32_int : int reader
-  val bin_read_network32_int32 : int32 reader
-  val bin_read_network64_int : int reader
-  val bin_read_network64_int64 : int64 reader
-end
+      "string" >::
+        (fun () ->
+          check_all 66000 "string" Read.bin_read_string Write.bin_write_string
+            [
+              ("", "\"\"", 1);
+              (random_string 1, "random 1", 1 + 1);
+              (random_string 10, "random 10", 10 + 1);
+              (random_string 127, "random 127", 127 + 1);
+              (random_string 128, "long 128", 128 + 3);
+              (random_string 65535, "long 65535", 65535 + 3);
+              (random_string 65536, "long 65536", 65536 + 5);
+            ];
 
-module type Writer_spec = sig
-  open Write_ml
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\253\252\255\255\000" in
+            "String_too_long" @? expect_read_error String_too_long 0 (fun () ->
+              Read.bin_read_string bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\253\251\255\255\000" in
+            "StringMaximimum" @? expect_buffer_short (fun () ->
+              Read.bin_read_string bad_buf ~pos_ref:(ref 0))
+          else
+            let bad_buf = Bigstring.of_string "\252\248\255\255\255\255\255\255\001" in
+            "String_too_long" @? expect_read_error String_too_long 0 (fun () ->
+              Read.bin_read_string bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\252\247\255\255\255\255\255\255\001" in
+            "StringMaximimum" @? expect_buffer_short (fun () ->
+              Read.bin_read_string bad_buf ~pos_ref:(ref 0))
 
-  val bin_write_unit : unit writer
-  val bin_write_bool : bool writer
-  val bin_write_string : string writer
-  val bin_write_char : char writer
-  val bin_write_int : int writer
-  val bin_write_nat0 : Nat0.t writer
-  val bin_write_float : float writer
-  val bin_write_int32 : int32 writer
-  val bin_write_int64 : int64 writer
-  val bin_write_nativeint : nativeint writer
-  val bin_write_ref : ('a, 'a ref) writer1
-  val bin_write_lazy : ('a, 'a lazy_t) writer1
-  val bin_write_option : ('a, 'a option) writer1
-  val bin_write_pair : ('a, 'b, 'a * 'b) writer2
-  val bin_write_triple : ('a, 'b, 'c, 'a * 'b * 'c) writer3
-  val bin_write_list : ('a, 'a list) writer1
-  val bin_write_array : ('a, 'a array) writer1
-  val bin_write_hashtbl : ('a, 'b, ('a, 'b) Hashtbl.t) writer2
-  val bin_write_float32_vec : vec32 writer
-  val bin_write_float64_vec : vec64 writer
-  val bin_write_vec : vec writer
-  val bin_write_float32_mat : mat32 writer
-  val bin_write_float64_mat : mat64 writer
-  val bin_write_mat : mat writer
-  val bin_write_bigstring : buf writer
-  val bin_write_float_array : float array writer
-  val bin_write_variant_tag : [> ] writer
-  val bin_write_int_64bit : int writer
-  val bin_write_int64_bits : int64 writer
-  val bin_write_network16_int : int writer
-  val bin_write_network32_int : int writer
-  val bin_write_network32_int32 : int32 writer
-  val bin_write_network64_int : int writer
-  val bin_write_network64_int64 : int64 writer
-end
+        );
 
-module Make (Spec : SPEC) (Read : Reader_spec) (Write : Writer_spec) = struct
-  let test =
-    "Bin_prot_" ^ Spec.kind >:::
-      [
-        "unit" >::
-          (fun () ->
-            check_all 1 "unit" Read.bin_read_unit Write.bin_write_unit
-              [
-                ((), "()", 1);
-              ];
-          );
+      "char" >::
+        (fun () ->
+          check_all 1 "char" Read.bin_read_char Write.bin_write_char
+            [
+              ('x', "x", 1);
+              ('y', "y", 1);
+            ];
+        );
 
-        "bool" >::
-          (fun () ->
-            check_all 1 "bool" Read.bin_read_bool Write.bin_write_bool
-              [
-                (true, "true", 1);
-                (false, "false", 1);
-              ];
-          );
+      "int" >::
+        (fun () ->
+          let small_int_tests =
+            [
+              mk_int_test ~n:~-0x01 ~len:2;
+              mk_int_test ~n:  0x00 ~len:1;
+              mk_int_test ~n:  0x01 ~len:1;
 
-        "string" >::
-          (fun () ->
-            check_all 66000 "string" Read.bin_read_string Write.bin_write_string
-              [
-                ("", "\"\"", 1);
-                (random_string 1, "random 1", 1 + 1);
-                (random_string 10, "random 10", 10 + 1);
-                (random_string 127, "random 127", 127 + 1);
-                (random_string 128, "long 128", 128 + 3);
-                (random_string 65535, "long 65535", 65535 + 3);
-                (random_string 65536, "long 65536", 65536 + 5);
-              ];
+              mk_int_test ~n:0x7e ~len:1;
+              mk_int_test ~n:0x7f ~len:1;
+              mk_int_test ~n:0x80 ~len:3;
+              mk_int_test ~n:0x81 ~len:3;
 
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\253\252\255\255\000" in
-              "String_too_long" @? expect_read_error String_too_long 0 (fun () ->
-                Read.bin_read_string bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\253\251\255\255\000" in
-              "StringMaximimum" @? expect_buffer_short (fun () ->
-                Read.bin_read_string bad_buf ~pos_ref:(ref 0))
+              mk_int_test ~n:0x7ffe ~len:3;
+              mk_int_test ~n:0x7fff ~len:3;
+              mk_int_test ~n:0x8000 ~len:5;
+              mk_int_test ~n:0x8001 ~len:5;
+
+              mk_int_test ~n:0x3ffffffe ~len:5;
+              mk_int_test ~n:0x3fffffff ~len:5;
+
+              mk_int_test ~n:~-0x7f ~len:2;
+              mk_int_test ~n:~-0x80 ~len:2;
+              mk_int_test ~n:~-0x81 ~len:3;
+              mk_int_test ~n:~-0x82 ~len:3;
+
+              mk_int_test ~n:~-0x7fff ~len:3;
+              mk_int_test ~n:~-0x8000 ~len:3;
+              mk_int_test ~n:~-0x8001 ~len:5;
+              mk_int_test ~n:~-0x8002 ~len:5;
+
+              mk_int_test ~n:~-0x40000001 ~len:5;
+              mk_int_test ~n:~-0x40000000 ~len:5;
+            ]
+          in
+          let all_int_tests =
+            if Sys.word_size = 32 then small_int_tests
             else
-              let bad_buf = Bigstring.of_string "\252\248\255\255\255\255\255\255\001" in
-              "String_too_long" @? expect_read_error String_too_long 0 (fun () ->
-                Read.bin_read_string bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\252\247\255\255\255\255\255\255\001" in
-              "StringMaximimum" @? expect_buffer_short (fun () ->
-                Read.bin_read_string bad_buf ~pos_ref:(ref 0))
-
-          );
-
-        "char" >::
-          (fun () ->
-            check_all 1 "char" Read.bin_read_char Write.bin_write_char
-              [
-                ('x', "x", 1);
-                ('y', "y", 1);
-              ];
-          );
-
-        "int" >::
-          (fun () ->
-            let small_int_tests =
-              [
-                mk_int_test ~n:~-0x01 ~len:2;
-                mk_int_test ~n:  0x00 ~len:1;
-                mk_int_test ~n:  0x01 ~len:1;
-
-                mk_int_test ~n:0x7e ~len:1;
-                mk_int_test ~n:0x7f ~len:1;
-                mk_int_test ~n:0x80 ~len:3;
-                mk_int_test ~n:0x81 ~len:3;
-
-                mk_int_test ~n:0x7ffe ~len:3;
-                mk_int_test ~n:0x7fff ~len:3;
-                mk_int_test ~n:0x8000 ~len:5;
-                mk_int_test ~n:0x8001 ~len:5;
-
-                mk_int_test ~n:0x3ffffffe ~len:5;
-                mk_int_test ~n:0x3fffffff ~len:5;
-
-                mk_int_test ~n:~-0x7f ~len:2;
-                mk_int_test ~n:~-0x80 ~len:2;
-                mk_int_test ~n:~-0x81 ~len:3;
-                mk_int_test ~n:~-0x82 ~len:3;
-
-                mk_int_test ~n:~-0x7fff ~len:3;
-                mk_int_test ~n:~-0x8000 ~len:3;
-                mk_int_test ~n:~-0x8001 ~len:5;
-                mk_int_test ~n:~-0x8002 ~len:5;
-
-                mk_int_test ~n:~-0x40000001 ~len:5;
-                mk_int_test ~n:~-0x40000000 ~len:5;
-              ]
-            in
-            let all_int_tests =
-              if Sys.word_size = 32 then small_int_tests
-              else
-                mk_int_test ~n:(int_of_string "0x7ffffffe") ~len:5 ::
+              mk_int_test ~n:(int_of_string "0x7ffffffe") ~len:5 ::
                 mk_int_test ~n:(int_of_string "0x7fffffff") ~len:5 ::
                 mk_int_test ~n:(int_of_string "0x80000000") ~len:9 ::
                 mk_int_test ~n:(int_of_string "0x80000001") ~len:9 ::
@@ -362,56 +279,56 @@ module Make (Spec : SPEC) (Read : Reader_spec) (Write : Writer_spec) = struct
                 mk_int_test ~n:min_int ~len:9 ::
 
                 small_int_tests
-            in
-            check_all 9 "int" Read.bin_read_int Write.bin_write_int
-              all_int_tests;
+          in
+          check_all 9 "int" Read.bin_read_int Write.bin_write_int
+            all_int_tests;
 
-            let bad_buf = Bigstring.of_string "\132" in
-            "Int_code" @? expect_read_error Int_code 0 (fun () ->
+          let bad_buf = Bigstring.of_string "\132" in
+          "Int_code" @? expect_read_error Int_code 0 (fun () ->
+            Read.bin_read_int bad_buf ~pos_ref:(ref 0));
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
+            "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
               Read.bin_read_int bad_buf ~pos_ref:(ref 0));
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
-              "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
-                Read.bin_read_int bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\253\255\255\255\191" in
-              "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
-                Read.bin_read_int bad_buf ~pos_ref:(ref 0))
+            let bad_buf = Bigstring.of_string "\253\255\255\255\191" in
+            "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
+              Read.bin_read_int bad_buf ~pos_ref:(ref 0))
+          else
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
+            "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
+              Read.bin_read_int bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\191" in
+            "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
+              Read.bin_read_int bad_buf ~pos_ref:(ref 0))
+
+        );
+
+      "nat0" >::
+        (fun () ->
+          let small_int_tests =
+            [
+              mk_nat0_test ~n:0x00 ~len:1;
+              mk_nat0_test ~n:0x01 ~len:1;
+
+              mk_nat0_test ~n:0x7e ~len:1;
+              mk_nat0_test ~n:0x7f ~len:1;
+              mk_nat0_test ~n:0x80 ~len:3;
+              mk_nat0_test ~n:0x81 ~len:3;
+
+              mk_nat0_test ~n:0x7fff ~len:3;
+              mk_nat0_test ~n:0x8000 ~len:3;
+              mk_nat0_test ~n:0xffff ~len:3;
+              mk_nat0_test ~n:0x10000 ~len:5;
+              mk_nat0_test ~n:0x10001 ~len:5;
+
+              mk_nat0_test ~n:0x3ffffffe ~len:5;
+              mk_nat0_test ~n:0x3fffffff ~len:5;
+            ]
+          in
+          let all_int_tests =
+            if Sys.word_size = 32 then small_int_tests
             else
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
-              "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
-                Read.bin_read_int bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\191" in
-              "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
-                Read.bin_read_int bad_buf ~pos_ref:(ref 0))
-
-          );
-
-        "nat0" >::
-          (fun () ->
-            let small_int_tests =
-              [
-                mk_nat0_test ~n:0x00 ~len:1;
-                mk_nat0_test ~n:0x01 ~len:1;
-
-                mk_nat0_test ~n:0x7e ~len:1;
-                mk_nat0_test ~n:0x7f ~len:1;
-                mk_nat0_test ~n:0x80 ~len:3;
-                mk_nat0_test ~n:0x81 ~len:3;
-
-                mk_nat0_test ~n:0x7fff ~len:3;
-                mk_nat0_test ~n:0x8000 ~len:3;
-                mk_nat0_test ~n:0xffff ~len:3;
-                mk_nat0_test ~n:0x10000 ~len:5;
-                mk_nat0_test ~n:0x10001 ~len:5;
-
-                mk_nat0_test ~n:0x3ffffffe ~len:5;
-                mk_nat0_test ~n:0x3fffffff ~len:5;
-              ]
-            in
-            let all_int_tests =
-              if Sys.word_size = 32 then small_int_tests
-              else
-                mk_nat0_test ~n:(int_of_string "0x7fffffff") ~len:5 ::
+              mk_nat0_test ~n:(int_of_string "0x7fffffff") ~len:5 ::
                 mk_nat0_test ~n:(int_of_string "0x80000000") ~len:5 ::
                 mk_nat0_test ~n:(int_of_string "0xffffffff") ~len:5 ::
                 mk_nat0_test ~n:(int_of_string "0x100000000") ~len:9 ::
@@ -419,179 +336,179 @@ module Make (Spec : SPEC) (Read : Reader_spec) (Write : Writer_spec) = struct
                 mk_nat0_test ~n:max_int ~len:9 ::
 
                 small_int_tests
-            in
-            check_all 9 "nat0" Read.bin_read_nat0 Write.bin_write_nat0
-              all_int_tests;
+          in
+          check_all 9 "nat0" Read.bin_read_nat0 Write.bin_write_nat0
+            all_int_tests;
 
-            let bad_buf = Bigstring.of_string "\128" in
-            "Nat0_code" @? expect_read_error Nat0_code 0 (fun () ->
-              Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0));
+          let bad_buf = Bigstring.of_string "\128" in
+          "Nat0_code" @? expect_read_error Nat0_code 0 (fun () ->
+            Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0));
 
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
-              "Nat0_overflow" @? expect_read_error Nat0_overflow 0 (fun () ->
-                Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0))
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
+            "Nat0_overflow" @? expect_read_error Nat0_overflow 0 (fun () ->
+              Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0))
+          else
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
+            "Nat0_overflow" @? expect_read_error Nat0_overflow 0 (fun () ->
+              Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0))
+
+        );
+
+      "float" >::
+        (fun () ->
+          let float_tests =
+            [
+              mk_float_test 0.;
+              mk_float_test (-0.);
+              mk_float_test (-1.);
+              mk_float_test 1.;
+              mk_float_test infinity;
+              mk_float_test (-.infinity);
+              mk_float_test 1e-310;  (* subnormal *)
+              mk_float_test (-1e-310);  (* subnormal *)
+              mk_float_test 3.141595;
+            ]
+          in
+          check_all 8 "float" Read.bin_read_float Write.bin_write_float
+            float_tests
+        );
+
+      "int32" >::
+        (fun () ->
+          let int32_tests =
+            [
+              mk_int32_test ~n:(-0x01l) ~len:2;
+              mk_int32_test ~n:  0x00l  ~len:1;
+              mk_int32_test ~n:  0x01l  ~len:1;
+
+              mk_int32_test ~n:0x7el ~len:1;
+              mk_int32_test ~n:0x7fl ~len:1;
+              mk_int32_test ~n:0x80l ~len:3;
+              mk_int32_test ~n:0x81l ~len:3;
+
+              mk_int32_test ~n:0x7ffel ~len:3;
+              mk_int32_test ~n:0x7fffl ~len:3;
+              mk_int32_test ~n:0x8000l ~len:5;
+              mk_int32_test ~n:0x8001l ~len:5;
+
+              mk_int32_test ~n:0x7ffffffel ~len:5;
+              mk_int32_test ~n:0x7fffffffl ~len:5;
+
+              mk_int32_test ~n:(-0x7fl) ~len:2;
+              mk_int32_test ~n:(-0x80l) ~len:2;
+              mk_int32_test ~n:(-0x81l) ~len:3;
+              mk_int32_test ~n:(-0x82l) ~len:3;
+
+              mk_int32_test ~n:(-0x7fffl) ~len:3;
+              mk_int32_test ~n:(-0x8000l) ~len:3;
+              mk_int32_test ~n:(-0x8001l) ~len:5;
+              mk_int32_test ~n:(-0x8002l) ~len:5;
+
+              mk_int32_test ~n:(-0x80000001l) ~len:5;
+              mk_int32_test ~n:(-0x80000000l) ~len:5;
+            ]
+          in
+          check_all 5 "int32" Read.bin_read_int32 Write.bin_write_int32
+            int32_tests;
+
+          let bad_buf = Bigstring.of_string "\132" in
+          "Int32_code" @? expect_read_error Int32_code 0 (fun () ->
+            Read.bin_read_int32 bad_buf ~pos_ref:(ref 0))
+        );
+
+      "int64" >::
+        (fun () ->
+          let int64_tests =
+            [
+              mk_int64_test ~n:(-0x01L) ~len:2;
+              mk_int64_test ~n:  0x00L  ~len:1;
+              mk_int64_test ~n:  0x01L  ~len:1;
+
+              mk_int64_test ~n:0x7eL ~len:1;
+              mk_int64_test ~n:0x7fL ~len:1;
+              mk_int64_test ~n:0x80L ~len:3;
+              mk_int64_test ~n:0x81L ~len:3;
+
+              mk_int64_test ~n:0x7ffeL ~len:3;
+              mk_int64_test ~n:0x7fffL ~len:3;
+              mk_int64_test ~n:0x8000L ~len:5;
+              mk_int64_test ~n:0x8001L ~len:5;
+
+              mk_int64_test ~n:0x7ffffffeL ~len:5;
+              mk_int64_test ~n:0x7fffffffL ~len:5;
+              mk_int64_test ~n:0x80000000L ~len:9;
+              mk_int64_test ~n:0x80000001L ~len:9;
+
+              mk_int64_test ~n:0x7ffffffffffffffeL ~len:9;
+              mk_int64_test ~n:0x7fffffffffffffffL ~len:9;
+
+              mk_int64_test ~n:(-0x7fL) ~len:2;
+              mk_int64_test ~n:(-0x80L) ~len:2;
+              mk_int64_test ~n:(-0x81L) ~len:3;
+              mk_int64_test ~n:(-0x82L) ~len:3;
+
+              mk_int64_test ~n:(-0x7fffL) ~len:3;
+              mk_int64_test ~n:(-0x8000L) ~len:3;
+              mk_int64_test ~n:(-0x8001L) ~len:5;
+              mk_int64_test ~n:(-0x8002L) ~len:5;
+
+              mk_int64_test ~n:(-0x7fffffffL) ~len:5;
+              mk_int64_test ~n:(-0x80000000L) ~len:5;
+              mk_int64_test ~n:(-0x80000001L) ~len:9;
+              mk_int64_test ~n:(-0x80000002L) ~len:9;
+
+              mk_int64_test ~n:(-0x8000000000000001L) ~len:9;
+              mk_int64_test ~n:(-0x8000000000000000L) ~len:9;
+            ]
+          in
+          check_all 9 "int64" Read.bin_read_int64 Write.bin_write_int64
+            int64_tests;
+
+          let bad_buf = Bigstring.of_string "\132" in
+          "Int64_code" @? expect_read_error Int64_code 0 (fun () ->
+            Read.bin_read_int64 bad_buf ~pos_ref:(ref 0))
+        );
+
+      "nativeint" >::
+        (fun () ->
+          let small_nativeint_tests =
+            [
+              mk_nativeint_test ~n:(-0x01n) ~len:2;
+              mk_nativeint_test ~n:  0x00n  ~len:1;
+              mk_nativeint_test ~n:  0x01n  ~len:1;
+
+              mk_nativeint_test ~n:0x7en ~len:1;
+              mk_nativeint_test ~n:0x7fn ~len:1;
+              mk_nativeint_test ~n:0x80n ~len:3;
+              mk_nativeint_test ~n:0x81n ~len:3;
+
+              mk_nativeint_test ~n:0x7ffen ~len:3;
+              mk_nativeint_test ~n:0x7fffn ~len:3;
+              mk_nativeint_test ~n:0x8000n ~len:5;
+              mk_nativeint_test ~n:0x8001n ~len:5;
+
+              mk_nativeint_test ~n:0x7ffffffen ~len:5;
+              mk_nativeint_test ~n:0x7fffffffn ~len:5;
+
+              mk_nativeint_test ~n:(-0x7fn) ~len:2;
+              mk_nativeint_test ~n:(-0x80n) ~len:2;
+              mk_nativeint_test ~n:(-0x81n) ~len:3;
+              mk_nativeint_test ~n:(-0x82n) ~len:3;
+
+              mk_nativeint_test ~n:(-0x7fffn) ~len:3;
+              mk_nativeint_test ~n:(-0x8000n) ~len:3;
+              mk_nativeint_test ~n:(-0x8001n) ~len:5;
+              mk_nativeint_test ~n:(-0x8002n) ~len:5;
+
+              mk_nativeint_test ~n:(-0x7fffffffn) ~len:5;
+              mk_nativeint_test ~n:(-0x80000000n) ~len:5;
+            ]
+          in
+          let nativeint_tests =
+            if Sys.word_size = 32 then small_nativeint_tests
             else
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
-              "Nat0_overflow" @? expect_read_error Nat0_overflow 0 (fun () ->
-                Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0))
-
-          );
-
-        "float" >::
-          (fun () ->
-            let float_tests =
-              [
-                mk_float_test 0.;
-                mk_float_test (-0.);
-                mk_float_test (-1.);
-                mk_float_test 1.;
-                mk_float_test infinity;
-                mk_float_test (-.infinity);
-                mk_float_test 1e-310;  (* subnormal *)
-                mk_float_test (-1e-310);  (* subnormal *)
-                mk_float_test 3.141595;
-              ]
-            in
-            check_all 8 "float" Read.bin_read_float Write.bin_write_float
-              float_tests
-          );
-
-        "int32" >::
-          (fun () ->
-            let int32_tests =
-              [
-                mk_int32_test ~n:(-0x01l) ~len:2;
-                mk_int32_test ~n:  0x00l  ~len:1;
-                mk_int32_test ~n:  0x01l  ~len:1;
-
-                mk_int32_test ~n:0x7el ~len:1;
-                mk_int32_test ~n:0x7fl ~len:1;
-                mk_int32_test ~n:0x80l ~len:3;
-                mk_int32_test ~n:0x81l ~len:3;
-
-                mk_int32_test ~n:0x7ffel ~len:3;
-                mk_int32_test ~n:0x7fffl ~len:3;
-                mk_int32_test ~n:0x8000l ~len:5;
-                mk_int32_test ~n:0x8001l ~len:5;
-
-                mk_int32_test ~n:0x7ffffffel ~len:5;
-                mk_int32_test ~n:0x7fffffffl ~len:5;
-
-                mk_int32_test ~n:(-0x7fl) ~len:2;
-                mk_int32_test ~n:(-0x80l) ~len:2;
-                mk_int32_test ~n:(-0x81l) ~len:3;
-                mk_int32_test ~n:(-0x82l) ~len:3;
-
-                mk_int32_test ~n:(-0x7fffl) ~len:3;
-                mk_int32_test ~n:(-0x8000l) ~len:3;
-                mk_int32_test ~n:(-0x8001l) ~len:5;
-                mk_int32_test ~n:(-0x8002l) ~len:5;
-
-                mk_int32_test ~n:(-0x80000001l) ~len:5;
-                mk_int32_test ~n:(-0x80000000l) ~len:5;
-              ]
-            in
-            check_all 5 "int32" Read.bin_read_int32 Write.bin_write_int32
-              int32_tests;
-
-            let bad_buf = Bigstring.of_string "\132" in
-            "Int32_code" @? expect_read_error Int32_code 0 (fun () ->
-              Read.bin_read_int32 bad_buf ~pos_ref:(ref 0))
-          );
-
-        "int64" >::
-          (fun () ->
-            let int64_tests =
-              [
-                mk_int64_test ~n:(-0x01L) ~len:2;
-                mk_int64_test ~n:  0x00L  ~len:1;
-                mk_int64_test ~n:  0x01L  ~len:1;
-
-                mk_int64_test ~n:0x7eL ~len:1;
-                mk_int64_test ~n:0x7fL ~len:1;
-                mk_int64_test ~n:0x80L ~len:3;
-                mk_int64_test ~n:0x81L ~len:3;
-
-                mk_int64_test ~n:0x7ffeL ~len:3;
-                mk_int64_test ~n:0x7fffL ~len:3;
-                mk_int64_test ~n:0x8000L ~len:5;
-                mk_int64_test ~n:0x8001L ~len:5;
-
-                mk_int64_test ~n:0x7ffffffeL ~len:5;
-                mk_int64_test ~n:0x7fffffffL ~len:5;
-                mk_int64_test ~n:0x80000000L ~len:9;
-                mk_int64_test ~n:0x80000001L ~len:9;
-
-                mk_int64_test ~n:0x7ffffffffffffffeL ~len:9;
-                mk_int64_test ~n:0x7fffffffffffffffL ~len:9;
-
-                mk_int64_test ~n:(-0x7fL) ~len:2;
-                mk_int64_test ~n:(-0x80L) ~len:2;
-                mk_int64_test ~n:(-0x81L) ~len:3;
-                mk_int64_test ~n:(-0x82L) ~len:3;
-
-                mk_int64_test ~n:(-0x7fffL) ~len:3;
-                mk_int64_test ~n:(-0x8000L) ~len:3;
-                mk_int64_test ~n:(-0x8001L) ~len:5;
-                mk_int64_test ~n:(-0x8002L) ~len:5;
-
-                mk_int64_test ~n:(-0x7fffffffL) ~len:5;
-                mk_int64_test ~n:(-0x80000000L) ~len:5;
-                mk_int64_test ~n:(-0x80000001L) ~len:9;
-                mk_int64_test ~n:(-0x80000002L) ~len:9;
-
-                mk_int64_test ~n:(-0x8000000000000001L) ~len:9;
-                mk_int64_test ~n:(-0x8000000000000000L) ~len:9;
-              ]
-            in
-            check_all 9 "int64" Read.bin_read_int64 Write.bin_write_int64
-              int64_tests;
-
-            let bad_buf = Bigstring.of_string "\132" in
-            "Int64_code" @? expect_read_error Int64_code 0 (fun () ->
-              Read.bin_read_int64 bad_buf ~pos_ref:(ref 0))
-          );
-
-        "nativeint" >::
-          (fun () ->
-            let small_nativeint_tests =
-              [
-                mk_nativeint_test ~n:(-0x01n) ~len:2;
-                mk_nativeint_test ~n:  0x00n  ~len:1;
-                mk_nativeint_test ~n:  0x01n  ~len:1;
-
-                mk_nativeint_test ~n:0x7en ~len:1;
-                mk_nativeint_test ~n:0x7fn ~len:1;
-                mk_nativeint_test ~n:0x80n ~len:3;
-                mk_nativeint_test ~n:0x81n ~len:3;
-
-                mk_nativeint_test ~n:0x7ffen ~len:3;
-                mk_nativeint_test ~n:0x7fffn ~len:3;
-                mk_nativeint_test ~n:0x8000n ~len:5;
-                mk_nativeint_test ~n:0x8001n ~len:5;
-
-                mk_nativeint_test ~n:0x7ffffffen ~len:5;
-                mk_nativeint_test ~n:0x7fffffffn ~len:5;
-
-                mk_nativeint_test ~n:(-0x7fn) ~len:2;
-                mk_nativeint_test ~n:(-0x80n) ~len:2;
-                mk_nativeint_test ~n:(-0x81n) ~len:3;
-                mk_nativeint_test ~n:(-0x82n) ~len:3;
-
-                mk_nativeint_test ~n:(-0x7fffn) ~len:3;
-                mk_nativeint_test ~n:(-0x8000n) ~len:3;
-                mk_nativeint_test ~n:(-0x8001n) ~len:5;
-                mk_nativeint_test ~n:(-0x8002n) ~len:5;
-
-                mk_nativeint_test ~n:(-0x7fffffffn) ~len:5;
-                mk_nativeint_test ~n:(-0x80000000n) ~len:5;
-              ]
-            in
-            let nativeint_tests =
-              if Sys.word_size = 32 then small_nativeint_tests
-              else
-                mk_nativeint_test ~n:0x80000000n ~len:9 ::
+              mk_nativeint_test ~n:0x80000000n ~len:9 ::
                 mk_nativeint_test ~n:0x80000001n ~len:9 ::
 
                 mk_nativeint_test ~n:(-0x80000001n) ~len:9 ::
@@ -604,367 +521,380 @@ module Make (Spec : SPEC) (Read : Reader_spec) (Write : Writer_spec) = struct
                 mk_nativeint_test ~n:(Nativeint.of_string "-0x8000000000000000") ~len:9 ::
 
                 small_nativeint_tests
-            in
+          in
 
-            let size = if Sys.word_size = 32 then 5 else 9 in
-            check_all size "nativeint"
-              Read.bin_read_nativeint Write.bin_write_nativeint
-              nativeint_tests;
+          let size = if Sys.word_size = 32 then 5 else 9 in
+          check_all size "nativeint"
+            Read.bin_read_nativeint Write.bin_write_nativeint
+            nativeint_tests;
 
-            let bad_buf = Bigstring.of_string "\251" in
-            "Nativeint_code" @? expect_read_error Nativeint_code 0 (fun () ->
-              Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0));
+          let bad_buf = Bigstring.of_string "\251" in
+          "Nativeint_code" @? expect_read_error Nativeint_code 0 (fun () ->
+            Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0));
 
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\255" in
-              "Nativeint_code (overflow)" @? expect_read_error Nativeint_code 0 (fun () ->
-                Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0))
-          );
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\255" in
+            "Nativeint_code (overflow)" @? expect_read_error Nativeint_code 0 (fun () ->
+              Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0))
+        );
 
-        "ref" >::
-          (fun () ->
-            check_all 1 "ref"
-              (Read.bin_read_ref Read.bin_read_int)
-              (Write.bin_write_ref Write.bin_write_int)
-              [(ref 42, "ref 42", 1)];
-          );
+      "ref" >::
+        (fun () ->
+          check_all 1 "ref"
+            (Read.bin_read_ref Read.bin_read_int)
+            (Write.bin_write_ref Write.bin_write_int)
+            [(ref 42, "ref 42", 1)];
+        );
 
-        "option" >::
-          (fun () ->
-            check_all 2 "option"
-              (Read.bin_read_option Read.bin_read_int)
-              (Write.bin_write_option Write.bin_write_int)
-              [
-                (Some 42, "Some 42", 2);
-                (None, "None", 1);
-              ];
-          );
+      "option" >::
+        (fun () ->
+          check_all 2 "option"
+            (Read.bin_read_option Read.bin_read_int)
+            (Write.bin_write_option Write.bin_write_int)
+            [
+              (Some 42, "Some 42", 2);
+              (None, "None", 1);
+            ];
+        );
 
-        "pair" >::
-          (fun () ->
-            check_all 9 "pair"
-              (Read.bin_read_pair Read.bin_read_float Read.bin_read_int)
-              (Write.bin_write_pair Write.bin_write_float Write.bin_write_int)
-              [((3.141, 42), "(3.141, 42)", 9)];
-          );
+      "pair" >::
+        (fun () ->
+          check_all 9 "pair"
+            (Read.bin_read_pair Read.bin_read_float Read.bin_read_int)
+            (Write.bin_write_pair Write.bin_write_float Write.bin_write_int)
+            [((3.141, 42), "(3.141, 42)", 9)];
+        );
 
-        "triple" >::
-          (fun () ->
-            check_all 14 "triple"
-              (Read.bin_read_triple
-                Read.bin_read_float Read.bin_read_int Read.bin_read_string)
-              (Write.bin_write_triple
-                Write.bin_write_float Write.bin_write_int Write.bin_write_string)
-              [((3.141, 42, "test"), "(3.141, 42, \"test\")", 14)];
-          );
+      "triple" >::
+        (fun () ->
+          check_all 14 "triple"
+            (Read.bin_read_triple
+               Read.bin_read_float Read.bin_read_int Read.bin_read_string)
+            (Write.bin_write_triple
+               Write.bin_write_float Write.bin_write_int Write.bin_write_string)
+            [((3.141, 42, "test"), "(3.141, 42, \"test\")", 14)];
+        );
 
-        "list" >::
-          (fun () ->
-            check_all 12 "list"
-              (Read.bin_read_list Read.bin_read_int)
-              (Write.bin_write_list Write.bin_write_int)
-              [
-                ([42; -1; 200; 33000], "[42; -1; 200; 33000]", 12);
-                ([], "[]", 1);
-              ];
-          );
+      "list" >::
+        (fun () ->
+          check_all 12 "list"
+            (Read.bin_read_list Read.bin_read_int)
+            (Write.bin_write_list Write.bin_write_int)
+            [
+              ([42; -1; 200; 33000], "[42; -1; 200; 33000]", 12);
+              ([], "[]", 1);
+            ];
+        );
 
-        "array" >::
-          (fun () ->
-            let bin_read_int_array = Read.bin_read_array Read.bin_read_int in
-            check_all 12 "array"
-              bin_read_int_array
-              (Write.bin_write_array Write.bin_write_int)
-              [
-                ([| 42; -1; 200; 33000 |], "[|42; -1; 200; 33000|]", 12);
-                ([||], "[||]", 1);
-              ];
+      "array" >::
+        (fun () ->
+          let bin_read_int_array = Read.bin_read_array Read.bin_read_int in
+          check_all 12 "array"
+            bin_read_int_array
+            (Write.bin_write_array Write.bin_write_int)
+            [
+              ([| 42; -1; 200; 33000 |], "[|42; -1; 200; 33000|]", 12);
+              ([||], "[||]", 1);
+            ];
 
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\253\000\000\064\000" in
-              "Array_too_long" @? expect_read_error Array_too_long 0 (fun () ->
-                bin_read_int_array bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\253\255\255\063\000" in
-              "ArrayMaximimum" @? expect_buffer_short (fun () ->
-                bin_read_int_array bad_buf ~pos_ref:(ref 0))
-            else
-              let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
-              "Array_too_long" @? expect_read_error Array_too_long 0 (fun () ->
-                bin_read_int_array bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
-              "ArrayMaximimum" @? expect_buffer_short (fun () ->
-                bin_read_int_array bad_buf ~pos_ref:(ref 0))
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\253\000\000\064\000" in
+            "Array_too_long" @? expect_read_error Array_too_long 0 (fun () ->
+              bin_read_int_array bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\253\255\255\063\000" in
+            "ArrayMaximimum" @? expect_buffer_short (fun () ->
+              bin_read_int_array bad_buf ~pos_ref:(ref 0))
+          else
+            let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
+            "Array_too_long" @? expect_read_error Array_too_long 0 (fun () ->
+              bin_read_int_array bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
+            "ArrayMaximimum" @? expect_buffer_short (fun () ->
+              bin_read_int_array bad_buf ~pos_ref:(ref 0))
 
-          );
+        );
 
-        "float_array" >::
-          (fun () ->
-            check_all 33 "float_array"
-              Read.bin_read_float_array Write.bin_write_float_array
-              [
-                ([| 42.; -1.; 200.; 33000. |], "[|42.; -1.; 200.; 33000.|]", 33);
-                ([||], "[||]", 1);
-              ];
+      "float_array" >::
+        (fun () ->
+          check_all 33 "float_array"
+            Read.bin_read_float_array Write.bin_write_float_array
+            [
+              ([| 42.; -1.; 200.; 33000. |], "[|42.; -1.; 200.; 33000.|]", 33);
+              ([||], "[||]", 1);
+            ];
 
-            if Sys.word_size = 32 then
-              let bad_buf = Bigstring.of_string "\253\000\000\032\000" in
-              "Array_too_long (float)" @? expect_read_error Array_too_long 0 (fun () ->
-                Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\253\255\255\031\000" in
-              "ArrayMaximimum (float)" @? expect_buffer_short (fun () ->
-                Read.bin_read_float_array bad_buf ~pos_ref:(ref 0))
-            else
-              let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
-              "Array_too_long (float)" @? expect_read_error Array_too_long 0 (fun () ->
-                Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
-              let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
-              "ArrayMaximimum (float)" @? expect_buffer_short (fun () ->
-                Read.bin_read_float_array bad_buf ~pos_ref:(ref 0))
+          if Sys.word_size = 32 then
+            let bad_buf = Bigstring.of_string "\253\000\000\032\000" in
+            "Array_too_long (float)" @? expect_read_error Array_too_long 0 (fun () ->
+              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\253\255\255\031\000" in
+            "ArrayMaximimum (float)" @? expect_buffer_short (fun () ->
+              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0))
+          else
+            let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
+            "Array_too_long (float)" @? expect_read_error Array_too_long 0 (fun () ->
+              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
+            let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
+            "ArrayMaximimum (float)" @? expect_buffer_short (fun () ->
+              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0))
 
-          );
+        );
 
-        "hashtbl" >::
-          (fun () ->
-            let bindings = List.rev [(42, 3.); (17, 2.); (42, 4.)] in
-            let htbl = Hashtbl.create (List.length bindings) in
-            List.iter (fun (k, v) -> Hashtbl.add htbl k v) bindings;
-            check_all 28 "hashtbl"
-              (Read.bin_read_hashtbl Read.bin_read_int Read.bin_read_float)
-              (Write.bin_write_hashtbl Write.bin_write_int Write.bin_write_float)
-              [
-                (htbl, "[(42, 3.); (17, 2.); (42, 4.)]", 28);
-                (Hashtbl.create 0, "[]", 1)
-              ];
-          );
+      "hashtbl" >::
+        (fun () ->
+          let bindings = List.rev [(42, 3.); (17, 2.); (42, 4.)] in
+          let htbl = Hashtbl.create (List.length bindings) in
+          List.iter (fun (k, v) -> Hashtbl.add htbl k v) bindings;
+          check_all 28 "hashtbl"
+            (Read.bin_read_hashtbl Read.bin_read_int Read.bin_read_float)
+            (Write.bin_write_hashtbl Write.bin_write_int Write.bin_write_float)
+            [
+              (htbl, "[(42, 3.); (17, 2.); (42, 4.)]", 28);
+              (Hashtbl.create 0, "[]", 1)
+            ];
+        );
 
-        "float32_vec" >::
-          (fun () ->
-            let n = 128 in
-            let header = 3 in
-            let size = header + n * 4 in
-            let vec = mk_float32_vec n in
-            check_all size "float32_vec"
-              Read.bin_read_float32_vec
-              Write.bin_write_float32_vec
-              [
-                (vec, "[| ... |]", size);
-                (mk_float32_vec 0, "[||]", 1);
-              ]
-          );
+      "float32_vec" >::
+        (fun () ->
+          let n = 128 in
+          let header = 3 in
+          let size = header + n * 4 in
+          let vec = mk_float32_vec n in
+          check_all size "float32_vec"
+            Read.bin_read_float32_vec
+            Write.bin_write_float32_vec
+            [
+              (vec, "[| ... |]", size);
+              (mk_float32_vec 0, "[||]", 1);
+            ]
+        );
 
-        "float64_vec" >::
-          (fun () ->
-            let n = 127 in
-            let header = 1 in
-            let size = header + n * 8 in
-            let vec = mk_float64_vec n in
-            check_all size "float64_vec"
-              Read.bin_read_float64_vec
-              Write.bin_write_float64_vec
-              [
-                (vec, "[| ... |]", size);
-                (mk_float64_vec 0, "[||]", 1);
-              ]
-          );
+      "float64_vec" >::
+        (fun () ->
+          let n = 127 in
+          let header = 1 in
+          let size = header + n * 8 in
+          let vec = mk_float64_vec n in
+          check_all size "float64_vec"
+            Read.bin_read_float64_vec
+            Write.bin_write_float64_vec
+            [
+              (vec, "[| ... |]", size);
+              (mk_float64_vec 0, "[||]", 1);
+            ]
+        );
 
-        "vec" >::
-          (fun () ->
-            let n = 128 in
-            let header = 3 in
-            let size = header + n * 8 in
-            let vec = mk_float64_vec n in
-            check_all size "vec"
-              Read.bin_read_vec
-              Write.bin_write_vec
-              [
-                (vec, "[| ... |]", size);
-                (mk_float64_vec 0, "[||]", 1);
-              ]
-          );
+      "vec" >::
+        (fun () ->
+          let n = 128 in
+          let header = 3 in
+          let size = header + n * 8 in
+          let vec = mk_float64_vec n in
+          check_all size "vec"
+            Read.bin_read_vec
+            Write.bin_write_vec
+            [
+              (vec, "[| ... |]", size);
+              (mk_float64_vec 0, "[||]", 1);
+            ]
+        );
 
-        "float32_mat" >::
-          (fun () ->
-            let m = 128 in
-            let n = 127 in
-            let header = 3 + 1 in
-            let size = header + m * n * 4 in
-            let mat = mk_float32_mat m n in
-            check_all size "float32_mat"
-              Read.bin_read_float32_mat
-              Write.bin_write_float32_mat
-              [
-                (mat, "[| ... |]", size);
-                (mk_float32_mat 0 0, "[||]", 2);
-              ]
-          );
+      "float32_mat" >::
+        (fun () ->
+          let m = 128 in
+          let n = 127 in
+          let header = 3 + 1 in
+          let size = header + m * n * 4 in
+          let mat = mk_float32_mat m n in
+          check_all size "float32_mat"
+            Read.bin_read_float32_mat
+            Write.bin_write_float32_mat
+            [
+              (mat, "[| ... |]", size);
+              (mk_float32_mat 0 0, "[||]", 2);
+            ]
+        );
 
-        "float64_mat" >::
-          (fun () ->
-            let m = 10 in
-            let n = 12 in
-            let header = 1 + 1 in
-            let size = header + m * n * 8 in
-            let mat = mk_float64_mat m n in
-            check_all size "float64_mat"
-              Read.bin_read_float64_mat
-              Write.bin_write_float64_mat
-              [
-                (mat, "[| ... |]", size);
-                (mk_float64_mat 0 0, "[||]", 2);
-              ]
-          );
+      "float64_mat" >::
+        (fun () ->
+          let m = 10 in
+          let n = 12 in
+          let header = 1 + 1 in
+          let size = header + m * n * 8 in
+          let mat = mk_float64_mat m n in
+          check_all size "float64_mat"
+            Read.bin_read_float64_mat
+            Write.bin_write_float64_mat
+            [
+              (mat, "[| ... |]", size);
+              (mk_float64_mat 0 0, "[||]", 2);
+            ]
+        );
 
-        "mat" >::
-          (fun () ->
-            let m = 128 in
-            let n = 128 in
-            let header = 3 + 3 in
-            let size = header + m * n * 8 in
-            let mat = mk_float64_mat m n in
-            check_all size "mat"
-              Read.bin_read_mat
-              Write.bin_write_mat
-              [
-                (mat, "[| ... |]", size);
-                (mk_float64_mat 0 0, "[||]", 2);
-              ]
-          );
+      "mat" >::
+        (fun () ->
+          let m = 128 in
+          let n = 128 in
+          let header = 3 + 3 in
+          let size = header + m * n * 8 in
+          let mat = mk_float64_mat m n in
+          check_all size "mat"
+            Read.bin_read_mat
+            Write.bin_write_mat
+            [
+              (mat, "[| ... |]", size);
+              (mk_float64_mat 0 0, "[||]", 2);
+            ]
+        );
 
-        "bigstring" >::
-          (fun () ->
-            let n = 128 in
-            let header = 3 in
-            let size = header + n in
-            let bstr = mk_bigstring n in
-            check_all size "bigstring"
-              Read.bin_read_bigstring
-              Write.bin_write_bigstring
-              [
-                (bstr, "[| ... |]", size);
-                (mk_bigstring 0, "[||]", 1);
-              ]
-          );
+      "bigstring" >::
+        (fun () ->
+          let n = 128 in
+          let header = 3 in
+          let size = header + n in
+          let bstr = mk_bigstring n in
+          check_all size "bigstring"
+            Read.bin_read_bigstring
+            Write.bin_write_bigstring
+            [
+              (bstr, "[| ... |]", size);
+              (mk_bigstring 0, "[||]", 1);
+            ]
+        );
 
-        "variant_tag" >::
-          (fun () ->
-            check_all 4 "variant_tag"
-              Read.bin_read_variant_tag
-              Write.bin_write_variant_tag
-              [
-                (`Foo, "`Foo", 4);
-                (`Bar, "`Bar", 4);
-              ];
-            let bad_buf = Bigstring.of_string "\000\000\000\000" in
-            "Variant_tag" @? expect_read_error Variant_tag 0 (fun () ->
-              Read.bin_read_variant_tag bad_buf ~pos_ref:(ref 0))
-          );
+      "bigstring (big)" >::
+        (fun () ->
+          (* [n] is a 16bits integer that will be serialized differently depending on
+             whether it is considered as an integer or an unsigned integer. *)
+          let n = 40_000 in
+          let header = 3 in
+          let size = header + n in
+          let bstr = mk_bigstring n in
+          check_all size "bigstring"
+            Read.bin_read_bigstring
+            Write.bin_write_bigstring
+            [
+              (bstr, "[| ... |]", size);
+              (mk_bigstring 0, "[||]", 1);
+            ]
+        );
 
-        "int64_bits" >::
-          (fun () ->
-            check_all 8 "int64_bits"
-              Read.bin_read_int64_bits
-              Write.bin_write_int64_bits
-              [
-                (Int64.min_int, "min_int", 8);
-                (Int64.add Int64.min_int Int64.one, "min_int + 1", 8);
-                (Int64.minus_one, "-1", 8);
-                (Int64.zero, "0", 8);
-                (Int64.one, "1", 8);
-                (Int64.sub Int64.max_int Int64.one, "max_int - 1", 8);
-                (Int64.max_int, "max_int", 8);
-              ];
-          );
+      "variant_tag" >::
+        (fun () ->
+          check_all 4 "variant_tag"
+            Read.bin_read_variant_tag
+            Write.bin_write_variant_tag
+            [
+              (`Foo, "`Foo", 4);
+              (`Bar, "`Bar", 4);
+            ];
+          let bad_buf = Bigstring.of_string "\000\000\000\000" in
+          "Variant_tag" @? expect_read_error Variant_tag 0 (fun () ->
+            Read.bin_read_variant_tag bad_buf ~pos_ref:(ref 0))
+        );
 
-        "int_64bit" >::
-          (fun () ->
-            check_all 8 "int_64bit"
-              Read.bin_read_int_64bit
-              Write.bin_write_int_64bit
-              [
-                (min_int, "min_int", 8);
-                (min_int + 1, "min_int + 1", 8);
-                (-1, "-1", 8);
-                (0, "0", 8);
-                (1, "1", 8);
-                (max_int - 1, "max_int - 1", 8);
-                (max_int, "max_int", 8);
-              ];
-            let bad_buf_max =
-              bin_dump bin_int64_bits.writer (Int64.succ (Int64.of_int max_int))
-            in
-            "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
-              Read.bin_read_int_64bit bad_buf_max ~pos_ref:(ref 0));
-            let bad_buf_min =
-              bin_dump bin_int64_bits.writer (Int64.pred (Int64.of_int min_int))
-            in
-            "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
-              Read.bin_read_int_64bit bad_buf_min ~pos_ref:(ref 0));
-          );
+      "int64_bits" >::
+        (fun () ->
+          check_all 8 "int64_bits"
+            Read.bin_read_int64_bits
+            Write.bin_write_int64_bits
+            [
+              (Int64.min_int, "min_int", 8);
+              (Int64.add Int64.min_int Int64.one, "min_int + 1", 8);
+              (Int64.minus_one, "-1", 8);
+              (Int64.zero, "0", 8);
+              (Int64.one, "1", 8);
+              (Int64.sub Int64.max_int Int64.one, "max_int - 1", 8);
+              (Int64.max_int, "max_int", 8);
+            ];
+        );
 
-        "network16_int" >::
-          (fun () ->
-            check_all 2 "network16_int"
-              Read.bin_read_network16_int
-              Write.bin_write_network16_int
-              [
+      "int_64bit" >::
+        (fun () ->
+          check_all 8 "int_64bit"
+            Read.bin_read_int_64bit
+            Write.bin_write_int_64bit
+            [
+              (min_int, "min_int", 8);
+              (min_int + 1, "min_int + 1", 8);
+              (-1, "-1", 8);
+              (0, "0", 8);
+              (1, "1", 8);
+              (max_int - 1, "max_int - 1", 8);
+              (max_int, "max_int", 8);
+            ];
+          let bad_buf_max =
+            bin_dump bin_int64_bits.writer (Int64.succ (Int64.of_int max_int))
+          in
+          "Int_overflow (positive)" @? expect_read_error Int_overflow 0 (fun () ->
+            Read.bin_read_int_64bit bad_buf_max ~pos_ref:(ref 0));
+          let bad_buf_min =
+            bin_dump bin_int64_bits.writer (Int64.pred (Int64.of_int min_int))
+          in
+          "Int_overflow (negative)" @? expect_read_error Int_overflow 0 (fun () ->
+            Read.bin_read_int_64bit bad_buf_min ~pos_ref:(ref 0));
+        );
+
+      "network16_int" >::
+        (fun () ->
+          check_all 2 "network16_int"
+            Read.bin_read_network16_int
+            Write.bin_write_network16_int
+            [
                 (* No negative numbers - ambiguous on 64bit platforms *)
-                (0, "0", 2);
-                (1, "1", 2);
-              ];
-          );
+              (0, "0", 2);
+              (1, "1", 2);
+            ];
+        );
 
-        "network32_int" >::
-          (fun () ->
-            check_all 4 "network32_int"
-              Read.bin_read_network32_int
-              Write.bin_write_network32_int
-              [
+      "network32_int" >::
+        (fun () ->
+          check_all 4 "network32_int"
+            Read.bin_read_network32_int
+            Write.bin_write_network32_int
+            [
                 (* No negative numbers - ambiguous on 64bit platforms *)
-                (0, "0", 4);
-                (1, "1", 4);
-              ];
-          );
+              (0, "0", 4);
+              (1, "1", 4);
+            ];
+        );
 
-        "network32_int32" >::
-          (fun () ->
-            check_all 4 "network32_int32"
-              Read.bin_read_network32_int32
-              Write.bin_write_network32_int32
-              [
-                (-1l, "-1", 4);
-                (0l, "0", 4);
-                (1l, "1", 4);
-              ];
-          );
+      "network32_int32" >::
+        (fun () ->
+          check_all 4 "network32_int32"
+            Read.bin_read_network32_int32
+            Write.bin_write_network32_int32
+            [
+              (-1l, "-1", 4);
+              (0l, "0", 4);
+              (1l, "1", 4);
+            ];
+        );
 
-        "network64_int" >::
-          (fun () ->
-            check_all 8 "network64_int"
-              Read.bin_read_network64_int
-              Write.bin_write_network64_int
-              [
-                (-1, "-1", 8);
-                (0, "0", 8);
-                (1, "1", 8);
-              ];
-          );
+      "network64_int" >::
+        (fun () ->
+          check_all 8 "network64_int"
+            Read.bin_read_network64_int
+            Write.bin_write_network64_int
+            [
+              (-1, "-1", 8);
+              (0, "0", 8);
+              (1, "1", 8);
+            ];
+        );
 
-        "network64_int64" >::
-          (fun () ->
-            check_all 8 "network64_int64"
-              Read.bin_read_network64_int64
-              Write.bin_write_network64_int64
-              [
-                (-1L, "-1", 8);
-                (0L, "0", 8);
-                (1L, "1", 8);
-              ];
-          );
-      ]
-end
-
-module ML = Make (struct let kind = "ml" end) (Read_ml) (Write_ml)
-module C = Make (struct let kind = "c" end) (Read_c) (Write_c)
+      "network64_int64" >::
+        (fun () ->
+          check_all 8 "network64_int64"
+            Read.bin_read_network64_int64
+            Write.bin_write_network64_int64
+            [
+              (-1L, "-1", 8);
+              (0L, "0", 8);
+              (1L, "1", 8);
+            ];
+        );
+    ]
 
 module Common = struct
   type tuple = float * string * int64
@@ -1015,7 +945,7 @@ module Common = struct
             let buf = bin_dump ~header:true bin_els.writer els in
 
             let pos_ref = ref 0 in
-            let els_len = Read_ml.bin_read_int_64bit buf ~pos_ref in
+            let els_len = Read.bin_read_int_64bit buf ~pos_ref in
             "pos_ref for length incorrect" @? (!pos_ref = 8);
             "els_len disagrees with bin_size" @? (els_len = bin_size_els els);
             let new_els = bin_read_els buf ~pos_ref in

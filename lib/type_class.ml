@@ -3,15 +3,13 @@
 type 'a writer =
   {
     size : 'a Size.sizer;
-    write : 'a Write_ml.writer;
-    unsafe_write : 'a Unsafe_write_c.writer;
+    write : 'a Write.writer;
   }
 
 type 'a reader =
   {
-    read : 'a Read_ml.reader;
-    unsafe_read : 'a Unsafe_read_c.reader;
-    unsafe_vtag_read : (int -> 'a) Unsafe_read_c.reader;
+    read : 'a Read.reader;
+    vtag_read : (int -> 'a) Read.reader;
   }
 
 type 'a t =
@@ -42,20 +40,20 @@ module S3 = struct
   type ('a, 'b, 'c, 'd) t = 'a t0 -> ('b, 'c, 'd) S2.t
 end
 
+let variant_wrong_type name _buf ~pos_ref _x =
+  Common.raise_variant_wrong_type name !pos_ref
+;;
+
 #define MK_BASE(NAME) \
   let bin_writer_##NAME = \
     { \
       size = Size.bin_size_##NAME; \
-      write = Write_ml.bin_write_##NAME; \
-      unsafe_write = Unsafe_write_c.bin_write_##NAME; \
+      write = Write.bin_write_##NAME; \
     } \
   let bin_reader_##NAME = \
     { \
-      read = Read_ml.bin_read_##NAME; \
-      unsafe_read = Unsafe_read_c.bin_read_##NAME; \
-      unsafe_vtag_read = fun _sptr_ptr _eptr _vint -> \
-        Unsafe_read_c.raise_variant_wrong_type \
-          "NAME"; \
+      read = Read.bin_read_##NAME; \
+      vtag_read = variant_wrong_type "NAME"; \
     } \
   let bin_##NAME = \
     { \
@@ -79,10 +77,7 @@ MK_BASE(nat0)
     { \
       size = (fun v -> Size.bin_size_##NAME bin_writer_el.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_##NAME bin_writer_el.write buf ~pos v); \
-      unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_##NAME \
-          bin_writer_el.unsafe_write sptr eptr v); \
+        Write.bin_write_##NAME bin_writer_el.write buf ~pos v); \
     }
 
 #define MK_BASE1(NAME) \
@@ -90,12 +85,8 @@ MK_BASE(nat0)
   let bin_reader_##NAME bin_reader_el = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_##NAME bin_reader_el.read buf ~pos_ref); \
-      unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_##NAME \
-          bin_reader_el.unsafe_read sptr_ptr eptr); \
-      unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
-        Unsafe_read_c.raise_variant_wrong_type "NAME"); \
+        Read.bin_read_##NAME bin_reader_el.read buf ~pos_ref); \
+      vtag_read = variant_wrong_type "NAME"; \
     } \
   let bin_##NAME bin_el = \
     { \
@@ -109,24 +100,15 @@ MK_BASE(nat0)
       size = (fun v -> \
         Size.bin_size_##NAME bin_writer_el1.size bin_writer_el2.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_##NAME \
+        Write.bin_write_##NAME \
           bin_writer_el1.write bin_writer_el2.write buf ~pos v); \
-      unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_##NAME \
-          bin_writer_el1.unsafe_write bin_writer_el2.unsafe_write \
-          sptr eptr v); \
     } \
   let bin_reader_##NAME bin_reader_el1 bin_reader_el2 = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_##NAME \
+        Read.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read buf ~pos_ref); \
-      unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_##NAME \
-          bin_reader_el1.unsafe_read bin_reader_el2.unsafe_read \
-          sptr_ptr eptr); \
-      unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
-        Unsafe_read_c.raise_variant_wrong_type "NAME"); \
+      vtag_read = variant_wrong_type "NAME"; \
     } \
   let bin_##NAME bin_el1 bin_el2 = \
     { \
@@ -141,26 +123,17 @@ MK_BASE(nat0)
         Size.bin_size_##NAME \
           bin_writer_el1.size bin_writer_el2.size bin_writer_el3.size v); \
       write = (fun buf ~pos v -> \
-        Write_ml.bin_write_##NAME \
+        Write.bin_write_##NAME \
           bin_writer_el1.write bin_writer_el2.write \
           bin_writer_el3.write buf ~pos v); \
-      unsafe_write = (fun sptr eptr v -> \
-        Unsafe_write_c.bin_write_##NAME \
-          bin_writer_el1.unsafe_write bin_writer_el2.unsafe_write \
-          bin_writer_el3.unsafe_write sptr eptr v); \
     } \
   let bin_reader_##NAME bin_reader_el1 bin_reader_el2 bin_reader_el3 = \
     { \
       read = (fun buf ~pos_ref -> \
-        Read_ml.bin_read_##NAME \
+        Read.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read \
           bin_reader_el3.read buf ~pos_ref); \
-      unsafe_read = (fun sptr_ptr eptr -> \
-        Unsafe_read_c.bin_read_##NAME \
-          bin_reader_el1.unsafe_read bin_reader_el2.unsafe_read \
-          bin_reader_el3.unsafe_read sptr_ptr eptr); \
-      unsafe_vtag_read = (fun _sptr_ptr _eptr _vint -> \
-        Unsafe_read_c.raise_variant_wrong_type "NAME"); \
+      vtag_read = variant_wrong_type "NAME"; \
     } \
   let bin_##NAME bin_el1 bin_el2 bin_el3 = \
     { \
@@ -213,17 +186,13 @@ let cnv_writer cnv tp_class =
   {
     size = (fun v -> tp_class.size (cnv v));
     write = (fun buf ~pos v -> tp_class.write buf ~pos (cnv v));
-    unsafe_write = (fun sptr eptr v ->
-      tp_class.unsafe_write sptr eptr (cnv v));
   }
 
 let cnv_reader cnv tp_class =
   {
     read = (fun buf ~pos_ref -> cnv (tp_class.read buf ~pos_ref));
-    unsafe_read = (fun sptr_ptr eptr ->
-      cnv (tp_class.unsafe_read sptr_ptr eptr));
-    unsafe_vtag_read = (fun sptr_ptr eptr vtag ->
-      cnv (tp_class.unsafe_vtag_read sptr_ptr eptr vtag));
+    vtag_read = (fun buf ~pos_ref vtag ->
+      cnv (tp_class.vtag_read buf ~pos_ref vtag));
   }
 
 let cnv for_writer for_reader tp_class =
