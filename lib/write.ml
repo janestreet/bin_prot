@@ -238,7 +238,7 @@ let bin_write_nativeint buf ~pos n =
     ALL_BIN_WRITE_INT64(buf, pos, Int64.of_nativeint n)
   end
 #else
-  if n >= 0x00008000L || n < -0x00008000L then begin
+  if n >= 0x00008000n || n < -0x00008000n then begin
     assert_pos pos;
     ALL_BIN_WRITE_INT32(buf, pos, Nativeint.to_int32 n)
   end

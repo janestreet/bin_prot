@@ -44,7 +44,7 @@ let unsafe_get8_signed buf pos =
 
 #define SAFE_INT_OF_INT32(pos, x) \
   (if (x) >= -0x4000_0000l && (x) < 0x4000_0000l then \
-     Int32.of_int (x) \
+     Int32.to_int (x) \
    else \
      raise_read_error ReadError.Int_overflow (pos))
 
@@ -55,7 +55,7 @@ let unsafe_get8_signed buf pos =
      raise_read_error ReadError.Int_overflow (pos))
 
 #define SAFE_NATIVEINT_OF_INT64(pos, x) \
-  (if (x) >= -0x0000_0000_8000_0000L && (x) < 0x0000_0000_8000_0000l then \
+  (if (x) >= -0x0000_0000_8000_0000L && (x) < 0x0000_0000_8000_0000L then \
      Int64.to_nativeint (x) \
    else \
      raise_read_error ReadError.Int_overflow (pos))
@@ -585,7 +585,11 @@ let bin_read_bigstring buf ~pos_ref =
 let bin_read_float_array buf ~pos_ref =
   let pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
+#ifdef ARCH_SIXTYFOUR
   if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long pos;
+#else
+  if len > max_array_length_2   then raise_read_error ReadError.Array_too_long pos;
+#endif
   let size = len * 8 in
   let pos = !pos_ref in
   let next = pos + size in
