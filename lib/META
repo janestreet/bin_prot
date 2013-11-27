@@ -1,0 +1,20 @@
+# OASIS_START
+# DO NOT EDIT (digest: 1adfd430f3521b1e58da1b5f9960b7fd)
+version = "109.53.00"
+description = "bin_prot - binary protocol generator"
+requires = "unix bigarray"
+archive(byte) = "bin_prot.cma"
+archive(byte, plugin) = "bin_prot.cma"
+archive(native) = "bin_prot.cmxa"
+archive(native, plugin) = "bin_prot.cmxs"
+exists_if = "bin_prot.cma"
+package "syntax" (
+ version = "109.53.00"
+ description = "Syntax extension for binary protocol generator"
+ requires = "camlp4 type_conv bin_prot"
+ archive(syntax, preprocessor) = "pa_bin_prot.cma"
+ archive(syntax, toploop) = "pa_bin_prot.cma"
+ exists_if = "pa_bin_prot.cma"
+)
+# OASIS_STOP
+
