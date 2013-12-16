@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: d6b0da1872572b37d4ff493dfc0f6ff9) *)
+(* DO NOT EDIT (digest: 83fd5cdf26f1c5e031fc6013d15d2ddc) *)
 This is the INSTALL file for the bin_prot distribution.
 
 This package uses OASIS to generate its build system. See section OASIS for
@@ -25,7 +25,7 @@ Installing
 Uninstalling
 ============
 
-1. Go to the root of the package 
+1. Go to the root of the package
 2. Run 'ocaml setup.ml -uninstall'
 
 OASIS
