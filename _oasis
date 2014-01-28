@@ -82,10 +82,3 @@ Executable example
   Install:            false
   CompiledObject:     best
   BuildDepends:       bin_prot,bin_prot.syntax
-
-Document "bin_prot"
-  Title:                API reference for bin_prot
-  Type:                 ocamlbuild (0.3)
-  BuildTools+:          ocamldoc
-  XOCamlbuildPath:      lib
-  XOCamlbuildLibraries: bin_prot
