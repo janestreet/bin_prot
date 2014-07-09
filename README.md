@@ -88,8 +88,9 @@ use the preprocessor macros to generate code from type definitions, make sure
 that the contents of this module is visible by e.g. adding the following at
 the top of files using this library:
 
-    :::ocaml
-    open Bin_prot.Std
+```ocaml
+open Bin_prot.Std
+```
 
 Note that you can shadow the definitions in the above module in the unlikely
 event that the predefined ways of converting data are unsatisfactory to you.
@@ -128,8 +129,9 @@ maps, etc.).
 
 Consider the following type definition:
 
-    :::ocaml
-    type t = A | B with bin_io
+```ocaml
+type t = A | B with bin_io
+```
 
 This will generate the functions `bin_size_t`, `bin_write_t`, and `bin_read_t`,
 as well as the type class values `bin_writer_t`, `bin_reader_t`, and `bin_t`.
@@ -163,11 +165,12 @@ used in the protocol for the contents of integers on all platforms.
 
 The following definitions will be used in the encoding specifications below:
 
-    :::text
-    CODE_NEG_INT8  ->  0xff
-    CODE_INT16     ->  0xfe
-    CODE_INT32     ->  0xfd
-    CODE_INT64     ->  0xfc
+```text
+CODE_NEG_INT8  ->  0xff
+CODE_INT16     ->  0xfe
+CODE_INT32     ->  0xfd
+CODE_INT64     ->  0xfc
+```
 
 ### Nat0.t
 
@@ -180,11 +183,12 @@ If the value of the underlying integer is lower than a certain range,
 this implies a certain encoding as provided on the right hand side of the
 following definitions:
 
-    :::text
-    <  0x000000080  ->  lower 8 bits of the integer                     (1 byte)
-    <  0x000010000  ->  CODE_INT16 followed by lower 16 bits of integer (3 bytes)
-    <  0x100000000  ->  CODE_INT32 followed by lower 32 bits of integer (5 bytes)
-    >= 0x100000000  ->  CODE_INT64 followed by all 64 bits of integer   (9 bytes)
+```text
+<  0x000000080  ->  lower 8 bits of the integer                     (1 byte)
+<  0x000010000  ->  CODE_INT16 followed by lower 16 bits of integer (3 bytes)
+<  0x100000000  ->  CODE_INT32 followed by lower 32 bits of integer (5 bytes)
+>= 0x100000000  ->  CODE_INT64 followed by all 64 bits of integer   (9 bytes)
+```
 
 The last line in the definitions above is only supported on 64 bit platforms
 due to word size limitations.
@@ -197,15 +201,17 @@ reserving one bit for GC-tagging and the sign bit being lost.
 
 ### Unit values
 
-    :::text
-    ()  ->  0x00
+```text
+()  ->  0x00
+```
 
 
 ### Booleans
 
-    :::text
-    false  ->  0x00
-    true   ->  0x01
+```text
+false  ->  0x00
+true   ->  0x01
+```
 
 ### Strings
 
@@ -221,19 +227,21 @@ Characters are written out verbatim.
 This includes all integer types: `int`, `int32`, `int64`, `nativeint`.
 If the value is positive (including zero) and if it is:
 
-    :::text
-    <  0x00000080  ->  lower 8 bits of the integer                     (1 byte)
-    <  0x00008000  ->  CODE_INT16 followed by lower 16 bits of integer (3 bytes)
-    <  0x80000000  ->  CODE_INT32 followed by lower 32 bits of integer (5 bytes)
-    >= 0x80000000  ->  CODE_INT64 followed by all 64 bits of integer   (9 bytes)
+```text
+<  0x00000080  ->  lower 8 bits of the integer                     (1 byte)
+<  0x00008000  ->  CODE_INT16 followed by lower 16 bits of integer (3 bytes)
+<  0x80000000  ->  CODE_INT32 followed by lower 32 bits of integer (5 bytes)
+>= 0x80000000  ->  CODE_INT64 followed by all 64 bits of integer   (9 bytes)
+```
 
 If the value is negative and if it is:
 
-    :::text
-    >= -0x00000080  ->  CODE_NEG_INT8 followed by lower 8 bits of integer (2 bytes)
-    >= -0x00008000  ->  CODE_INT16 followed by lower 16 bits of integer   (3 bytes)
-    >= -0x80000000  ->  CODE_INT32 followed by lower 32 bits of integer   (5 bytes)
-    <  -0x80000000  ->  CODE_INT64 followed by all 64 bits of integer     (9 bytes)
+```text
+>= -0x00000080  ->  CODE_NEG_INT8 followed by lower 8 bits of integer (2 bytes)
+>= -0x00008000  ->  CODE_INT16 followed by lower 16 bits of integer   (3 bytes)
+>= -0x80000000  ->  CODE_INT32 followed by lower 32 bits of integer   (5 bytes)
+<  -0x80000000  ->  CODE_INT64 followed by all 64 bits of integer     (9 bytes)
+```
 
 All of the above branches will be considered when converting values of type
 `int64`.  The case for `CODE_INT64` will only be considered with types `int`
@@ -264,9 +272,10 @@ calculated value.
 
 If the value is:
 
-    :::text
-    None    ->  0x00
-    Some v  ->  0x01 followed by the encoding of v
+```text
+None    ->  0x00
+Some v  ->  0x01 followed by the encoding of v
+```
 
 ### Tuples and records
 
@@ -281,9 +290,10 @@ Each of the `n` tags in a sum type is assigned an integer from `0` to `n - 1`
 in exactly the same order as they occur in the type.  If a value of this
 type needs to be written out, then if:
 
-    :::text
-    n <= 256    ->  write out lower 8 bits of n  (1 byte)
-    n <= 65536  ->  write out lower 16 bits of n (2 bytes)
+```text
+n <= 256    ->  write out lower 8 bits of n  (1 byte)
+n <= 65536  ->  write out lower 16 bits of n (2 bytes)
+```
 
 Sum types with more tags are currently not supported and highly unlikely
 to occur in practice.  Arguments to the tag are written out in the order
@@ -301,14 +311,15 @@ of occurrence (left-to-right) in the type and depth-first in the case of
 included polymorphic types.  The first type containing a match for the
 variant will be used for reading.  E.g.:
 
-    :::ocaml
-    type ab = [ `A | `B ] with bin_io
-    type cda = [ `C | `D | `A ] with bin_io
-    type abcda = [ ab | cda ] with bin_io
+```ocaml
+type ab = [ `A | `B ] with bin_io
+type cda = [ `C | `D | `A ] with bin_io
+type abcda = [ ab | cda ] with bin_io
+```
 
 When reading type `abcda`, the reader associated with type `ab` rather than
-`cda` will be invoked if a value of type ```A`` can be read.  This may not
-make a difference in this example, but is important to know if the user
+`cda` will be invoked if a value of type `` `A `` can be read.  This may
+not make a difference in this example, but is important to know if the user
 manually overrides converters.  It is strongly recommended to not merge
 polymorphic variants if their readers might disagree about how to interpret
 a certain tag.  This is inconsistent, confusing, and hard to debug.
@@ -342,9 +353,10 @@ copied verbatim.
 There is nothing special about polymorphic values as long as there are
 conversion functions for the type parameters.  E.g.:
 
-    :::ocaml
-    type 'a t = A | B of 'a with bin_io
-    type foo = int t with bin_io
+```ocaml
+type 'a t = A | B of 'a with bin_io
+type foo = int t with bin_io
+```
 
 In the above case the conversion functions will behave as if `foo` had been
 defined as a monomorphic version of `t` with `int` substituted for `'a`
