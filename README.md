@@ -57,7 +57,7 @@ Usage
 The API (`.mli`-files) in the `bin_prot` library directory (`lib`)
 is fully documented, and HTML-documentation can be built from it on
 installation.  The documentation for the latest release can also be found
-[online](http://mmottl.bitbucket.org/projects/bin_prot/api/).
+[online](https://ocaml.janestreet.com/ocaml-core/latest/doc/bin_prot/).
 
 Module `Common` defines some globally used types, functions, exceptions,
 and values.  `Nat0` implements natural numbers including zero.
@@ -385,4 +385,3 @@ contact the maintainers:
 
 Up-to-date information should be available at:
 * <https://github.com/janestreet/bin_prot>
-* <https://bitbucket.org/janestreet/bin_prot>
