@@ -1,3 +1,8 @@
+## 112.01.00
+
+- In `Write`, improved some OCaml macros to name values and avoid
+  calling C functions multiple times.
+
 ## 111.03.00
 
 - Fixed build on ARM.

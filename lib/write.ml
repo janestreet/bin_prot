@@ -53,44 +53,50 @@ external bswap64 : int64 -> int64 = "%bswap_int64";;
 #define UNSAFE_SET8_FROM_INT64(buf, pos, x) (unsafe_set8 (buf) (pos) (Int64.to_int (x)))
 
 #define UNSAFE_SET16LE(buf, pos, x) \
-  unsafe_set8 buf (pos) (x); \
-  unsafe_set8 buf (pos + 1) ((x) asr 8)
+  (let _pos = pos and _x = x in \
+   unsafe_set8 buf _pos  _x; \
+   unsafe_set8 buf (_pos + 1) (_x asr 8))
 
 #define UNSAFE_SET32LE(buf, pos, x) \
-  UNSAFE_SET8_FROM_INT32 (buf, pos, x); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 1, Int32.shift_right (x) 8); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 2, Int32.shift_right (x) 16); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 3, Int32.shift_right (x) 24)
+  (let _pos = pos and _x = x in \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos, _x); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 1, Int32.shift_right _x 8); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 2, Int32.shift_right _x 16); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 3, Int32.shift_right _x 24))
 
 #define UNSAFE_SET64LE(buf, pos, x) \
-  UNSAFE_SET8_FROM_INT64 (buf, pos, x); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 1, Int64.shift_right (x) 8); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 2, Int64.shift_right (x) 16); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 3, Int64.shift_right (x) 24); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 4, Int64.shift_right (x) 32); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 5, Int64.shift_right (x) 40); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 6, Int64.shift_right (x) 48); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 7, Int64.shift_right (x) 56)
+  (let _pos = pos and _x = x in \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos, _x); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 1, Int64.shift_right _x 8); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 2, Int64.shift_right _x 16); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 3, Int64.shift_right _x 24); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 4, Int64.shift_right _x 32); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 5, Int64.shift_right _x 40); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 6, Int64.shift_right _x 48); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 7, Int64.shift_right _x 56))
 
 #define UNSAFE_SET16BE(buf, pos, x) \
-  unsafe_set8 buf (pos + 1) (x); \
-  unsafe_set8 buf (pos) ((x) lsr 8)
+  (let _pos = pos and _x = x in \
+   unsafe_set8 buf (_pos + 1) _x; \
+   unsafe_set8 buf _pos (_x lsr 8))
 
 #define UNSAFE_SET32BE(buf, pos, x) \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 3, x); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 2, Int32.shift_right (x) 8); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos + 1, Int32.shift_right (x) 16); \
-  UNSAFE_SET8_FROM_INT32 (buf, pos, Int32.shift_right (x) 24)
+  (let _pos = pos and _x = x in \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 3, _x); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 2, Int32.shift_right _x 8); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos + 1, Int32.shift_right _x 16); \
+   UNSAFE_SET8_FROM_INT32 (buf, _pos, Int32.shift_right _x 24))
 
 #define UNSAFE_SET64BE(buf, pos, x) \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 7, x); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 6, Int64.shift_right (x) 8); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 5, Int64.shift_right (x) 16); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 4, Int64.shift_right (x) 24); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 3, Int64.shift_right (x) 32); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 2, Int64.shift_right (x) 40); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos + 1, Int64.shift_right (x) 48); \
-  UNSAFE_SET8_FROM_INT64 (buf, pos, Int64.shift_right (x) 56)
+  (let _pos = pos and _x = x in \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 7, _x); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 6, Int64.shift_right _x 8); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 5, Int64.shift_right _x 16); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 4, Int64.shift_right _x 24); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 3, Int64.shift_right _x 32); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 2, Int64.shift_right _x 40); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos + 1, Int64.shift_right _x 48); \
+   UNSAFE_SET8_FROM_INT64 (buf, _pos, Int64.shift_right _x 56))
 
 #endif
 
