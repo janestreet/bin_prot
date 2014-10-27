@@ -171,9 +171,6 @@ let rec copy_htbl_list htbl = function
   | [] -> htbl
   | (k, v) :: rest -> Hashtbl.add htbl k v; copy_htbl_list htbl rest
 
-external variant_of_int : int -> [> ] = "%identity"
-
-
 (* Bigarrays *)
 
 type vec32 = (float, float32_elt, fortran_layout) Array1.t

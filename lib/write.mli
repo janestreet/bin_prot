@@ -38,8 +38,8 @@ val bin_write_mat : mat writer
 val bin_write_bigstring : buf writer
 val bin_write_float_array : float array writer
 
-val bin_write_variant_tag : [> ] writer
-(** [bin_write_variant_tag] writes out the exact little-endian bit
+val bin_write_variant_int : int writer
+(** [bin_write_variant_int] writes out the exact little-endian bit
     representation of the variant tag of the given value (= 32 bits). *)
 
 val bin_write_int_8bit : int writer

@@ -52,6 +52,15 @@ let bin_read_float = Read.bin_read_float
 let __bin_read_float__ _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "float" !pos_ref
 
+type float_array = float array
+let bin_float_array = Type_class.bin_float_array
+let bin_writer_float_array = Type_class.bin_writer_float_array
+let bin_write_float_array = Write.bin_write_float_array
+let bin_reader_float_array = Type_class.bin_reader_float_array
+let bin_read_float_array = Read.bin_read_float_array
+let __bin_read_float_array__ _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "float_array" !pos_ref
+
 let bin_int32 = Type_class.bin_int32
 let bin_writer_int32 = Type_class.bin_writer_int32
 let bin_write_int32 = Write.bin_write_int32

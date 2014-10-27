@@ -478,8 +478,8 @@ module Generate_bin_write = struct
       | <:ctyp< $tp1$ | $tp2$ >> -> <:match_case< $loop tp1$ | $loop tp2$ >>
       | <:ctyp< `$cnstr$ >> ->
           <:match_case<
-            `$cnstr$ as v ->
-              Bin_prot.Write.bin_write_variant_tag buf ~pos v
+            `$cnstr$ ->
+              Bin_prot.Write.bin_write_variant_int buf ~pos $`int:Pa_type_conv.hash_variant cnstr$
           >>
       | <:ctyp< `$cnstr$ of $tp$ >> ->
           let write_args =
@@ -488,9 +488,9 @@ module Generate_bin_write = struct
             | `Match matchings -> <:expr< match args with [ $matchings$ ] >>
           in
           <:match_case<
-            `$cnstr$ args as v ->
+            `$cnstr$ args ->
               let pos =
-                Bin_prot.Write.bin_write_variant_tag buf ~pos v
+                Bin_prot.Write.bin_write_variant_int buf ~pos $`int:Pa_type_conv.hash_variant cnstr$
               in
               $write_args$
           >>
@@ -831,7 +831,7 @@ module Generate_bin_read = struct
     let atoms_only = ref true in
     let code =
       let mk_check_vint mcs =
-        <:expr< match Bin_prot.Common.variant_of_int vint with [ $mcs$ ] >>
+        <:expr< match vint with [ $mcs$ ] >>
       in
       let mk_try_next_expr call next_expr =
         <:expr<
@@ -849,13 +849,13 @@ module Generate_bin_read = struct
             | `None -> raise_nvm
       and loop_one next t = function
         | <:ctyp< `$cnstr$ >> ->
-            let this_mc = <:match_case< `$cnstr$ as tag -> tag >> in
+            let this_mc = <:match_case< $`int:Pa_type_conv.hash_variant cnstr$ -> `$cnstr$ >> in
             add_mc next this_mc t
         | <:ctyp< `$cnstr$ of $arg_tp$ >> ->
             atoms_only := false;
             let bnds, args_expr = handle_arg_tp _loc full_type_name arg_tp in
             let rhs = let_ins _loc bnds <:expr< `$cnstr$ $args_expr$ >> in
-            let this_mc = <:match_case< `$cnstr$ -> $rhs$ >> in
+            let this_mc = <:match_case< $`int:Pa_type_conv.hash_variant cnstr$ -> $rhs$ >> in
             add_mc next this_mc t
         | (<:ctyp< $id:_$ >> | <:ctyp< $_$ $_$ >>
         | <:ctyp< #$id:_$ >>) as inh ->

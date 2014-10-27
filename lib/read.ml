@@ -353,13 +353,23 @@ let bin_read_int buf ~pos_ref =
     raise_read_error ReadError.Int_code pos
 ;;
 
+
+(* The C stubs returns the address of buf.{pos} as a float array. This is a hack to trick
+   OCaml to read the float at this address. This way it can unbox when [bin_read_float] is
+   inlined. *)
+external get_float_offset : buf -> pos -> float array
+  = "bin_prot_get_float_offset" "noalloc"
+
 let bin_read_float buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  pos_ref := next; (* No error possible either. *)
-  Int64.float_of_bits (UNSAFE_GET64LE(buf, pos))
+  pos_ref := next;
+  (* We must use the unsafe function to prevent OCaml from checking the length: the float
+     array returned by [get_float_offset] has no header! *)
+  Array.unsafe_get (get_float_offset buf pos) 0
+;;
 
 let bin_read_int32 buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -614,11 +624,6 @@ let bin_read_variant_int buf ~pos_ref =
     pos_ref := next;
     Int32.to_int (Int32.shift_right n 1)
   end
-
-external variant_tag_of_int : int -> [> ] = "%identity"
-
-let bin_read_variant_tag buf ~pos_ref =
-  variant_tag_of_int (bin_read_variant_int buf ~pos_ref)
 ;;
 
 let bin_read_int_8bit buf ~pos_ref =

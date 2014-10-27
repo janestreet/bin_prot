@@ -103,9 +103,9 @@ val bin_writer_float_array : float array writer
 val bin_reader_float_array : float array reader
 val bin_float_array : float array t
 
-val bin_writer_variant_tag : [> ] writer
-val bin_reader_variant_tag : [> ] reader
-val bin_variant_tag : [> ] t
+val bin_writer_variant_int : int writer
+val bin_reader_variant_int : int reader
+val bin_variant_int : int t
 
 MK_BASE_TP(int_8bit, int)
 MK_BASE_TP(int_16bit, int)

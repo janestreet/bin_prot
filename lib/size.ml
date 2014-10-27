@@ -50,7 +50,15 @@ let bin_size_string str =
   let size_len = bin_size_nat0 plen in
   size_len + len
 
-let bin_size_float _ = 8
+let bin_size_float f =
+  (* If we just ignore the argument the compiler will still require it to exist and be
+     boxed. This means that if for instance we call this for a field of a float record,
+     the compiler will allocate the float for nothing.
+
+     With this line the compiler really ignores the float. *)
+  ignore (truncate f);
+  8
+;;
 
 #ifdef ARCH_SIXTYFOUR
 let bin_size_int32 n = bin_size_int (Int32.to_int n)
@@ -151,7 +159,7 @@ let bin_size_float_array ar =
   let len = Array.length ar in
   bin_size_len len + 8 * len
 
-let bin_size_variant_tag _ = 4
+let bin_size_variant_int _ = 4
 
 let bin_size_int_8bit _ = 1
 let bin_size_int_16bit _ = 2

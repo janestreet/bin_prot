@@ -782,15 +782,15 @@ let test =
       "variant_tag" >::
         (fun () ->
           check_all 4 "variant_tag"
-            Read.bin_read_variant_tag
-            Write.bin_write_variant_tag
+            Read.bin_read_variant_int
+            Write.bin_write_variant_int
             [
-              (`Foo, "`Foo", 4);
-              (`Bar, "`Bar", 4);
+              ((Obj.magic `Foo : int), "`Foo", 4);
+              ((Obj.magic `Bar : int), "`Bar", 4);
             ];
           let bad_buf = Bigstring.of_string "\000\000\000\000" in
           "Variant_tag" @? expect_read_error Variant_tag 0 (fun () ->
-            Read.bin_read_variant_tag bad_buf ~pos_ref:(ref 0))
+            Read.bin_read_variant_int bad_buf ~pos_ref:(ref 0))
         );
 
       "int64_bits" >::

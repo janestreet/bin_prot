@@ -39,7 +39,6 @@ val bin_read_mat : mat reader
 val bin_read_bigstring : buf reader
 val bin_read_float_array : float array reader
 val bin_read_variant_int : int reader
-val bin_read_variant_tag : [> ] reader
 val bin_read_int_8bit : int reader
 val bin_read_int_16bit : int reader
 val bin_read_int_32bit : int reader

@@ -143,9 +143,6 @@ val copy_htbl_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
 (** [copy_htbl_list htbl lst] adds all [(key, value)] pairs in [lst]
     to hash table [htbl]. *)
 
-external variant_of_int : int -> [> ] = "%identity"
-
-
 (** {2 NOTE: unsafe functions!!!} *)
 
 external unsafe_blit_buf :

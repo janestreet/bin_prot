@@ -204,11 +204,16 @@ let bin_write_string buf ~pos str =
   unsafe_blit_string_buf ~src_pos:0 str ~dst_pos:new_pos buf ~len;
   next
 
+
+(* Same trick as in read.ml *)
+external get_float_offset : buf -> pos -> float array
+  = "bin_prot_get_float_offset" "noalloc"
+
 let bin_write_float buf ~pos x =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  UNSAFE_SET64LE(buf, pos, Int64.bits_of_float x);
+  Array.unsafe_set (get_float_offset buf pos) 0 x;
   next
 
 #ifdef ARCH_SIXTYFOUR
@@ -381,13 +386,10 @@ let bin_write_float_array buf ~pos a =
   unsafe_blit_float_array_buf a buf ~src_pos:0 ~dst_pos:pos ~len;
   next
 
-let bin_write_variant_tag buf ~pos (x : [> ]) =
+let bin_write_variant_int buf ~pos x =
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
-  let x = Obj.repr x in
-  let x = if Obj.is_int x then x else Obj.field x 0 in
-  let x : int = Obj.obj x in
   UNSAFE_SET32LE(buf, pos, Int32.logor (Int32.shift_left (Int32.of_int x) 1) 1l);
   next
 

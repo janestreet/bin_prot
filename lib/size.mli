@@ -34,7 +34,7 @@ val bin_size_float64_mat : mat64 sizer
 val bin_size_mat : mat sizer
 val bin_size_bigstring : buf sizer
 val bin_size_float_array : float array sizer
-val bin_size_variant_tag : [> ] sizer
+val bin_size_variant_int : int sizer
 val bin_size_int_8bit : int sizer
 val bin_size_int_16bit : int sizer
 val bin_size_int_32bit : int sizer
