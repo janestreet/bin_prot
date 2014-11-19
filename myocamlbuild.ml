@@ -5,7 +5,7 @@ let dispatch = function
   | After_rules ->
     let env = BaseEnvLight.load () in
     let system = BaseEnvLight.var_get "system" env in
-    let cc = BaseEnvLight.var_get "ccomp_type" env in
+    let cc = BaseEnvLight.var_get "bytecomp_c_compiler" env in
     let is_darwin = String.is_prefix "macos" system in
     let arch_sixtyfour = BaseEnvLight.var_get "arch_sixtyfour" env = "true" in
 
