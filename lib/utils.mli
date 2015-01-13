@@ -3,6 +3,26 @@
 open Common
 open Type_class
 
+val size_header_length : int
+(** [size_header_length] is the standard number of bytes allocated for the size header in
+    size-prefixed bin-io payloads. This size-prefixed layout is used by the [bin_dump]
+    and [bin_read_stream] functions below, as well as:
+      - Core.Std.Bigstring.{read,write}_bin_prot
+      - Core.Std.Unpack_buffer.unpack_bin_prot
+      - Async.Std.{Reader,Writer}.{read,write}_bin_prot
+    among others.
+
+    The size prefix is always 8 bytes at present. This is exposed so your program does not
+    have to know this fact too.
+
+    We do not use a variable length header because we want to know how many bytes to read
+    to get the size without having to peek into the payload. *)
+
+val bin_read_size_header : int Read.reader
+val bin_write_size_header : int Write.writer
+(** [bin_read_size_header] and [bin_write_size_header] are bin-prot serializers for the
+    size header described above. *)
+
 val bin_dump : ?header : bool -> 'a writer -> 'a -> buf
 (** [bin_dump ?header writer v] uses [writer] to first compute the size of
     [v] in the binary protocol, then allocates a buffer of exactly this

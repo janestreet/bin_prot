@@ -16,6 +16,9 @@ type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 val create_buf : int -> buf
 (** [create_buf n] creates a buffer of size [n]. *)
 
+val buf_len : buf -> int
+(** [buf_len buf] returns the length of [buf]. *)
+
 val assert_pos : pos -> unit
 (** [assert_pos pos] @raise Invalid_argument if position [pos] is negative. *)
 

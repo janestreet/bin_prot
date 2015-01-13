@@ -1,20 +1,21 @@
 (* Utils: utility functions for user convenience *)
 
 open Common
-open Read
-open Write
 open Size
 open Type_class
 
-let header_len = 8
+let size_header_length = 8
+
+let bin_write_size_header = Write.bin_write_int_64bit
+let bin_read_size_header = Read.bin_read_int_64bit
 
 let bin_dump ?(header = false) writer v =
   let buf, pos, pos_len =
     let v_len = writer.size v in
     if header then
-      let tot_len = v_len + header_len in
+      let tot_len = v_len + size_header_length in
       let buf = create_buf tot_len in
-      let pos = bin_write_int64_bits buf ~pos:0 (Int64.of_int v_len) in
+      let pos = bin_write_size_header buf ~pos:0 v_len in
       buf, pos, pos + v_len
     else
       let buf = create_buf v_len in
@@ -28,36 +29,30 @@ let bin_dump ?(header = false) writer v =
 (* Reading from streams *)
 
 let bin_read_stream ?max_size ~read reader =
-  let buf = create_buf header_len in
-  read buf ~pos:0 ~len:header_len;
+  let buf = create_buf size_header_length in
+  read buf ~pos:0 ~len:size_header_length;
   let pos_ref = ref 0 in
-  let len64 = bin_read_int64_bits buf ~pos_ref in
-  let len = Int64.to_int len64 in
-  if Int64.of_int len <> len64 then
+  let len = bin_read_size_header buf ~pos_ref in
+  match max_size with
+  | Some max_size when len > max_size ->
     failwith (
       Printf.sprintf
-        "Bin_prot.Utils.bin_read_stream: size header overflow: %Ld" len64)
-  else
-    match max_size with
-    | Some max_size when len > max_size ->
-        failwith (
-          Printf.sprintf
-            "Bin_prot.Utils.bin_read_stream: size exceeds max_size: %d > %d"
-            len max_size)
-    | _ ->
-        let buf = if len > header_len then create_buf len else buf in
-        read buf ~pos:0 ~len;
-        pos_ref := 0;
-        let res = reader.read buf ~pos_ref in
-        if !pos_ref = len then res
-        else
-          let msg =
-            Printf.sprintf
-              "Bin_prot.Utils.bin_read_stream: \
-              protocol lied about length of value: expected %d, received %d"
-              len !pos_ref
-          in
-          failwith msg
+        "Bin_prot.Utils.bin_read_stream: size exceeds max_size: %d > %d"
+        len max_size)
+  | _ ->
+    let buf = if len > size_header_length then create_buf len else buf in
+    read buf ~pos:0 ~len;
+    pos_ref := 0;
+    let res = reader.read buf ~pos_ref in
+    if !pos_ref = len then res
+    else
+      let msg =
+        Printf.sprintf
+          "Bin_prot.Utils.bin_read_stream: \
+           protocol lied about length of value: expected %d, received %d"
+          len !pos_ref
+      in
+      failwith msg
 
 
 (* Conversion of binable types *)

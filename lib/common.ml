@@ -80,6 +80,8 @@ type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 
 let create_buf n = Array1.create Bigarray.char c_layout n
 
+let buf_len buf = Array1.dim buf
+
 let assert_pos pos =
   if pos < 0 then array_bound_error ()
 

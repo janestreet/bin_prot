@@ -1,3 +1,9 @@
+## 112.17.00
+
+- Added `Bin_prot.Blob`, formerly known as `Core_extended.Wrapped`,
+  which has efficient handling of size-prefixed bin-io values in cases
+  where serialization can be bypassed.
+
 ## 112.06.00
 
 - Sped up `float` and `float array` operations.
