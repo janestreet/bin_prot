@@ -6,6 +6,12 @@ module type S = sig
   val bin_size_t : t Size.sizer
   val bin_write_t : t Write.writer
   val bin_read_t : t Read.reader
+  (**
+     This function only needs implementation if [t] exposed to be a polymorphic variant.
+     Despite what the type reads, this does *not* produce a function after reading;
+     instead it takes the constructor tag (int) before reading and reads the rest of the
+     variant [t] afterwards.
+  *)
   val __bin_read_t__ : (int -> t) Read.reader
   val bin_writer_t : t Type_class.writer
   val bin_reader_t : t Type_class.reader

@@ -46,7 +46,7 @@ include Binable.S1 with type 'a t = 'a
     piece: perhaps you want to operate on a bin-prot stream, transforming some bits of
     the stream and passing the others through untouched. In these cases you can
     deserialize using the bin-prot converters for a type involving [Opaque.t]. This is
-    anologuous to reading a sexp file / operating on a sexp stream and using
+    analogous to reading a sexp file / operating on a sexp stream and using
     (de-)serialization functions for a type involving [Sexp.t].
 *)
 module Opaque : Binable.S

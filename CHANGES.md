@@ -1,3 +1,7 @@
+## 112.24.00
+
+Minor commit: comments.
+
 ## 112.17.00
 
 - Added `Bin_prot.Blob`, formerly known as `Core_extended.Wrapped`,
