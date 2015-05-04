@@ -48,7 +48,7 @@ Library pa_bin_prot
   XMETADescription:   Syntax extension for binary protocol generator
 
 Executable test_runner
-  Path:               lib_test
+  Path:               test
   MainIs:             test_runner.ml
   Build$:             flag(tests)
   Install:            false
@@ -59,10 +59,10 @@ Executable test_runner
 Test test_runner
   Run$:               flag(tests)
   Command:            $test_runner
-  WorkingDirectory:   lib_test
+  WorkingDirectory:   test
 
 Executable mac_test
-  Path:               lib_test
+  Path:               test
   MainIs:             mac_test.ml
   Build$:             flag(tests)
   Install:            false
@@ -73,10 +73,10 @@ Executable mac_test
 Test mac_test
   Run$:               flag(tests)
   Command:            $mac_test
-  WorkingDirectory:   lib_test
+  WorkingDirectory:   test
 
 Executable example
-  Path:               lib_test
+  Path:               test
   MainIs:             example.ml
   Build$:             flag(tests)
   Install:            false
