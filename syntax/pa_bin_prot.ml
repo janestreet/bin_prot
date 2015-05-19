@@ -32,6 +32,15 @@ let let_ins _loc bindings expr =
     <:expr< let $binding$ in $expr$ >>
   ) bindings expr
 
+let alias_or_fun expr fct =
+  let is_id =
+    match expr with
+    | <:expr< $id:_$ >> -> true
+    | _ -> false
+  in
+  if is_id then expr else fct
+;;
+
 (* Generators for the binary protocol *)
 
 (* Generates the signature for binary protocol writers *)
@@ -347,7 +356,7 @@ module Generate_bin_size = struct
       in
       match loop _loc rhs with
       | `Fun fun_expr when !is_nil -> fun_expr
-      | `Fun fun_expr -> <:expr< fun v -> $fun_expr$ v >>
+      | `Fun fun_expr -> alias_or_fun fun_expr <:expr< fun v -> $fun_expr$ v >>
       | `Match matchings -> <:expr< fun [ $matchings$ ] >>
     in
     let tparam_cnvs = List.map ((^) "_size_of_" *** Gen.get_tparam_id) tps in
@@ -605,7 +614,8 @@ module Generate_bin_write = struct
       in
       match loop _loc rhs with
       | `Fun expr when !is_nil -> <:expr< fun _buf ~pos:_ _v -> $expr$ >>
-      | `Fun fun_expr -> <:expr< fun buf ~pos v -> $fun_expr$ buf ~pos v >>
+      | `Fun fun_expr ->
+        alias_or_fun fun_expr <:expr< fun buf ~pos v -> $fun_expr$ buf ~pos v >>
       | `Match matchings -> <:expr< fun buf ~pos -> fun [ $matchings$ ] >>
     in
     let tparam_cnvs = List.map ( (^) "_write_" *** Gen.get_tparam_id) tps in
@@ -627,7 +637,7 @@ module Generate_bin_write = struct
         let call =
           Gen.apply _loc <:expr< $lid:size_name$ >> tparam_size_exprs
         in
-        <:expr< fun v -> $call$ v >>
+        alias_or_fun call <:expr< fun v -> $call$ v >>
       in
       let tparam_write_exprs =
         List.map (fun tp ->
@@ -641,7 +651,7 @@ module Generate_bin_write = struct
         let call =
           Gen.apply _loc <:expr< $lid:write_name$ >> tparam_write_exprs
         in
-        <:expr< fun buf ~pos v -> $call$ buf ~pos v >>
+        alias_or_fun call <:expr< fun buf ~pos v -> $call$ buf ~pos v >>
       in
       let write =
         <:expr<
@@ -1060,7 +1070,8 @@ module Generate_bin_read = struct
           >>
         else
           match oc_body with
-          | `Closed expr -> <:expr< fun buf ~pos_ref -> $expr$ buf ~pos_ref >>
+          | `Closed expr ->
+            alias_or_fun expr <:expr< fun buf ~pos_ref -> $expr$ buf ~pos_ref >>
           | `Open body -> <:expr< fun buf ~pos_ref -> $body$ >>
       in
       let func = Gen.abstract _loc arg_patts body in
@@ -1099,9 +1110,10 @@ module Generate_bin_read = struct
                               _loc (("__" ^ call ^ "__") :: rest)$
                           >>
                         in
-                        <:expr<
+                        let cnv_expr = cnv expr in
+                        alias_or_fun cnv_expr <:expr<
                           fun buf ~pos_ref vint ->
-                            $cnv expr$ buf ~pos_ref vint
+                            $cnv_expr$ buf ~pos_ref vint
                         >>
                     | _ -> assert false)  (* impossible *)
                 | _ -> assert false  (* impossible *)
@@ -1133,14 +1145,14 @@ module Generate_bin_read = struct
         Gen.apply _loc <:expr< $lid:read_name$ >>
           tparam_read_exprs
       in
-      <:expr< fun buf ~pos_ref -> $call$ buf ~pos_ref >>
+      alias_or_fun call <:expr< fun buf ~pos_ref -> $call$ buf ~pos_ref >>
     in
     let vtag_read =
       let call =
         Gen.apply _loc <:expr< $lid:vtag_read_name$ >>
           tparam_read_exprs
       in
-      <:expr< fun buf ~pos_ref vtag -> $call$ buf ~pos_ref vtag >>
+      alias_or_fun call <:expr< fun buf ~pos_ref vtag -> $call$ buf ~pos_ref vtag >>
     in
     let reader =
       <:expr<

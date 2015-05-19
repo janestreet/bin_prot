@@ -636,8 +636,34 @@ let test =
               Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
             let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
             "ArrayMaximimum (float)" @? expect_buffer_short (fun () ->
-              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0))
+              Read.bin_read_float_array bad_buf ~pos_ref:(ref 0));
 
+          (* Test that the binary forms of [float array] and [float_array] are the same *)
+          let arrays =
+            let rec loop acc len =
+              if len < 0 then acc
+              else
+                let a = Array.init len (fun i -> float_of_int (i + len)) in
+                let txt = Printf.sprintf "float array, len = %d" len in
+                let buf = len * 8 + Size.bin_size_nat0 (Nat0.unsafe_of_int len) in
+                loop ((a, txt, buf) :: acc) (len - 1)
+            in
+            loop [] 255 in
+          let len = 255 * 8 + Size.bin_size_nat0 (Nat0.unsafe_of_int 255) in
+          check_all len "float array -> float_array"
+            Read.bin_read_float_array (Write.bin_write_array Write.bin_write_float)
+            arrays;
+          check_all len "float_array -> float array"
+            (Read.bin_read_array Read.bin_read_float) (Write.bin_write_float_array)
+            arrays;
+
+          (* Check that the canonical closures used in the short circuit test of float
+             arrays are indeed allocated closures as opposed to [compare] for example
+             which is a primitive.  Even if it looks like a tautology, it is not. (for
+             example, [compare == compare] is false. *)
+          assert (bin_write_float == bin_write_float);
+          assert (bin_read_float  == bin_read_float);
+          assert (bin_size_float  == bin_size_float);
         );
 
       "hashtbl" >::

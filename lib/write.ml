@@ -289,6 +289,16 @@ let bin_write_list bin_write_el buf ~pos lst =
   let els_pos = bin_write_nat0 buf ~pos len in
   loop els_pos lst
 
+let bin_write_float_array buf ~pos a =
+  let len = Array.length a in
+  let plen = Nat0.unsafe_of_int len in
+  let pos = bin_write_nat0 buf ~pos plen in
+  let size = len * 8 in
+  let next = pos + size in
+  check_next buf next;
+  unsafe_blit_float_array_buf a buf ~src_pos:0 ~dst_pos:pos ~len;
+  next
+
 let bin_write_array_loop bin_write_el buf ~els_pos ~n ar =
   let els_pos_ref = ref els_pos in
   for i = 0 to n - 1 do
@@ -296,11 +306,14 @@ let bin_write_array_loop bin_write_el buf ~els_pos ~n ar =
   done;
   !els_pos_ref
 
-let bin_write_array bin_write_el buf ~pos ar =
-  let n = Array.length ar in
-  let pn = Nat0.unsafe_of_int n in
-  let els_pos = bin_write_nat0 buf ~pos pn in
-  bin_write_array_loop bin_write_el buf ~els_pos ~n ar
+let bin_write_array (type a) bin_write_el buf ~pos ar =
+  if (Obj.magic (bin_write_el : a writer) : float writer) == bin_write_float then
+    bin_write_float_array buf ~pos (Obj.magic (ar : a array) : float array)
+  else
+    let n = Array.length ar in
+    let pn = Nat0.unsafe_of_int n in
+    let els_pos = bin_write_nat0 buf ~pos pn in
+    bin_write_array_loop bin_write_el buf ~els_pos ~n ar
 
 let bin_write_hashtbl bin_write_key bin_write_val buf ~pos htbl =
   let len = Hashtbl.length htbl in
@@ -374,16 +387,6 @@ let bin_write_bigstring buf ~pos s =
   let next = pos + len in
   check_next buf next;
   unsafe_blit_buf ~src:s ~src_pos:0 ~dst:buf ~dst_pos:pos ~len;
-  next
-
-let bin_write_float_array buf ~pos a =
-  let len = Array.length a in
-  let plen = Nat0.unsafe_of_int len in
-  let pos = bin_write_nat0 buf ~pos plen in
-  let size = len * 8 in
-  let next = pos + size in
-  check_next buf next;
-  unsafe_blit_float_array_buf a buf ~src_pos:0 ~dst_pos:pos ~len;
   next
 
 let bin_write_variant_int buf ~pos x =

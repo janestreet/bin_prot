@@ -478,41 +478,63 @@ let () = ignore (Write.bin_write_float dummy_float_buf ~pos:0 3.1)
 let max_array_length_2 = Sys.max_array_length / 2
 #endif
 
-let bin_read_array bin_read_el buf ~pos_ref =
-  let start_pos = !pos_ref in
+let bin_read_float_array buf ~pos_ref =
+  let pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
-  if len = 0 then [||]
-  else begin
 #ifdef ARCH_SIXTYFOUR
-    if len > Sys.max_array_length then
-      raise_read_error ReadError.Array_too_long start_pos;
+  if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long pos;
 #else
-    if len > max_array_length_2 then (
-      let maybe_float =
-        try
-          let el = bin_read_el dummy_float_buf ~pos_ref:(ref 0) in
-          Some el
-        with _ -> None
-      in
-      match maybe_float with
-      | None ->
-          if len > Sys.max_array_length then
-            raise_read_error ReadError.Array_too_long start_pos
-      | Some el ->
-          if
-            Obj.tag (Obj.repr el) = Obj.double_tag ||
-            len > Sys.max_array_length
-          then raise_read_error ReadError.Array_too_long start_pos
-    );
+  if len > max_array_length_2   then raise_read_error ReadError.Array_too_long pos;
 #endif
-    let first = bin_read_el buf ~pos_ref in
-    let res = Array.create len first in
-    for i = 1 to len - 1 do
-      let el = bin_read_el buf ~pos_ref in
-      Array.unsafe_set res i el
-    done;
-    res
-  end
+  let size = len * 8 in
+  let pos = !pos_ref in
+  let next = pos + size in
+  check_next buf next;
+  let arr = Array.make_float len in
+  unsafe_blit_buf_float_array buf arr ~src_pos:pos ~dst_pos:0 ~len;
+  pos_ref := next;
+  arr
+;;
+
+let bin_read_array (type a) bin_read_el buf ~pos_ref =
+  if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
+  then
+    (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
+  else
+    let start_pos = !pos_ref in
+    let len = (bin_read_nat0 buf ~pos_ref :> int) in
+    if len = 0 then [||]
+    else begin
+#ifdef ARCH_SIXTYFOUR
+      if len > Sys.max_array_length then
+        raise_read_error ReadError.Array_too_long start_pos;
+#else
+      if len > max_array_length_2 then (
+        let maybe_float =
+          try
+            let el = bin_read_el dummy_float_buf ~pos_ref:(ref 0) in
+            Some el
+          with _ -> None
+        in
+        match maybe_float with
+        | None ->
+            if len > Sys.max_array_length then
+              raise_read_error ReadError.Array_too_long start_pos
+        | Some el ->
+            if
+              Obj.tag (Obj.repr el) = Obj.double_tag ||
+              len > Sys.max_array_length
+            then raise_read_error ReadError.Array_too_long start_pos
+      );
+#endif
+      let first = bin_read_el buf ~pos_ref in
+      let res = Array.create len first in
+      for i = 1 to len - 1 do
+        let el = bin_read_el buf ~pos_ref in
+        Array.unsafe_set res i el
+      done;
+      res
+    end
 
 let bin_read_hashtbl bin_read_key bin_read_val buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
@@ -590,24 +612,6 @@ let bin_read_bigstring buf ~pos_ref =
   unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:str ~dst_pos:0 ~len;
   pos_ref := next;
   str
-;;
-
-let bin_read_float_array buf ~pos_ref =
-  let pos = !pos_ref in
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
-#ifdef ARCH_SIXTYFOUR
-  if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long pos;
-#else
-  if len > max_array_length_2   then raise_read_error ReadError.Array_too_long pos;
-#endif
-  let size = len * 8 in
-  let pos = !pos_ref in
-  let next = pos + size in
-  check_next buf next;
-  let arr = Array.create len 0. in
-  unsafe_blit_buf_float_array buf arr ~src_pos:pos ~dst_pos:0 ~len;
-  pos_ref := next;
-  arr
 ;;
 
 let bin_read_variant_int buf ~pos_ref =

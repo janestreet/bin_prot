@@ -111,6 +111,10 @@ let bin_size_len len =
   let plen = Nat0.unsafe_of_int len in
   bin_size_nat0 plen
 
+let bin_size_float_array ar =
+  let len = Array.length ar in
+  bin_size_len len + 8 * len
+
 let bin_size_array_loop bin_size_el ar ~total_len ~n =
   let total_len_ref = ref total_len in
   for i = 0 to n - 1 do
@@ -119,10 +123,13 @@ let bin_size_array_loop bin_size_el ar ~total_len ~n =
   done;
   !total_len_ref
 
-let bin_size_array bin_size_el ar =
-  let n = Array.length ar in
-  let total_len = bin_size_len n in
-  bin_size_array_loop bin_size_el ar ~total_len ~n
+let bin_size_array (type a) bin_size_el ar =
+  if (Obj.magic (bin_size_el : a sizer) : float sizer) == bin_size_float then
+    bin_size_float_array (Obj.magic (ar : a array) : float array)
+  else
+    let n = Array.length ar in
+    let total_len = bin_size_len n in
+    bin_size_array_loop bin_size_el ar ~total_len ~n
 
 let bin_size_hashtbl bin_size_key bin_size_val htbl =
   let cnt_ref = ref 0 in
@@ -154,10 +161,6 @@ let bin_size_float64_mat mat = bin_size_gen_mat mat 8
 let bin_size_mat = bin_size_float64_mat
 
 let bin_size_bigstring buf = bin_size_gen_vec buf 1
-
-let bin_size_float_array ar =
-  let len = Array.length ar in
-  bin_size_len len + 8 * len
 
 let bin_size_variant_int _ = 4
 
