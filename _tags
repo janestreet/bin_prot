@@ -1,4 +1,77 @@
 # OASIS_START
+# DO NOT EDIT (digest: c32f9c2175ceb2a06fe9208809f482c6)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library bin_prot
+"lib/bin_prot.cmxs": use_bin_prot
+"lib/binable.cmx": for-pack(Bin_prot)
+"lib/nat0.cmx": for-pack(Bin_prot)
+"lib/common.cmx": for-pack(Bin_prot)
+"lib/size.cmx": for-pack(Bin_prot)
+"lib/write.cmx": for-pack(Bin_prot)
+"lib/read.cmx": for-pack(Bin_prot)
+"lib/std.cmx": for-pack(Bin_prot)
+"lib/type_class.cmx": for-pack(Bin_prot)
+"lib/utils.cmx": for-pack(Bin_prot)
+<lib/bin_prot.{cma,cmxa}>: use_libbin_prot_stubs
+<lib/*.ml{,i,y}>: package(bigarray)
+<lib/*.ml{,i,y}>: package(unix)
+"lib/blit_stubs.c": package(bigarray)
+"lib/blit_stubs.c": package(unix)
+"lib/float_stubs.c": package(bigarray)
+"lib/float_stubs.c": package(unix)
+# Library pa_bin_prot
+"syntax/pa_bin_prot.cmxs": use_pa_bin_prot
+<syntax/*.ml{,i,y}>: package(camlp4.extend)
+<syntax/*.ml{,i,y}>: package(camlp4.quotations)
+<syntax/*.ml{,i,y}>: package(type_conv)
+# Executable test_runner
+<test/test_runner.{native,byte}>: package(bigarray)
+<test/test_runner.{native,byte}>: package(camlp4.extend)
+<test/test_runner.{native,byte}>: package(camlp4.quotations)
+<test/test_runner.{native,byte}>: package(oUnit)
+<test/test_runner.{native,byte}>: package(type_conv)
+<test/test_runner.{native,byte}>: package(unix)
+<test/test_runner.{native,byte}>: use_bin_prot
+<test/test_runner.{native,byte}>: use_pa_bin_prot
+<test/*.ml{,i,y}>: package(oUnit)
+<test/test_runner.{native,byte}>: custom
+# Executable mac_test
+<test/mac_test.{native,byte}>: package(bigarray)
+<test/mac_test.{native,byte}>: package(camlp4.extend)
+<test/mac_test.{native,byte}>: package(camlp4.quotations)
+<test/mac_test.{native,byte}>: package(type_conv)
+<test/mac_test.{native,byte}>: package(unix)
+<test/mac_test.{native,byte}>: use_bin_prot
+<test/mac_test.{native,byte}>: use_pa_bin_prot
+<test/mac_test.{native,byte}>: custom
+# Executable example
+<test/example.{native,byte}>: package(bigarray)
+<test/example.{native,byte}>: package(camlp4.extend)
+<test/example.{native,byte}>: package(camlp4.quotations)
+<test/example.{native,byte}>: package(type_conv)
+<test/example.{native,byte}>: package(unix)
+<test/example.{native,byte}>: use_bin_prot
+<test/example.{native,byte}>: use_pa_bin_prot
+<test/*.ml{,i,y}>: package(bigarray)
+<test/*.ml{,i,y}>: package(camlp4.extend)
+<test/*.ml{,i,y}>: package(camlp4.quotations)
+<test/*.ml{,i,y}>: package(type_conv)
+<test/*.ml{,i,y}>: package(unix)
+<test/*.ml{,i,y}>: use_bin_prot
+<test/*.ml{,i,y}>: use_pa_bin_prot
 # OASIS_STOP
 <lib/{size,write,read,type_class}.ml{i,}>:cpp
 <lib/{write,read}.ml{,i}>:mlh
