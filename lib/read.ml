@@ -1,5 +1,6 @@
 (* Read_ml: reading values from the binary protocol using (mostly) OCaml. *)
 
+#include "config.h"
 #include "int_codes.mlh"
 
 open Bigarray
@@ -28,12 +29,14 @@ let unsafe_get8_signed buf pos =
    a temporary int64 will still be allocated, even if [f] is inlined.
 *)
 
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
 
+let max_int_int64 = Int64.of_int max_int
+let min_int_int64 = Int64.of_int min_int
 #define SAFE_INT_OF_INT32(pos, x) (Int32.to_int (x))
 
 #define SAFE_INT_OF_INT64(pos, x) \
-  (if (x) >= -0x4000_0000_0000_0000L && (x) < 0x4000_0000_0000_0000L then \
+  (if (x) >= min_int_int64 && (x) <= max_int_int64 then \
      Int64.to_int (x) \
    else \
      raise_read_error ReadError.Int_overflow (pos))
@@ -42,21 +45,20 @@ let unsafe_get8_signed buf pos =
 
 #else
 
+let max_int_int32 = Int32.of_int max_int
+let min_int_int32 = Int32.of_int min_int
+let max_int_int64 = Int64.of_int max_int
+let min_int_int64 = Int64.of_int min_int
+
 #define SAFE_INT_OF_INT32(pos, x) \
-  (if (x) >= -0x4000_0000l && (x) < 0x4000_0000l then \
+  (if (x) >= min_int_int32 && (x) <= max_int_int32 then \
      Int32.to_int (x) \
    else \
      raise_read_error ReadError.Int_overflow (pos))
 
 #define SAFE_INT_OF_INT64(pos, x) \
-  (if (x) >= -0x0000_0000_4000_0000L && (x) < 0x0000_0000_4000_0000L then \
+  (if (x) >= min_int_int64 && (x) <= max_int_int64 then \
      Int64.to_int (x) \
-   else \
-     raise_read_error ReadError.Int_overflow (pos))
-
-#define SAFE_NATIVEINT_OF_INT64(pos, x) \
-  (if (x) >= -0x0000_0000_8000_0000L && (x) < 0x0000_0000_8000_0000L then \
-     Int64.to_nativeint (x) \
    else \
      raise_read_error ReadError.Int_overflow (pos))
 
@@ -219,6 +221,7 @@ let safe_bin_read_int32_as_int buf ~pos_ref ~pos =
   pos_ref := next;
   n
 
+#ifdef JSC_ARCH_SIXTYFOUR
 let safe_bin_read_int64_as_int buf ~pos_ref ~pos =
   let next = pos + 8 in
   check_next buf next;
@@ -226,6 +229,7 @@ let safe_bin_read_int64_as_int buf ~pos_ref ~pos =
   let n = SAFE_INT_OF_INT64(!pos_ref, n) in
   pos_ref := next;
   n
+#endif
 
 let safe_bin_read_int32_as_int64 buf ~pos_ref ~pos =
   let next = pos + 4 in
@@ -241,6 +245,7 @@ let safe_bin_read_int32_as_nativeint buf ~pos_ref ~pos =
   let n = UNSAFE_GET32LE(buf, pos) in
   Nativeint.of_int32 n
 
+#ifdef JSC_ARCH_SIXTYFOUR
 let safe_bin_read_int64_as_nativeint buf ~pos_ref ~pos =
   let next = pos + 8 in
   check_next buf next;
@@ -248,6 +253,7 @@ let safe_bin_read_int64_as_nativeint buf ~pos_ref ~pos =
   let n = SAFE_NATIVEINT_OF_INT64(pos, n) in
   pos_ref := next;
   n
+#endif
 
 let safe_bin_read_nat0_16 buf ~pos_ref ~pos =
   let next = pos + 2 in
@@ -255,7 +261,7 @@ let safe_bin_read_nat0_16 buf ~pos_ref ~pos =
   pos_ref := next;
   Nat0.unsafe_of_int (UNSAFE_GET16LE_UNSIGNED(buf, pos))
 
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
 
 let safe_bin_read_nat0_32 buf ~pos_ref ~pos =
   let next = pos + 4 in
@@ -272,7 +278,7 @@ let safe_bin_read_nat0_64 buf ~pos_ref ~pos =
   let next = pos + 8 in
   check_next buf next;
   let n = UNSAFE_GET64LE(buf, pos) in
-  if n >= 0L && n < 0x4000_0000_0000_0000L then begin
+  if n >= 0L && n <= max_int_int64 then begin
     let n = Nat0.unsafe_of_int (Int64.to_int n) in
     pos_ref := next;
     n
@@ -285,7 +291,7 @@ let safe_bin_read_nat0_32 buf ~pos_ref ~pos =
   let next = pos + 4 in
   check_next buf next;
   let n = UNSAFE_GET32LE(buf, pos) in
-  if n >= 0l && n < 0x4000_0000l then begin
+  if n >= 0l && n <= max_int_int32 then begin
     let n = Nat0.unsafe_of_int (Int32.to_int n) in
     pos_ref := next;
     n
@@ -305,7 +311,7 @@ let bin_read_nat0 buf ~pos_ref =
     safe_bin_read_nat0_16 buf ~pos_ref ~pos:(pos + 1)
   | CODE_INT32 ->
     safe_bin_read_nat0_32 buf ~pos_ref ~pos:(pos + 1)
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   | CODE_INT64 ->
     safe_bin_read_nat0_64 buf ~pos_ref ~pos:(pos + 1)
 #endif
@@ -345,7 +351,7 @@ let bin_read_int buf ~pos_ref =
     safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1)
   | CODE_INT32 ->
     safe_bin_read_int32_as_int buf ~pos_ref ~pos:(pos + 1)
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   | CODE_INT64 ->
     safe_bin_read_int64_as_int buf ~pos_ref ~pos:(pos + 1)
 #endif
@@ -354,11 +360,13 @@ let bin_read_int buf ~pos_ref =
 ;;
 
 
+#ifdef JSC_ARCH_SIXTYFOUR
 (* The C stubs returns the address of buf.{pos} as a float array. This is a hack to trick
    OCaml to read the float at this address. This way it can unbox when [bin_read_float] is
    inlined. *)
 external get_float_offset : buf -> pos -> float array
   = "bin_prot_get_float_offset" "noalloc"
+#endif
 
 let bin_read_float buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -366,9 +374,14 @@ let bin_read_float buf ~pos_ref =
   let next = pos + 8 in
   check_next buf next;
   pos_ref := next;
+#ifdef JSC_ARCH_SIXTYFOUR
   (* We must use the unsafe function to prevent OCaml from checking the length: the float
      array returned by [get_float_offset] has no header! *)
   Array.unsafe_get (get_float_offset buf pos) 0
+#else
+  (* No hack in 32bit.  (required for Javascript support) *)
+  Int64.float_of_bits (UNSAFE_GET64LE(buf, pos))
+#endif
 ;;
 
 let bin_read_int32 buf ~pos_ref =
@@ -420,7 +433,7 @@ let bin_read_nativeint buf ~pos_ref =
     Nativeint.of_int (safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1))
   | CODE_INT32 ->
     safe_bin_read_int32_as_nativeint buf ~pos_ref ~pos:(pos + 1)
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   | CODE_INT64 ->
     safe_bin_read_int64_as_nativeint buf ~pos_ref ~pos:(pos + 1)
 #endif
@@ -472,7 +485,7 @@ let bin_read_list bin_read_el buf ~pos_ref =
   let rev_lst = bin_read_n_rev_list bin_read_el buf ~pos_ref len in
   List.rev rev_lst
 
-#ifndef ARCH_SIXTYFOUR
+#ifndef JSC_ARCH_SIXTYFOUR
 let dummy_float_buf = create_buf 8
 let () = ignore (Write.bin_write_float dummy_float_buf ~pos:0 3.1)
 let max_array_length_2 = Sys.max_array_length / 2
@@ -481,7 +494,7 @@ let max_array_length_2 = Sys.max_array_length / 2
 let bin_read_float_array buf ~pos_ref =
   let pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long pos;
 #else
   if len > max_array_length_2   then raise_read_error ReadError.Array_too_long pos;
@@ -505,7 +518,7 @@ let bin_read_array (type a) bin_read_el buf ~pos_ref =
     let len = (bin_read_nat0 buf ~pos_ref :> int) in
     if len = 0 then [||]
     else begin
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
       if len > Sys.max_array_length then
         raise_read_error ReadError.Array_too_long start_pos;
 #else

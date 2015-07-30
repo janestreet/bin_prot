@@ -1,5 +1,6 @@
 (* Write_ml: writing values to the binary protocol using (mostly) OCaml. *)
 
+#include "config.h"
 #include "int_codes.mlh"
 
 open Bigarray
@@ -159,7 +160,7 @@ let bin_write_int buf ~pos n =
     else if n < 0x00008000 then
       ALL_BIN_WRITE_INT16(buf, pos, n)
     else
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
     if n >= 0x80000000 then
       ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
     else
@@ -171,7 +172,7 @@ let bin_write_int buf ~pos n =
     else if n >= -0x00008000 then
       ALL_BIN_WRITE_INT16(buf, pos, n)
     else
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
     if n < -0x80000000 then
       ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
     else
@@ -187,7 +188,7 @@ let bin_write_nat0 buf ~pos nat0 =
   else if n < 0x00010000 then
     ALL_BIN_WRITE_INT16(buf, pos, n)
   else
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   if n >= 0x100000000 then
     ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
   else
@@ -205,18 +206,25 @@ let bin_write_string buf ~pos str =
   next
 
 
+#ifdef JSC_ARCH_SIXTYFOUR
 (* Same trick as in read.ml *)
 external get_float_offset : buf -> pos -> float array
   = "bin_prot_get_float_offset" "noalloc"
+#endif
 
 let bin_write_float buf ~pos x =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
+#ifdef JSC_ARCH_SIXTYFOUR
   Array.unsafe_set (get_float_offset buf pos) 0 x;
+#else
+  (* No hack in 32bit.  (required for Javascript support) *)
+  UNSAFE_SET64LE(buf, pos, Int64.bits_of_float x);
+#endif
   next
 
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
 let bin_write_int32 buf ~pos n = bin_write_int buf ~pos (Int32.to_int n)
 #else
 let bin_write_int32 buf ~pos n =
@@ -232,7 +240,7 @@ let bin_write_int64 buf ~pos n =
     assert_pos pos;
     ALL_BIN_WRITE_INT64(buf, pos, n)
   end else
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   bin_write_int buf ~pos (Int64.to_int n)
 #else
   if n >= 0x00008000L || n < -0x00008000L then begin
@@ -243,7 +251,7 @@ let bin_write_int64 buf ~pos n =
 #endif
 
 let bin_write_nativeint buf ~pos n =
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   if n >= 0x80000000n || n < -0x80000000n then begin
     assert_pos pos;
     ALL_BIN_WRITE_INT64(buf, pos, Int64.of_nativeint n)

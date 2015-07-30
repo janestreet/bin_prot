@@ -1040,7 +1040,7 @@ module Generate_bin_read = struct
           ~record:(bin_read_record full_type_name)
           ~variants:handle_variant
           ~mani:(fun _loc _tp1 -> loop _loc)
-          ~nil:(bin_read_nil type_name)
+          ~nil:(bin_read_nil full_type_name)
       in
       loop _loc rhs
     in
@@ -1095,8 +1095,9 @@ module Generate_bin_read = struct
                     rewrite_call (fun new_f -> cnv (<:expr< $new_f$ $arg$ >>)) f
                 | <:expr< Bin_prot.Read.$_$ >> -> wrong_type
                 | <:expr< $lid:name$ >> when name.[0] = '_' && name.[1] = 'o' ->
+                  (* change [buf] -> [_buf] to fix unused-var warning in generated code *)
                     <:expr<
-                      fun buf ~pos_ref _vint ->
+                      fun _buf ~pos_ref _vint ->
                         Bin_prot.Common.raise_read_error
                           (Bin_prot.Common.ReadError.Silly_type $str:full_type_name$)
                           !pos_ref

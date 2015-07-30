@@ -10,7 +10,7 @@ let dispatch = function
     let arch_sixtyfour = BaseEnvLight.var_get "arch_sixtyfour" env = "true" in
 
     let cpp = cc ^ " -E -xc -undef -w" in
-    let cpp = if arch_sixtyfour then cpp ^ " -DARCH_SIXTYFOUR" else cpp in
+    let cpp = if arch_sixtyfour then cpp ^ " -DJSC_ARCH_SIXTYFOUR" else cpp in
 
     let cpp = S [A "-pp"; P cpp] in
 

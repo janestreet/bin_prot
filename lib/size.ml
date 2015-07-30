@@ -1,5 +1,7 @@
 (* Size: compute size of values in the binary protocol. *)
 
+#include "config.h"
+
 open Bigarray
 
 open Common
@@ -16,7 +18,7 @@ let bin_size_bool _ = 1
 let bin_size_int_nat0 n =
   if      n  < 0x00000080 then 1
   else if n  < 0x00008000 then 3
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   else if n >= 0x80000000 then 9
 #endif
   else 5
@@ -24,7 +26,7 @@ let bin_size_int_nat0 n =
 let bin_size_int_negative n =
   if      n >= -0x00000080 then 2
   else if n >= -0x00008000 then 3
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   else if n  < -0x80000000 then 9
 #endif
   else 5
@@ -39,7 +41,7 @@ let bin_size_nat0 nat0 =
   let n = (nat0 : Nat0.t :> int) in
   if      n <   0x00000080 then 1
   else if n <   0x00010000 then 3
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   else if n >= 0x100000000 then 9
 #endif
   else 5
@@ -60,7 +62,7 @@ let bin_size_float f =
   8
 ;;
 
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
 let bin_size_int32 n = bin_size_int (Int32.to_int n)
 #else
 let bin_size_int32 n =
@@ -68,7 +70,7 @@ let bin_size_int32 n =
   else bin_size_int (Int32.to_int n)
 #endif
 
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
 let bin_size_int64 n =
   if n >= 0x80000000L || n < -0x80000000L then 9
   else bin_size_int (Int64.to_int n)
@@ -79,7 +81,7 @@ let bin_size_int64 n =
 #endif
 
 let bin_size_nativeint n =
-#ifdef ARCH_SIXTYFOUR
+#ifdef JSC_ARCH_SIXTYFOUR
   bin_size_int64 (Int64.of_nativeint n)
 #else
   bin_size_int32 (Nativeint.to_int32 n)

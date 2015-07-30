@@ -1,3 +1,18 @@
+## 113.00.00
+
+- Switched build to use =config.h= rather than the command-line for
+  preprocessor variables.
+
+- Switched from `ARCH_SIXTYFOUR` to `JSC_ARCH_SIXTYFOUR`.
+
+- Fixed to support 32-bit integers, which are used in `js_of_ocaml`.
+
+    Do not make too many assumptions on integer size.
+    Integers are 32bit in Javascript.
+
+    Do not use the "get_float_offset" hack on 32bit
+    as it cannot be implemented in javascript.
+
 ## 112.35.00
 
 - Sped up `bin_io` of `float array`.

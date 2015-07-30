@@ -66,6 +66,7 @@ val blit_buf :
 (** {2 Errors and exceptions} *)
 
 exception Buffer_short  (** Buffer too short for read/write operation *)
+
 exception No_variant_match  (** Used internally for backtracking *)
 
 module ReadError : sig
