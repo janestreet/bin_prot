@@ -1,5 +1,8 @@
 (* Write_ml: writing values to the binary protocol using (mostly) OCaml. *)
 
+(* Note: the code is this file is carefully written to avoid unnecessary allocations. When
+   touching this code, be sure to run the benchmarks to check for regressions. *)
+
 #include "config.h"
 #include "int_codes.mlh"
 
@@ -11,12 +14,9 @@ type ('a, 'b) writer1 = 'a writer -> 'b writer
 type ('a, 'b, 'c) writer2 = 'a writer -> ('b, 'c) writer1
 type ('a, 'b, 'c, 'd) writer3 = 'a writer -> ('b, 'c, 'd) writer2
 
-external unsafe_set : buf -> int -> char -> unit = "%caml_ba_unsafe_set_1";;
-external unsafe_set8 : buf -> int -> int -> unit = "%caml_ba_unsafe_set_1";;
-
-#ifdef HAVE_FAST_BA_ACCESS
-
-external unsafe_set16 : buf -> int -> int -> unit = "%caml_bigstring_set16u";;
+external unsafe_set   : buf -> int -> char  -> unit = "%caml_ba_unsafe_set_1";;
+external unsafe_set8  : buf -> int -> int   -> unit = "%caml_ba_unsafe_set_1";;
+external unsafe_set16 : buf -> int -> int   -> unit = "%caml_bigstring_set16u";;
 external unsafe_set32 : buf -> int -> int32 -> unit = "%caml_bigstring_set32u";;
 external unsafe_set64 : buf -> int -> int64 -> unit = "%caml_bigstring_set64u";;
 
@@ -24,82 +24,40 @@ external bswap16 : int -> int = "%bswap16";;
 external bswap32 : int32 -> int32 = "%bswap_int32";;
 external bswap64 : int64 -> int64 = "%bswap_int64";;
 
-(* See comment in read.ml about why we use macros instead of functions. *)
+let arch_sixtyfour = Sys.word_size = 64
+let arch_big_endian = Sys.big_endian
 
-#ifdef ARCH_BIG_ENDIAN
+let unsafe_set16be =
+  if arch_big_endian then
+    unsafe_set16
+  else
+    fun buf pos x -> unsafe_set16 buf pos (bswap16 x)
+let unsafe_set32be =
+  if arch_big_endian then
+    unsafe_set32
+  else
+    fun buf pos x -> unsafe_set32 buf pos (bswap32 x)
+let unsafe_set64be =
+  if arch_big_endian then
+    unsafe_set64
+  else
+    fun buf pos x -> unsafe_set64 buf pos (bswap64 x)
 
-#define UNSAFE_SET16BE(buf, pos, x) (unsafe_set16 (buf) (pos) (x))
-#define UNSAFE_SET32BE(buf, pos, x) (unsafe_set32 (buf) (pos) (x))
-#define UNSAFE_SET64BE(buf, pos, x) (unsafe_set64 (buf) (pos) (x))
-
-#define UNSAFE_SET16LE(buf, pos, x) (unsafe_set16 (buf) (pos) (bswap16 (x)))
-#define UNSAFE_SET32LE(buf, pos, x) (unsafe_set32 (buf) (pos) (bswap32 (x)))
-#define UNSAFE_SET64LE(buf, pos, x) (unsafe_set64 (buf) (pos) (bswap64 (x)))
-
-#else
-
-#define UNSAFE_SET16LE(buf, pos, x) (unsafe_set16 (buf) (pos) (x))
-#define UNSAFE_SET32LE(buf, pos, x) (unsafe_set32 (buf) (pos) (x))
-#define UNSAFE_SET64LE(buf, pos, x) (unsafe_set64 (buf) (pos) (x))
-
-#define UNSAFE_SET16BE(buf, pos, x) (unsafe_set16 (buf) (pos) (bswap16 (x)))
-#define UNSAFE_SET32BE(buf, pos, x) (unsafe_set32 (buf) (pos) (bswap32 (x)))
-#define UNSAFE_SET64BE(buf, pos, x) (unsafe_set64 (buf) (pos) (bswap64 (x)))
-
-#endif
-
-#else
-
-#define UNSAFE_SET8_FROM_INT32(buf, pos, x) (unsafe_set8 (buf) (pos) (Int32.to_int (x)))
-#define UNSAFE_SET8_FROM_INT64(buf, pos, x) (unsafe_set8 (buf) (pos) (Int64.to_int (x)))
-
-#define UNSAFE_SET16LE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   unsafe_set8 buf _pos  _x; \
-   unsafe_set8 buf (_pos + 1) (_x asr 8))
-
-#define UNSAFE_SET32LE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos, _x); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 1, Int32.shift_right _x 8); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 2, Int32.shift_right _x 16); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 3, Int32.shift_right _x 24))
-
-#define UNSAFE_SET64LE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos, _x); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 1, Int64.shift_right _x 8); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 2, Int64.shift_right _x 16); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 3, Int64.shift_right _x 24); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 4, Int64.shift_right _x 32); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 5, Int64.shift_right _x 40); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 6, Int64.shift_right _x 48); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 7, Int64.shift_right _x 56))
-
-#define UNSAFE_SET16BE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   unsafe_set8 buf (_pos + 1) _x; \
-   unsafe_set8 buf _pos (_x lsr 8))
-
-#define UNSAFE_SET32BE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 3, _x); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 2, Int32.shift_right _x 8); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos + 1, Int32.shift_right _x 16); \
-   UNSAFE_SET8_FROM_INT32 (buf, _pos, Int32.shift_right _x 24))
-
-#define UNSAFE_SET64BE(buf, pos, x) \
-  (let _pos = pos and _x = x in \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 7, _x); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 6, Int64.shift_right _x 8); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 5, Int64.shift_right _x 16); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 4, Int64.shift_right _x 24); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 3, Int64.shift_right _x 32); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 2, Int64.shift_right _x 40); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos + 1, Int64.shift_right _x 48); \
-   UNSAFE_SET8_FROM_INT64 (buf, _pos, Int64.shift_right _x 56))
-
-#endif
+let unsafe_set16le =
+  if arch_big_endian then
+    fun buf pos x -> unsafe_set16 buf pos (bswap16 x)
+  else
+    unsafe_set16
+let unsafe_set32le =
+  if arch_big_endian then
+    fun buf pos x -> unsafe_set32 buf pos (bswap32 x)
+  else
+    unsafe_set32
+let unsafe_set64le =
+  if arch_big_endian then
+    fun buf pos x -> unsafe_set64 buf pos (bswap64 x)
+  else
+    unsafe_set64
 
 let bin_write_unit buf ~pos () =
   assert_pos pos;
@@ -113,38 +71,38 @@ let bin_write_bool buf ~pos b =
   unsafe_set buf pos (if b then '\001' else '\000');
   pos + 1
 
-#define ALL_BIN_WRITE_SMALL_INT(buf, pos, n) \
-  (check_pos buf pos; \
-   unsafe_set8 buf pos (n); \
-   pos + 1)
+let all_bin_write_small_int buf pos n =
+  check_pos buf pos;
+  unsafe_set8 buf pos n;
+  pos + 1
 
-#define ALL_BIN_WRITE_NEG_INT8(buf, pos, n) \
-  (let next = pos + 2 in \
-   check_next buf next; \
-   unsafe_set buf pos CODE_NEG_INT8; \
-   unsafe_set8 buf (pos + 1) (n); \
-   next)
+let all_bin_write_neg_int8 buf pos n =
+  let next = pos + 2 in
+  check_next buf next;
+  unsafe_set buf pos CODE_NEG_INT8;
+  unsafe_set8 buf (pos + 1) n;
+  next
 
-#define ALL_BIN_WRITE_INT16(buf, pos, n) \
-  (let next = pos + 3 in \
-   check_next buf next; \
-   unsafe_set buf pos CODE_INT16; \
-   UNSAFE_SET16LE(buf, pos + 1, n); \
-   next)
+let all_bin_write_int16 buf pos n =
+  let next = pos + 3 in
+  check_next buf next;
+  unsafe_set buf pos CODE_INT16;
+  unsafe_set16le buf (pos + 1) n;
+  next
 
-#define ALL_BIN_WRITE_INT32(buf, pos, n) \
-  (let next = pos + 5 in \
-   check_next buf next; \
-   unsafe_set buf pos CODE_INT32; \
-   UNSAFE_SET32LE(buf, pos + 1, n); \
-   next)
+let all_bin_write_int32 buf pos n =
+  let next = pos + 5 in
+  check_next buf next;
+  unsafe_set buf pos CODE_INT32;
+  unsafe_set32le buf (pos + 1) n;
+  next
 
-#define ALL_BIN_WRITE_INT64(buf, pos, n) \
-  (let next = pos + 9 in \
-   check_next buf next; \
-   unsafe_set buf pos CODE_INT64; \
-   UNSAFE_SET64LE(buf, pos + 1, n); \
-   next)
+let all_bin_write_int64 buf pos n =
+  let next = pos + 9 in
+  check_next buf next;
+  unsafe_set buf pos CODE_INT64;
+  unsafe_set64le buf (pos + 1) n;
+  next
 
 let bin_write_char buf ~pos c =
   assert_pos pos;
@@ -156,44 +114,35 @@ let bin_write_int buf ~pos n =
   assert_pos pos;
   if n >= 0 then begin
     if n < 0x00000080 then
-      ALL_BIN_WRITE_SMALL_INT(buf, pos, n)
+      all_bin_write_small_int buf pos n
     else if n < 0x00008000 then
-      ALL_BIN_WRITE_INT16(buf, pos, n)
+      all_bin_write_int16 buf pos n
+    else if arch_sixtyfour && n >= 1 lsl 31 then
+      all_bin_write_int64 buf pos (Int64.of_int n)
     else
-#ifdef JSC_ARCH_SIXTYFOUR
-    if n >= 0x80000000 then
-      ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
-    else
-#endif
-      ALL_BIN_WRITE_INT32(buf, pos, Int32.of_int n)
+      all_bin_write_int32 buf pos (Int32.of_int n)
   end else begin
     if n >= -0x00000080 then
-      ALL_BIN_WRITE_NEG_INT8(buf, pos, n)
+      all_bin_write_neg_int8 buf pos n
     else if n >= -0x00008000 then
-      ALL_BIN_WRITE_INT16(buf, pos, n)
+      all_bin_write_int16 buf pos n
+    else if arch_sixtyfour && n < -(1 lsl 31) then
+      all_bin_write_int64 buf pos (Int64.of_int n)
     else
-#ifdef JSC_ARCH_SIXTYFOUR
-    if n < -0x80000000 then
-      ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
-    else
-#endif
-      ALL_BIN_WRITE_INT32(buf, pos, Int32.of_int n)
+      all_bin_write_int32 buf pos (Int32.of_int n)
   end
 
 let bin_write_nat0 buf ~pos nat0 =
   assert_pos pos;
   let n = (nat0 : Nat0.t :> int) in
   if n < 0x00000080 then
-    ALL_BIN_WRITE_SMALL_INT(buf, pos, n)
+    all_bin_write_small_int buf pos n
   else if n < 0x00010000 then
-    ALL_BIN_WRITE_INT16(buf, pos, n)
+    all_bin_write_int16 buf pos n
+  else if arch_sixtyfour && n >= 1 lsl 32 then
+    all_bin_write_int64 buf pos (Int64.of_int n)
   else
-#ifdef JSC_ARCH_SIXTYFOUR
-  if n >= 0x100000000 then
-    ALL_BIN_WRITE_INT64(buf, pos, Int64.of_int n)
-  else
-#endif
-    ALL_BIN_WRITE_INT32(buf, pos, Int32.of_int n)
+    all_bin_write_int32 buf pos (Int32.of_int n)
 
 let bin_write_string buf ~pos str =
   let len = String.length str in
@@ -220,49 +169,41 @@ let bin_write_float buf ~pos x =
   Array.unsafe_set (get_float_offset buf pos) 0 x;
 #else
   (* No hack in 32bit.  (required for Javascript support) *)
-  UNSAFE_SET64LE(buf, pos, Int64.bits_of_float x);
+  unsafe_set64le buf pos (Int64.bits_of_float x);
 #endif
   next
 
-#ifdef JSC_ARCH_SIXTYFOUR
-let bin_write_int32 buf ~pos n = bin_write_int buf ~pos (Int32.to_int n)
-#else
-let bin_write_int32 buf ~pos n =
-  if n >= 0x00008000l || n < -0x00008000l then begin
-    assert_pos pos;
-    ALL_BIN_WRITE_INT32(buf, pos, n)
-  end else
-    bin_write_int buf ~pos (Int32.to_int n)
-#endif
+let bin_write_int32 =
+  if arch_sixtyfour then
+    fun buf ~pos n -> bin_write_int buf ~pos (Int32.to_int n)
+  else
+    fun buf ~pos n ->
+      if n >= 0x00008000l || n < -0x00008000l then begin
+        assert_pos pos;
+        all_bin_write_int32 buf pos n
+      end else
+        bin_write_int buf ~pos (Int32.to_int n)
 
 let bin_write_int64 buf ~pos n =
   if n >= 0x80000000L || n < -0x80000000L then begin
     assert_pos pos;
-    ALL_BIN_WRITE_INT64(buf, pos, n)
-  end else
-#ifdef JSC_ARCH_SIXTYFOUR
-  bin_write_int buf ~pos (Int64.to_int n)
-#else
-  if n >= 0x00008000L || n < -0x00008000L then begin
+    all_bin_write_int64 buf pos n
+  end else if arch_sixtyfour then
+    bin_write_int buf ~pos (Int64.to_int n)
+  else if n >= 0x00008000L || n < -0x00008000L then begin
     assert_pos pos;
-    ALL_BIN_WRITE_INT32(buf, pos, Int64.to_int32 n)
+    all_bin_write_int32 buf pos (Int64.to_int32 n)
   end else
     bin_write_int buf ~pos (Int64.to_int n)
-#endif
 
 let bin_write_nativeint buf ~pos n =
-#ifdef JSC_ARCH_SIXTYFOUR
-  if n >= 0x80000000n || n < -0x80000000n then begin
+  if arch_sixtyfour && n >= 0x80000000n || n < -0x80000000n then begin
     assert_pos pos;
-    ALL_BIN_WRITE_INT64(buf, pos, Int64.of_nativeint n)
-  end
-#else
-  if n >= 0x00008000n || n < -0x00008000n then begin
+    all_bin_write_int64 buf pos (Int64.of_nativeint n)
+  end else if not arch_sixtyfour && n >= 0x8000n || n < -0x8000n then begin
     assert_pos pos;
-    ALL_BIN_WRITE_INT32(buf, pos, Nativeint.to_int32 n)
-  end
-#endif
-  else
+    all_bin_write_int32 buf pos (Nativeint.to_int32 n)
+  end else
     bin_write_int buf ~pos (Nativeint.to_int n)
 
 let bin_write_ref bin_write_el buf ~pos r = bin_write_el buf ~pos !r
@@ -401,7 +342,7 @@ let bin_write_variant_int buf ~pos x =
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
-  UNSAFE_SET32LE(buf, pos, Int32.logor (Int32.shift_left (Int32.of_int x) 1) 1l);
+  unsafe_set32le buf pos (Int32.logor (Int32.shift_left (Int32.of_int x) 1) 1l);
   next
 
 let bin_write_int_8bit buf ~pos n =
@@ -414,63 +355,63 @@ let bin_write_int_16bit buf ~pos n =
   assert_pos pos;
   let next = pos + 2 in
   check_next buf next;
-  UNSAFE_SET16LE(buf, pos, n);
+  unsafe_set16le buf pos n;
   next
 
 let bin_write_int_32bit buf ~pos n =
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
-  UNSAFE_SET32LE(buf, pos, Int32.of_int n);
+  unsafe_set32le buf pos (Int32.of_int n);
   next
 
 let bin_write_int_64bit buf ~pos n =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  UNSAFE_SET64LE(buf, pos, Int64.of_int n);
+  unsafe_set64le buf pos (Int64.of_int n);
   next
 
 let bin_write_int64_bits buf ~pos n =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  UNSAFE_SET64LE(buf, pos, n);
+  unsafe_set64le buf pos n;
   next
 
 let bin_write_network16_int buf ~pos n =
   assert_pos pos;
   let next = pos + 2 in
   check_next buf next;
-  UNSAFE_SET16BE(buf, pos, n);
+  unsafe_set16be buf pos n;
   next
 
 let bin_write_network32_int buf ~pos n =
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
-  UNSAFE_SET32BE(buf, pos, Int32.of_int n);
+  unsafe_set32be buf pos (Int32.of_int n);
   next
 
 let bin_write_network32_int32 buf ~pos n =
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
-  UNSAFE_SET32BE(buf, pos, n);
+  unsafe_set32be buf pos n;
   next
 
 let bin_write_network64_int buf ~pos n =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  UNSAFE_SET64BE(buf, pos, Int64.of_int n);
+  unsafe_set64be buf pos (Int64.of_int n);
   next
 
 let bin_write_network64_int64 buf ~pos n =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  UNSAFE_SET64BE(buf, pos, n);
+  unsafe_set64be buf pos n;
   next
 
 let bin_write_array_no_length bin_write_el buf ~pos ar =

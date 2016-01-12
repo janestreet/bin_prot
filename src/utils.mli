@@ -102,14 +102,11 @@ module Make_binable2 (Bin_spec : Make_binable2_spec)
 module type Make_iterable_binable_spec = sig
   type t
   type el
-  type acc
 
   val module_name : string option
   val length : t -> int
   val iter : t -> f : (el -> unit) -> unit
-  val init : int -> acc
-  val insert : acc -> el -> int -> acc
-  val finish : acc -> t
+  val init : len:int -> next:(unit -> el) -> t
   val bin_size_el : el Size.sizer
   val bin_write_el : el Write.writer
   val bin_read_el : el Read.reader
@@ -121,14 +118,11 @@ module Make_iterable_binable (Iterable_spec : Make_iterable_binable_spec)
 module type Make_iterable_binable1_spec = sig
   type 'a t
   type 'a el
-  type 'a acc
 
   val module_name : string option
   val length : 'a t -> int
   val iter : 'a t -> f : ('a el -> unit) -> unit
-  val init : int -> 'a acc
-  val insert : 'a acc -> 'a el -> int -> 'a acc
-  val finish : 'a acc -> 'a t
+  val init : len:int -> next:(unit -> 'a el) -> 'a t
   val bin_size_el : ('a, 'a el) Size.sizer1
   val bin_write_el : ('a, 'a el) Write.writer1
   val bin_read_el : ('a, 'a el) Read.reader1
@@ -140,14 +134,11 @@ module Make_iterable_binable1 (Iterable_spec : Make_iterable_binable1_spec)
 module type Make_iterable_binable2_spec = sig
   type ('a, 'b) t
   type ('a, 'b) el
-  type ('a, 'b) acc
 
   val module_name : string option
   val length : ('a, 'b) t -> int
   val iter : ('a, 'b) t -> f : (('a, 'b) el -> unit) -> unit
-  val init : int -> ('a, 'b) acc
-  val insert : ('a, 'b) acc -> ('a, 'b) el -> int -> ('a, 'b) acc
-  val finish : ('a, 'b) acc -> ('a, 'b) t
+  val init : len:int -> next:(unit -> ('a,'b) el) -> ('a,'b) t
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
   val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
   val bin_read_el : ('a, 'b, ('a, 'b) el) Read.reader2

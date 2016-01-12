@@ -1,6 +1,9 @@
+<**/*.ml{,i}>: warn(-40), no_alias_deps
+<**/*>: thread
+# This prevents the implicit addition of -ppx options by ocamlfind
+<**/*.ml{,i}>: predicate(ppx_driver)
+<src/*.ml>: for-pack(Bin_prot)
+<src/*.ml{,i}>: pp_deps_for_src
+<src/{size,write,read,type_class}.ml{i,}>:cpp
 # OASIS_START
 # OASIS_STOP
-<lib/{size,write,read,type_class}.ml{i,}>:cpp
-<lib/{write,read}.ml{,i}>:mlh
-<test/*.ml{,i}>: syntax_camlp4o
-<syntax/pa_bin_prot.ml>: syntax_camlp4o

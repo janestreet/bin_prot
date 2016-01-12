@@ -1,3 +1,22 @@
+## 113.24.00
+
+- Bin\_prot can be configured to use the primitives to read/write
+  integers from bigarrays. This was never enabled due to missing tests
+  that selecting this code path doesn't change the format.
+
+  This version add these tests and enable the use of the fast
+  primitives.
+
+- Add benchmarks for all exposed bin\_prot read/write functions.
+  These are intended to check performance regressions.
+
+- Remove most use of cpp in bin\_prot.
+
+  Replace the pre-processor conditionals by runtime one. This make the
+  code a little less obfuscated.
+
+- Remove big literals so that the compiler does not complain in 32bit
+
 ## 113.00.00
 
 - Switched build to use =config.h= rather than the command-line for

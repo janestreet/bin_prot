@@ -1,11 +1,11 @@
-OASISFormat:      0.3
-OCamlVersion:     >= 4.00.0
+OASISFormat:      0.4
+OCamlVersion:     >= 4.02.3
 FindlibVersion:   >= 1.3.2
 Name:             bin_prot
-Version:          113.00.00
-Synopsis:         bin_prot - binary protocol generator
+Version:          113.24.00
+Synopsis:         A binary protocol generator
 Authors:          Jane Street Group, LLC <opensource@janestreet.com>
-Copyrights:       (C) 2008-2013 Jane Street Group LLC <opensource@janestreet.com>
+Copyrights:       (C) 2008-2016 Jane Street Group LLC <opensource@janestreet.com>
 Maintainers:      Jane Street Group, LLC <opensource@janestreet.com>
 License:          Apache-2.0
 LicenseFile:      LICENSE.txt
@@ -13,72 +13,31 @@ Homepage:         https://github.com/janestreet/bin_prot
 Plugins:          StdFiles (0.3), DevFiles (0.3), META (0.3)
 XStdFilesAUTHORS: false
 XStdFilesREADME:  false
-BuildTools:       ocamlbuild, camlp4o
+BuildTools:       ocamlbuild
+FilesAB:          META.ab
+Description:
+  Part of Jane Street’s Core library
+  The Core suite of libraries is an industrial strength alternative to
+  OCaml's standard library that was developed by Jane Street, the
+  largest industrial user of OCaml.
 
-Plugins:          StdFiles (0.3), DevFiles (0.3), META (0.3)
-XStdFilesAUTHORS: false
-XStdFilesREADME:  false
-
-PostConfCommand: config/arch.sh $ocamlc
-PreBuildCommand: mkdir -p _build; cp lib/*.mlh _build/
+PostConfCommand: cd src && ./detect-arch.sh $ocamlc config.h
+PreDistCleanCommand: $rm src/config.h
 
 Library bin_prot
-  Path:               lib
-  Pack:               true
-  Modules:            Binable,
-                      Nat0,
-                      Common,
-                      Size,
-                      Write,
-                      Read,
-                      Std,
-                      Type_class,
-                      Utils
-  CSources:           config.h, blit_stubs.c, float_stubs.c
-  BuildDepends:       unix,bigarray
-
-Library pa_bin_prot
-  Path:               syntax
-  FindlibName:        syntax
-  FindlibParent:      bin_prot
-  Modules:            Pa_bin_prot
-  BuildDepends:       camlp4.quotations,camlp4.extend,type_conv (>= 3.0.5)
-  XMETAType:          syntax
-  XMETARequires:      camlp4,type_conv,bin_prot
-  XMETADescription:   Syntax extension for binary protocol generator
-
-Executable test_runner
-  Path:               test
-  MainIs:             test_runner.ml
-  Build$:             flag(tests)
-  Install:            false
-  CompiledObject:     best
-  Custom:             true
-  BuildDepends:       bin_prot,bin_prot.syntax,oUnit (>= 1.0.2)
-
-Test test_runner
-  Run$:               flag(tests)
-  Command:            $test_runner
-  WorkingDirectory:   test
-
-Executable mac_test
-  Path:               test
-  MainIs:             mac_test.ml
-  Build$:             flag(tests)
-  Install:            false
-  Custom:             true
-  CompiledObject:     best
-  BuildDepends:       bin_prot,bin_prot.syntax
-
-Test mac_test
-  Run$:               flag(tests)
-  Command:            $mac_test
-  WorkingDirectory:   test
-
-Executable example
-  Path:               test
-  MainIs:             example.ml
-  Build$:             flag(tests)
-  Install:            false
-  CompiledObject:     best
-  BuildDepends:       bin_prot,bin_prot.syntax
+  Path:         src
+  Pack:         true
+  Modules:      Binable,
+                Blob,
+                Common,
+                Nat0,
+                Read,
+                Size,
+                Std,
+                Type_class,
+                Utils,
+                Write
+  BuildDepends: bigarray
+  CSources:     blit_stubs.c,
+                config.h,
+                float_stubs.c
