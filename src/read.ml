@@ -296,7 +296,7 @@ let bin_read_int buf ~pos_ref =
    OCaml to read the float at this address. This way it can unbox when [bin_read_float] is
    inlined. *)
 external get_float_offset : buf -> pos -> float array
-  = "bin_prot_get_float_offset" "noalloc"
+  = "bin_prot_get_float_offset" [@@noalloc]
 #endif
 
 let bin_read_float buf ~pos_ref =
@@ -431,7 +431,7 @@ let bin_read_float_array buf ~pos_ref =
   let pos = !pos_ref in
   let next = pos + size in
   check_next buf next;
-  let arr = Array.make_float len in
+  let arr = Array.create_float len in
   unsafe_blit_buf_float_array buf arr ~src_pos:pos ~dst_pos:0 ~len;
   pos_ref := next;
   arr

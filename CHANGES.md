@@ -1,3 +1,7 @@
+## 113.33.00+4.03
+
+Various updates to work with OCaml 4.03.0
+
 ## 113.24.00
 
 - Bin\_prot can be configured to use the primitives to read/write
