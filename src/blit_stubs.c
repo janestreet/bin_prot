@@ -23,6 +23,10 @@
 # endif
 #endif
 
+#ifdef __MINIOS__
+#define unlikely(x)     __builtin_expect((x),0)
+#endif
+
 #define get_buf(v_buf, v_pos) (char *) Caml_ba_data_val(v_buf) + Long_val(v_pos)
 
 CAMLprim value bin_prot_blit_string_buf_stub(
