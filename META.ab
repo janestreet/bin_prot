@@ -6,3 +6,15 @@ archive(native) = "bin_prot.cmxa"
 plugin(byte  ) = "bin_prot.cma"
 plugin(native) = "bin_prot.cmxs"
 exists_if = "bin_prot.cma"
+
+xen_linkopts = "-lbin_prot_xen_stubs"
+package "xen" (
+  version = "$(pkg_version)"
+  description = "A binary protocol generator"
+  requires = "bigarray"
+  archive(byte  ) = "bin_prot_xen.cma"
+  archive(native) = "bin_prot_xen.cmxa"
+  plugin(byte  ) = "bin_prot_xen.cma"
+  plugin(native) = "bin_prot_xen.cmxs"
+  exists_if = "bin_prot_xen.cma"
+)

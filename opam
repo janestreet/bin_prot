@@ -6,7 +6,7 @@ bug-reports: "https://github.com/janestreet/bin_prot/issues"
 dev-repo: "https://github.com/janestreet/bin_prot.git"
 license: "Apache-2.0"
 build: [
-  ["./configure" "--prefix" prefix]
+  ["./configure" "--prefix" prefix "--%{mirage-xen:enable}%-xen"]
   [make]
 ]
 depends: [
@@ -16,3 +16,6 @@ depends: [
   "js-build-tools" {build}
 ]
 available: [ ocaml-version >= "4.02.3" ]
+depopts: [
+  "mirage-xen-ocaml"
+]
