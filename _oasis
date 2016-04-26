@@ -21,8 +21,12 @@ Description:
   OCaml's standard library that was developed by Jane Street, the
   largest industrial user of OCaml.
 
-PostConfCommand: cd src && ./detect-arch.sh $ocamlc config.h
+PostConfCommand: (cd src && ./detect-arch.sh $ocamlc config.h) && ./postconf.sh
 PreDistCleanCommand: $rm src/config.h
+
+Flag xen
+  Description:        Build Xen support
+  Default:            false
 
 Library bin_prot
   Path:         src
@@ -41,3 +45,14 @@ Library bin_prot
   CSources:     blit_stubs.c,
                 config.h,
                 float_stubs.c
+  XMETAExtraLines:    xen_linkopts = "-lbin_prot_xen_stubs"
+
+Library bin_prot_xen
+  Build$:             flag(xen)
+  CompiledObject:     best
+  Path:               src
+  FindlibParent:      bin_prot
+  Findlibname:        xen
+  BuildDepends:       bigarray
+  CSources:           blit_stubs_xen.c, config.h, float_stubs_xen.c
+  CCOpt:              -O2 $XEN_CFLAGS
