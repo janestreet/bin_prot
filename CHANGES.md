@@ -1,3 +1,14 @@
+## 113.43.00
+
+- Converted `bin_prot` to use `%expect` tests. No functional changes.
+
+- Added `Maximum` and `Minimum` submodules to `Size` so to allow for
+  easy estimation of the space required for simple bin_prot'ed types.
+
+- `Binable.S_only_functions`
+
+- Fix various bin_prot issue in 32bit architectures
+
 ## 113.24.00
 
 - Bin\_prot can be configured to use the primitives to read/write
