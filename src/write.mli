@@ -84,5 +84,7 @@ val bin_write_network64_int64 : int64 writer
     network byte order (= big-endian). *)
 
 val bin_write_array_no_length : ('a, 'a array) writer1
+  [@@deprecated
+    "[since 2016-03] this function was deprecated as it is misleading and unused"]
 (** [bin_write_array_no_length] writes out all values in the given array
     without writing out its length. *)

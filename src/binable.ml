@@ -1,6 +1,8 @@
 (* Binable: signatures defining generated functions for the binary protocol *)
 
-module type S = sig
+(* the subset of S containing only functions, so that one can recursively define modules
+   implementing this interface *)
+module type S_only_functions = sig
   type t
 
   val bin_size_t : t Size.sizer
@@ -14,6 +16,12 @@ module type S = sig
      variant [t] afterwards.
   *)
   val __bin_read_t__ : (int -> t) Read.reader
+end
+
+module type S = sig
+  type t
+  include S_only_functions with type t := t
+
   val bin_writer_t : t Type_class.writer
   val bin_reader_t : t Type_class.reader
   val bin_t : t Type_class.t

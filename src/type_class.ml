@@ -72,16 +72,13 @@ MK_BASE(int64)
 MK_BASE(nativeint)
 MK_BASE(nat0)
 
-#define MK_WRITER_BASE1(NAME) \
+#define MK_BASE1(NAME) \
   let bin_writer_##NAME bin_writer_el = \
     { \
       size = (fun v -> Size.bin_size_##NAME bin_writer_el.size v); \
       write = (fun buf ~pos v -> \
         Write.bin_write_##NAME bin_writer_el.write buf ~pos v); \
-    }
-
-#define MK_BASE1(NAME) \
-  MK_WRITER_BASE1(NAME) \
+    } \
   let bin_reader_##NAME bin_reader_el = \
     { \
       read = (fun buf ~pos_ref -> \
@@ -177,8 +174,12 @@ MK_BASE(network32_int32)
 MK_BASE(network64_int)
 MK_BASE(network64_int64)
 
-MK_WRITER_BASE1(array_no_length)
-
+let bin_writer_array_no_length bin_writer_el =
+  { size  = (fun v ->
+      (Size.bin_size_array_no_length [@warning "-3"]) bin_writer_el.size v)
+  ; write = (fun buf ~pos v ->
+      (Write.bin_write_array_no_length [@warning "-3"]) bin_writer_el.write buf ~pos v)
+  }
 
 (* Conversion of binable types *)
 

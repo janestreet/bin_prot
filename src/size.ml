@@ -6,6 +6,79 @@ open Bigarray
 
 open Common
 
+module Maximum = struct
+  let bin_size_unit            = 1
+  let bin_size_bool            = 1
+  let bin_size_char            = 1
+#ifdef JSC_ARCH_SIXTYFOUR
+  let bin_size_int_nat0        = 9
+  let bin_size_int_negative    = 9
+#else
+  let bin_size_int_nat0        = 5
+  let bin_size_int_negative    = 5
+#endif
+  let bin_size_int             = max bin_size_int_nat0 bin_size_int_negative
+  let bin_size_float           = 8
+  let bin_size_int32           = 5
+  let bin_size_int64           = 9
+  let bin_size_nativeint       = bin_size_int
+  let bin_size_nat0            = bin_size_int_nat0
+  let bin_size_variant_int     = 4
+  let bin_size_int_8bit        = 1
+  let bin_size_int_16bit       = 2
+  let bin_size_int_32bit       = 4
+  let bin_size_int_64bit       = 8
+  let bin_size_int64_bits      = 8
+  let bin_size_network16_int   = 2
+  let bin_size_network32_int   = 4
+  let bin_size_network32_int32 = 4
+  let bin_size_network64_int   = 8
+  let bin_size_network64_int64 = 8
+end
+
+module Minimum = struct
+  let bin_size_unit            = Maximum.bin_size_unit
+  let bin_size_bool            = Maximum.bin_size_bool
+  let bin_size_char            = Maximum.bin_size_char
+  let bin_size_int_nat0        = 1
+  let bin_size_int_negative    = 2
+  let bin_size_int             = min bin_size_int_nat0 bin_size_int_negative
+  let bin_size_float           = Maximum.bin_size_float
+  let bin_size_int32           = bin_size_int
+  let bin_size_int64           = bin_size_int
+  let bin_size_nativeint       = bin_size_int
+  let bin_size_nat0            = 1
+  let bin_size_ref             = 1
+  let bin_size_lazy_t          = 1
+  let bin_size_option          = 1
+  let bin_size_pair            = 1 + 1
+  let bin_size_triple          = 1 + 1 + 1
+  let bin_size_len             = bin_size_nat0
+  let bin_size_list            = bin_size_len
+  let bin_size_array           = bin_size_len
+  let bin_size_hashtbl         = bin_size_len
+  let bin_size_string          = bin_size_len
+  let bin_size_vec             = bin_size_len
+  let bin_size_float32_vec     = bin_size_vec
+  let bin_size_float64_vec     = bin_size_vec
+  let bin_size_mat             = bin_size_len + bin_size_len
+  let bin_size_float32_mat     = bin_size_mat
+  let bin_size_float64_mat     = bin_size_mat
+  let bin_size_bigstring       = bin_size_len
+  let bin_size_float_array     = bin_size_len
+  let bin_size_variant_int     = Maximum.bin_size_variant_int
+  let bin_size_int_8bit        = Maximum.bin_size_int_8bit
+  let bin_size_int_16bit       = Maximum.bin_size_int_16bit
+  let bin_size_int_32bit       = Maximum.bin_size_int_32bit
+  let bin_size_int_64bit       = Maximum.bin_size_int_64bit
+  let bin_size_int64_bits      = Maximum.bin_size_int64_bits
+  let bin_size_network16_int   = Maximum.bin_size_network16_int
+  let bin_size_network32_int   = Maximum.bin_size_network32_int
+  let bin_size_network32_int32 = Maximum.bin_size_network32_int32
+  let bin_size_network64_int   = Maximum.bin_size_network64_int
+  let bin_size_network64_int64 = Maximum.bin_size_network64_int64
+end
+
 type 'a sizer = 'a -> int
 type ('a, 'b) sizer1 = 'a sizer -> 'b sizer
 type ('a, 'b, 'c) sizer2 = 'a sizer -> ('b, 'c) sizer1
@@ -92,7 +165,7 @@ let bin_size_lazy_t bin_size_el lv = bin_size_el (Lazy.force lv)
 let bin_size_lazy = bin_size_lazy_t
 
 let bin_size_option bin_size_el = function
-  | None -> 1
+  | None   -> 1
   | Some v -> 1 + bin_size_el v
 
 let bin_size_pair bin_size_a bin_size_b (a, b) = bin_size_a a + bin_size_b b

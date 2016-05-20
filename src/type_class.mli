@@ -120,7 +120,8 @@ MK_BASE_TP(network64_int, int)
 MK_BASE_TP(network64_int64, int64)
 
 val bin_writer_array_no_length : ('a, 'a array) S1.writer
-
+  [@@deprecated
+    "[since 2016-03] this writer was deprecated as it is misleading and unused"]
 
 (** Conversion of binable types *)
 
