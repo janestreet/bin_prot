@@ -126,7 +126,7 @@ let blit_buf ?src_pos ~src ?dst_pos ~dst len =
 
 external unsafe_blit_string_buf :
   src_pos : int -> string -> dst_pos : int -> buf -> len : int -> unit
-  = "bin_prot_blit_string_buf_stub" "noalloc"
+  = "bin_prot_blit_string_buf_stub" [@@noalloc]
 
 let blit_string_buf ?src_pos str ?dst_pos buf ~len =
   let loc = "blit_string_buf" in
@@ -147,7 +147,7 @@ let blit_string_buf ?src_pos str ?dst_pos buf ~len =
 
 external unsafe_blit_buf_string :
   src_pos : int -> buf -> dst_pos : int -> string -> len : int -> unit
-  = "bin_prot_blit_buf_string_stub" "noalloc"
+  = "bin_prot_blit_buf_string_stub" [@@noalloc]
 
 let blit_buf_string ?src_pos buf ?dst_pos str ~len =
   let loc = "blit_buf_string" in
@@ -188,8 +188,8 @@ type mat = mat64
 
 external unsafe_blit_float_array_buf :
   src_pos : int -> float array -> dst_pos : int -> buf -> len : int -> unit
-  = "bin_prot_blit_float_array_buf_stub" "noalloc"
+  = "bin_prot_blit_float_array_buf_stub" [@@noalloc]
 
 external unsafe_blit_buf_float_array :
   src_pos : int -> buf -> dst_pos : int -> float array -> len : int -> unit
-  = "bin_prot_blit_buf_float_array_stub" "noalloc"
+  = "bin_prot_blit_buf_float_array_stub" [@@noalloc]

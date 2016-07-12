@@ -158,7 +158,7 @@ let bin_write_string buf ~pos str =
 #ifdef JSC_ARCH_SIXTYFOUR
 (* Same trick as in read.ml *)
 external get_float_offset : buf -> pos -> float array
-  = "bin_prot_get_float_offset" "noalloc"
+  = "bin_prot_get_float_offset" [@@noalloc]
 #endif
 
 let bin_write_float buf ~pos x =
