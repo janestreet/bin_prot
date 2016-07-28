@@ -5,6 +5,9 @@ module Opaque = struct
      header is included. *)
   type t = buf
 
+  let bin_shape_t =
+    Shape.(basetype (Uuid.of_string "85a1f76e-490a-11e6-86a9-5bef585f2602") [])
+
   let bin_size_t t =
     Utils.size_header_length + (buf_len t)
 
@@ -47,6 +50,7 @@ module Opaque = struct
     { Type_class.
       writer = bin_writer_t
     ; reader = bin_reader_t
+    ; shape = bin_shape_t
     }
 end
 
@@ -78,6 +82,9 @@ module Ignored = struct
 end
 
 type 'a t = 'a
+
+let bin_shape_t t =
+  Shape.(basetype (Uuid.of_string "85a2557e-490a-11e6-98ac-4b8953d525fe") [t])
 
 let bin_size_t bin_size_a a = Utils.size_header_length + bin_size_a a
 
@@ -120,10 +127,12 @@ let bin_reader_t { Type_class. read = bin_read_a; vtag_read = __bin_read_a__ } =
   ; vtag_read = __bin_read_t__ __bin_read_a__
   }
 
-let bin_t { Type_class. writer = bin_writer_a; reader = bin_reader_a } =
+let bin_t { Type_class. writer = bin_writer_a; reader = bin_reader_a
+          ; shape = bin_shape_a } =
   { Type_class.
     writer = bin_writer_t bin_writer_a
   ; reader = bin_reader_t bin_reader_a
+  ; shape = bin_shape_t bin_shape_a
   }
 
 let to_opaque t bin_writer = Utils.bin_dump bin_writer t

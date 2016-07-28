@@ -16,6 +16,7 @@ type 'a reader =
 
 type 'a t =
   {
+    shape : Shape.t;
     writer : 'a writer;
     reader : 'a reader;
   }
@@ -45,6 +46,7 @@ end
 #define MK_BASE_TP(NAME, TP) \
   val bin_writer_##NAME : TP writer \
   val bin_reader_##NAME : TP reader \
+  val bin_shape_##NAME : Shape.t \
   val bin_##NAME : TP t
 
 #define MK_BASE(NAME) MK_BASE_TP(NAME, NAME)
@@ -52,6 +54,7 @@ end
 #define MK_BASE1_TP(NAME, TP) \
   val bin_writer_##NAME : ('a, 'a TP) S1.writer \
   val bin_reader_##NAME : ('a, 'a TP) S1.reader \
+  val bin_shape_##NAME : Shape.t -> Shape.t \
   val bin_##NAME : ('a, 'a TP) S1.t
 
 #define MK_BASE1(NAME) MK_BASE1_TP(NAME, NAME)
@@ -59,6 +62,7 @@ end
 #define MK_BASE2_TP(NAME, TP) \
   val bin_writer_##NAME : ('a, 'b, ('a, 'b) TP) S2.writer \
   val bin_reader_##NAME : ('a, 'b, ('a, 'b) TP) S2.reader \
+  val bin_shape_##NAME : Shape.t -> Shape.t -> Shape.t \
   val bin_##NAME : ('a, 'b, ('a, 'b) TP) S2.t
 
 #define MK_BASE2(NAME) MK_BASE2_TP(NAME, NAME)
@@ -73,6 +77,7 @@ MK_BASE(int32)
 MK_BASE(int64)
 MK_BASE(nativeint)
 MK_BASE_TP(nat0, Nat0.t)
+MK_BASE_TP(digest, Shape.Digest.t)
 
 MK_BASE1(ref)
 MK_BASE1_TP(lazy, lazy_t)
@@ -99,9 +104,8 @@ MK_BASE_TP(float64_mat, mat64)
 MK_BASE(mat)
 MK_BASE_TP(bigstring, buf)
 
-val bin_writer_float_array : float array writer
-val bin_reader_float_array : float array reader
-val bin_float_array : float array t
+type float_array = float array
+MK_BASE(float_array)
 
 val bin_writer_variant_int : int writer
 val bin_reader_variant_int : int reader
@@ -127,4 +131,4 @@ val bin_writer_array_no_length : ('a, 'a array) S1.writer
 
 val cnv_writer : ('a -> 'b) -> 'b writer -> 'a writer
 val cnv_reader : ('b -> 'a) -> 'b reader -> 'a reader
-val cnv : ('a -> 'b) -> ('b -> 'a) -> 'b t -> 'a t
+val cnv : (Shape.t -> Shape.t) -> ('a -> 'b) -> ('b -> 'a) -> 'b t -> 'a t

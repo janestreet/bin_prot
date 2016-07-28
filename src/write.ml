@@ -416,3 +416,29 @@ let bin_write_network64_int64 buf ~pos n =
 
 let bin_write_array_no_length bin_write_el buf ~pos ar =
   bin_write_array_loop bin_write_el buf ~els_pos:pos ~n:(Array.length ar) ar
+
+external unsafe_string_get32 : string -> int -> int32 = "%caml_string_get32u";;
+external unsafe_string_get64 : string -> int -> int64 = "%caml_string_get64u";;
+
+let bin_write_digest buf ~pos x =
+  let x = Shape.Digest.unsafe_to_raw_string x in
+  assert (String.length x = 16);
+  assert_pos pos;
+  let next = pos + 16 in
+  check_next buf next;
+  if arch_sixtyfour then begin
+    let a = unsafe_string_get64 x 0 in
+    let b = unsafe_string_get64 x 8 in
+    unsafe_set64 buf  pos      a;
+    unsafe_set64 buf (pos + 8) b;
+  end else begin
+    let a = unsafe_string_get32 x  0 in
+    let b = unsafe_string_get32 x  4 in
+    let c = unsafe_string_get32 x  8 in
+    let d = unsafe_string_get32 x 12 in
+    unsafe_set32 buf  pos       a;
+    unsafe_set32 buf (pos +  4) b;
+    unsafe_set32 buf (pos +  8) c;
+    unsafe_set32 buf (pos + 12) d;
+  end;
+  next

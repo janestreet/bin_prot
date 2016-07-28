@@ -3,6 +3,8 @@
 # This prevents the implicit addition of -ppx options by ocamlfind
 <**/*>: predicate(custom_ppx)
 <src/*.ml>: for-pack(Bin_prot)
+<shape/src/*.ml>: for-pack(Bin_shape_lib)
+<shape/src/*.ml{,i}>: ppx-driver(ppx_compare+ppx_custom_printf+ppx_fields_conv+ppx_sexp_conv+ppx_variants_conv)
 <src/*.ml{,i}>: pp_deps_for_src
 <src/{size,write,read,type_class}.ml{i,}>:cpp
 # OASIS_START

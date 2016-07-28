@@ -37,6 +37,7 @@ val bin_write_float64_mat : mat64 writer
 val bin_write_mat : mat writer
 val bin_write_bigstring : buf writer
 val bin_write_float_array : float array writer
+val bin_write_digest : Shape.Digest.t writer
 
 val bin_write_variant_int : int writer
 (** [bin_write_variant_int] writes out the exact little-endian bit

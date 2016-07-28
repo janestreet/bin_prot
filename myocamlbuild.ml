@@ -27,6 +27,7 @@ let () =
     JS.pass_predicates_to_ocamldep hook;
     if dev_mode && not Sys.win32 then JS.track_external_deps hook;
     setup_preprocessor_deps hook;
+    Ppx_driver_ocamlbuild.dispatch hook;
     dispatch hook;
     dispatch_default hook)
 

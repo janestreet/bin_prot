@@ -1,11 +1,22 @@
 version = "$(pkg_version)"
 description = "A binary protocol generator"
-requires = "bigarray"
+requires = "bigarray bin_prot.shape"
 archive(byte  ) = "bin_prot.cma"
 archive(native) = "bin_prot.cmxa"
 plugin(byte  ) = "bin_prot.cma"
 plugin(native) = "bin_prot.cmxs"
 exists_if = "bin_prot.cma"
+
+package "shape" (
+  version = "$(pkg_version)"
+  description = ""
+  requires = "fieldslib sexplib variantslib"
+  archive(byte  ) = "bin_shape_lib.cma"
+  archive(native) = "bin_shape_lib.cmxa"
+  plugin(byte  ) = "bin_shape_lib.cma"
+  plugin(native) = "bin_shape_lib.cmxs"
+  exists_if = "bin_shape_lib.cma"
+)
 
 xen_linkopts = "-lbin_prot_xen_stubs"
 package "xen" (

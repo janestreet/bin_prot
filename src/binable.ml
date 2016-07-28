@@ -22,6 +22,7 @@ module type S = sig
   type t
   include S_only_functions with type t := t
 
+  val bin_shape_t : Shape.t
   val bin_writer_t : t Type_class.writer
   val bin_reader_t : t Type_class.reader
   val bin_t : t Type_class.t
@@ -30,6 +31,7 @@ end
 module type S1 = sig
   type 'a t
 
+  val bin_shape_t : Shape.t -> Shape.t
   val bin_size_t : ('a, 'a t) Size.sizer1
   val bin_write_t :('a, 'a t) Write.writer1
   val bin_read_t : ('a, 'a t) Read.reader1
@@ -42,6 +44,7 @@ end
 module type S2 = sig
   type ('a, 'b) t
 
+  val bin_shape_t : Shape.t -> Shape.t -> Shape.t
   val bin_size_t : ('a, 'b, ('a, 'b) t) Size.sizer2
   val bin_write_t :('a, 'b, ('a, 'b) t) Write.writer2
   val bin_read_t : ('a, 'b, ('a, 'b) t) Read.reader2

@@ -103,6 +103,9 @@ module type Make_iterable_binable_spec = sig
   type t
   type el
 
+  (** [caller_identity] is necessary to ensure different callers of
+      [Make_iterable_binable] are not shape compatible. *)
+  val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : t -> int
   val iter : t -> f : (el -> unit) -> unit
@@ -110,6 +113,7 @@ module type Make_iterable_binable_spec = sig
   val bin_size_el : el Size.sizer
   val bin_write_el : el Write.writer
   val bin_read_el : el Read.reader
+  val bin_shape_el : Shape.t
 end
 
 module Make_iterable_binable (Iterable_spec : Make_iterable_binable_spec)
@@ -119,6 +123,7 @@ module type Make_iterable_binable1_spec = sig
   type 'a t
   type 'a el
 
+  val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : 'a t -> int
   val iter : 'a t -> f : ('a el -> unit) -> unit
@@ -126,6 +131,7 @@ module type Make_iterable_binable1_spec = sig
   val bin_size_el : ('a, 'a el) Size.sizer1
   val bin_write_el : ('a, 'a el) Write.writer1
   val bin_read_el : ('a, 'a el) Read.reader1
+  val bin_shape_el : Shape.t -> Shape.t
 end
 
 module Make_iterable_binable1 (Iterable_spec : Make_iterable_binable1_spec)
@@ -135,6 +141,7 @@ module type Make_iterable_binable2_spec = sig
   type ('a, 'b) t
   type ('a, 'b) el
 
+  val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : ('a, 'b) t -> int
   val iter : ('a, 'b) t -> f : (('a, 'b) el -> unit) -> unit
@@ -142,6 +149,7 @@ module type Make_iterable_binable2_spec = sig
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
   val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
   val bin_read_el : ('a, 'b, ('a, 'b) el) Read.reader2
+  val bin_shape_el : Shape.t -> Shape.t -> Shape.t
 end
 
 module Make_iterable_binable2 (Iterable_spec : Make_iterable_binable2_spec)

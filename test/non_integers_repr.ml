@@ -16,6 +16,7 @@ open Import
 
 module Read  = Bin_prot.Read
 module Write = Bin_prot.Write
+module Shape = Bin_prot.Shape
 
 type 'a to_test =
   { writer   : 'a Write.writer
@@ -103,6 +104,16 @@ module Tests = struct
     ; sexp_of  = [%sexp_of: char]
     ; hi_bound = Some Maximum.bin_size_char
     ; lo_bound = Minimum.bin_size_char
+    }
+
+  let digest =
+    { writer   = Write.bin_write_digest
+    ; reader   = Read .bin_read_digest
+    ; values   = [ Bin_prot.Shape.Digest.from_hex "0123456789abcdef0123456789ABCDEF" ]
+    ; equal    = (fun d1 d2 -> Shape.Digest.compare d1 d2 = 0)
+    ; sexp_of  = [%sexp_of: Shape.Digest.t]
+    ; hi_bound = Some Maximum.bin_size_digest
+    ; lo_bound = Minimum.bin_size_digest
     }
 
   let float =
@@ -375,6 +386,51 @@ module Tests = struct
     }
 
 
+  module Inline_record = struct
+    type inner =
+      | Inner of { w : Int64.t
+                 ; x : Int32.t
+                 }
+      | Inner_other of unit
+    [@@deriving bin_io, sexp_of, variants]
+    let maximum_bin_size_of_inner =
+      1 + Variants_of_inner.fold ~init:0
+            ~inner:(fun acc _ -> max acc (Maximum.bin_size_int64 + Maximum.bin_size_int32))
+            ~inner_other:(fun acc _ -> max acc Maximum.bin_size_unit)
+    let minimum_bin_size_of_inner =
+      1 + Variants_of_inner.fold ~init:Int.max_value
+            ~inner:(fun acc _ -> min acc (Minimum.bin_size_int64 + Minimum.bin_size_int32))
+            ~inner_other:(fun acc _ -> min acc Minimum.bin_size_unit)
+    type t =
+      | Outer_other of unit
+      | Outer of { y : inner
+                 ; z : unit
+                 } [@@deriving bin_io, sexp_of, variants]
+    let maximum_bin_size =
+      1 + Variants.fold ~init:0
+            ~outer:(fun acc _ -> max acc (maximum_bin_size_of_inner + Maximum.bin_size_unit))
+            ~outer_other:(fun acc _ -> max acc Maximum.bin_size_unit)
+
+    let minimum_bin_size =
+      1 + Variants.fold ~init:Int.max_value
+            ~outer:(fun acc _ -> min acc (minimum_bin_size_of_inner + Minimum.bin_size_unit))
+            ~outer_other:(fun acc _ -> min acc Minimum.bin_size_unit)
+  end
+  let inline_record =
+    let open Inline_record in
+    { writer   = bin_write_t
+    ; reader   = bin_read_t
+    ; values   = [ Outer { y = Inner { w = 0L; x = 0l }; z = () }
+                 ; Outer { y = Inner { w = Int64.max_value; x = Int32.max_value }; z = () }
+                 ; Outer { y = Inner_other (); z = () }
+                 ; Outer_other ()
+                 ]
+    ; equal    = ( = )
+    ; sexp_of  = [%sexp_of: t]
+    ; hi_bound = Some (maximum_bin_size)
+    ; lo_bound = minimum_bin_size
+    }
+
 end
 
 let buf = Bigstring.create 1024
@@ -436,6 +492,10 @@ let%expect_test "Non-integer bin_prot size tests" =
     7a -> z
     3b -> ";"
     ff -> "\255"
+  |}];
+  gen_tests Tests.digest;
+  [%expect{|
+    ef cd ab 89 67 45 23 01 ef cd ab 89 67 45 23 01 -> 0123456789abcdef0123456789abcdef
   |}];
   gen_tests Tests.float;
   [%expect{|
@@ -577,4 +637,10 @@ let%expect_test "Non-integer bin_prot size tests" =
   [%expect {|
     .. .. .. .. .. .. .. .. .. .. .. .. 00 00 00 -> ((y((w 0)(x 0)))(z()))
     00 7f ff ff ff fd 7f ff ff ff ff ff ff ff fc -> ((y((w 9223372036854775807)(x 2147483647)))(z())) |}];
+  gen_tests Tests.inline_record;
+  [%expect {|
+    .. .. .. .. .. .. .. .. .. .. .. .. 00 00 00 00 01 -> (Outer(y(Inner(w 0)(x 0)))(z()))
+    00 7f ff ff ff fd 7f ff ff ff ff ff ff ff fc 00 01 -> (Outer(y(Inner(w 9223372036854775807)(x 2147483647)))(z()))
+    .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 01 01 -> (Outer(y(Inner_other()))(z()))
+    .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 -> (Outer_other()) |}]
 ;;

@@ -14,6 +14,7 @@ type 'a reader =
 
 type 'a t =
   {
+    shape : Shape.t;
     writer : 'a writer;
     reader : 'a reader;
   }
@@ -53,10 +54,12 @@ let variant_wrong_type name _buf ~pos_ref _x =
   let bin_reader_##NAME = \
     { \
       read = Read.bin_read_##NAME; \
-      vtag_read = variant_wrong_type "NAME"; \
+      vtag_read = variant_wrong_type #NAME; \
     } \
+  let bin_shape_##NAME = Shape.bin_shape_##NAME \
   let bin_##NAME = \
     { \
+      shape = bin_shape_##NAME; \
       writer = bin_writer_##NAME; \
       reader = bin_reader_##NAME; \
     }
@@ -71,6 +74,7 @@ MK_BASE(int32)
 MK_BASE(int64)
 MK_BASE(nativeint)
 MK_BASE(nat0)
+MK_BASE(digest)
 
 #define MK_BASE1(NAME) \
   let bin_writer_##NAME bin_writer_el = \
@@ -83,10 +87,13 @@ MK_BASE(nat0)
     { \
       read = (fun buf ~pos_ref -> \
         Read.bin_read_##NAME bin_reader_el.read buf ~pos_ref); \
-      vtag_read = variant_wrong_type "NAME"; \
+      vtag_read = variant_wrong_type #NAME; \
     } \
+  let bin_shape_##NAME = \
+    fun x1 -> Shape.bin_shape_##NAME x1 \
   let bin_##NAME bin_el = \
     { \
+      shape = bin_shape_##NAME bin_el.shape; \
       writer = bin_writer_##NAME bin_el.writer; \
       reader = bin_reader_##NAME bin_el.reader; \
     }
@@ -105,10 +112,13 @@ MK_BASE(nat0)
       read = (fun buf ~pos_ref -> \
         Read.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read buf ~pos_ref); \
-      vtag_read = variant_wrong_type "NAME"; \
+      vtag_read = variant_wrong_type #NAME; \
     } \
+  let bin_shape_##NAME = \
+    fun x1 x2 -> Shape.bin_shape_##NAME x1 x2 \
   let bin_##NAME bin_el1 bin_el2 = \
     { \
+      shape = bin_shape_##NAME bin_el1.shape bin_el2.shape; \
       writer = bin_writer_##NAME bin_el1.writer bin_el2.writer; \
       reader = bin_reader_##NAME bin_el1.reader bin_el2.reader; \
     }
@@ -130,10 +140,14 @@ MK_BASE(nat0)
         Read.bin_read_##NAME \
           bin_reader_el1.read bin_reader_el2.read \
           bin_reader_el3.read buf ~pos_ref); \
-      vtag_read = variant_wrong_type "NAME"; \
+      vtag_read = variant_wrong_type #NAME; \
     } \
+  let bin_shape_##NAME = \
+    fun x1 x2 x3 -> Shape.bin_shape_##NAME x1 x2 x3 \
   let bin_##NAME bin_el1 bin_el2 bin_el3 = \
     { \
+      shape = \
+        bin_shape_##NAME bin_el1.shape bin_el2.shape bin_el3.shape; \
       writer = \
         bin_writer_##NAME bin_el1.writer bin_el2.writer bin_el3.writer; \
       reader = \
@@ -160,7 +174,10 @@ MK_BASE(float32_mat)
 MK_BASE(float64_mat)
 MK_BASE(mat)
 MK_BASE(bigstring)
+
+type float_array = float array
 MK_BASE(float_array)
+
 MK_BASE(variant_int)
 MK_BASE(int_8bit)
 MK_BASE(int_16bit)
@@ -196,8 +213,9 @@ let cnv_reader cnv tp_class =
       cnv (tp_class.vtag_read buf ~pos_ref vtag));
   }
 
-let cnv for_writer for_reader tp_class =
+let cnv for_shape for_writer for_reader tp_class =
   {
+    shape = for_shape tp_class.shape;
     writer = cnv_writer for_writer tp_class.writer;
     reader = cnv_reader for_reader tp_class.reader;
   }

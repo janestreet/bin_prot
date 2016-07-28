@@ -653,3 +653,30 @@ let bin_read_network64_int64 buf ~pos_ref =
   check_next buf next;
   pos_ref := next;
   unsafe_get64be buf pos
+
+external unsafe_string_set32 : string -> int -> int32 -> unit = "%caml_string_set32u";;
+external unsafe_string_set64 : string -> int -> int64 -> unit = "%caml_string_set64u";;
+
+let bin_read_digest buf ~pos_ref =
+  let pos = !pos_ref in
+  assert_pos pos;
+  let next = pos + 16 in
+  check_next buf next;
+  pos_ref := next;
+  let res = Bytes.create 16 in
+  if arch_sixtyfour then begin
+    let a = unsafe_get64 buf  pos      in
+    let b = unsafe_get64 buf (pos + 8) in
+    unsafe_string_set64 res 0 a;
+    unsafe_string_set64 res 8 b;
+  end else begin
+    let a = unsafe_get32 buf  pos       in
+    let b = unsafe_get32 buf (pos +  4) in
+    let c = unsafe_get32 buf (pos +  8) in
+    let d = unsafe_get32 buf (pos + 12) in
+    unsafe_string_set32 res  0 a;
+    unsafe_string_set32 res  4 b;
+    unsafe_string_set32 res  8 c;
+    unsafe_string_set32 res 12 d;
+  end;
+  Shape.Digest.unsafe_of_raw_string res
