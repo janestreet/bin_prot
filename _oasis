@@ -54,8 +54,8 @@ Library bin_prot
 Library bin_shape_lib
   Path:         shape/src
   Pack:         true
-  Modules:      Core_fragment,
-                Shape,
+  Modules:      Bin_shape,
+                Core_fragment,
                 Std
   BuildDepends: fieldslib,
                 sexplib,

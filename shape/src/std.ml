@@ -1,1 +1,1 @@
-module Shape = Shape
+module Shape = Bin_shape
