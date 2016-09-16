@@ -440,7 +440,7 @@ module Expression = struct
       loc : Location.t;
       members : (Tid.t * (Vid.t list * 'a)) list;
     }
-    [@@deriving fields, compare, sexp_of]
+    [@@deriving compare, sexp_of]
 
     let create loc trips =
       let gid = Gid.create () in
