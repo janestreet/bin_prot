@@ -1,0 +1,13 @@
+(rule
+ ((targets (cflags.sexp))
+  (deps    (cflags.sh))
+  (action  "./${<} > ${@}")))
+
+(library
+ ((name        bin_prot_xen)
+  (public_name bin_prot.xen)
+  (optional)
+  (libraries (bigarray))
+  (virtual_deps (mirage-xen-ocaml))
+  (c_flags (< cflags.sexp))
+  (preprocess no_preprocessing)))

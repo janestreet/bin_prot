@@ -19,6 +19,9 @@ depends: [
   "ppx_variants_conv"
   "sexplib"
 ]
+depopts: [
+  "mirage-xen-ocaml"
+]
 available: [ ocaml-version >= "4.03.0" ]
 descr: "
 A binary protocol generator
@@ -28,6 +31,3 @@ The Core suite of libraries is an industrial strength alternative to
 OCaml's standard library that was developed by Jane Street, the
 largest industrial user of OCaml.
 "
-depopts: [
-  "mirage-xen-ocaml"
-]
