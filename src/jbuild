@@ -1,11 +1,14 @@
 (library
  ((name bin_prot)
-  (libraries (bigarray bin_shape_lib))
+  (libraries (bigarray bin_shape_lib base base.caml))
   (public_name bin_prot)
   (c_names (blit_stubs float_stubs))
   (preprocessor_deps (int_codes.mlh config.h))
-  (preprocess (((command "${CPP} -undef") (List (size write read type_class)))))
-  (js_of_ocaml ())))
+  (preprocess (per_file
+               ((command "${CPP} -x c -undef") (size write read type_class))
+               ((pps (ppx_sexp_conv)) (common))
+               ))
+  (js_of_ocaml ((javascript_files (runtime.js))))))
 
 ;; config.h is created atomically by discover.sh to avoid a problem where gcc -MM on some
 ;; file that includes config.h reads a partial written file, and fails

@@ -1,9 +1,10 @@
 (* Common: common definitions used by binary protocol converters *)
 
+open Base
 open Printf
 open Bigarray
 
-type pos = int
+type pos = int [@@deriving sexp_of]
 
 (* Errors and exceptions *)
 
@@ -57,9 +58,11 @@ module ReadError = struct
     | Variant_wrong_type loc -> "Variant_wrong_type / " ^ loc
     | Silly_type loc -> "Silly_type / " ^ loc
     | Empty_type loc -> "Empty_type / " ^ loc
+
+  let sexp_of_t t = Sexp.Atom (to_string t)
 end
 
-exception Read_error of ReadError.t * pos
+exception Read_error of ReadError.t * pos [@@deriving sexp_of]
 exception Poly_rec_write of string
 exception Empty_type of string
 
@@ -171,7 +174,7 @@ let blit_buf_string ?src_pos buf ?dst_pos str ~len =
 
 let rec copy_htbl_list htbl = function
   | [] -> htbl
-  | (k, v) :: rest -> Hashtbl.add htbl k v; copy_htbl_list htbl rest
+  | (k, v) :: rest -> Caml.Hashtbl.add htbl k v; copy_htbl_list htbl rest
 
 (* Bigarrays *)
 

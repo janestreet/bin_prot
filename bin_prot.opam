@@ -6,15 +6,11 @@ bug-reports: "https://github.com/janestreet/bin_prot/issues"
 dev-repo: "https://github.com/janestreet/bin_prot.git"
 license: "Apache-2.0"
 build: [
-  ["./configure" "--prefix" prefix "--%{mirage-xen:enable}%-xen"]
-  [make]
+  ["jbuilder" "build-package" "bin_prot" "-j" jobs]
 ]
 depends: [
-  "ocamlbuild"        {build}
-  "oasis"             {build & >= "0.4"}
-  "ocamlfind"         {build & >= "1.3.2"}
-  "fieldslib"
-  "js-build-tools"    {build}
+  "base"
+  "jbuilder"
   "ppx_compare"
   "ppx_custom_printf"
   "ppx_driver"
@@ -22,10 +18,16 @@ depends: [
   "ppx_sexp_conv"
   "ppx_variants_conv"
   "sexplib"
-  "variantslib"
 ]
 available: [ ocaml-version >= "4.03.0" ]
-conflicts: [ "oasis" {= "0.4.7"} ]
+descr: "
+A binary protocol generator
+
+Part of Jane Street\226\128\153s Core library
+The Core suite of libraries is an industrial strength alternative to
+OCaml's standard library that was developed by Jane Street, the
+largest industrial user of OCaml.
+"
 depopts: [
   "mirage-xen-ocaml"
 ]
