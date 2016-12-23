@@ -1,4 +1,4 @@
 (library
  ((name bin_prot_test)
-  (preprocessor_deps (../src/config.h))
-  (libraries (core bin_prot))))
+  (libraries (core_kernel bin_prot))
+  (js_of_ocaml ())))

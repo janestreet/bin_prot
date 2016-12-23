@@ -9,5 +9,5 @@
   (optional)
   (libraries (bigarray))
   (virtual_deps (mirage-xen-ocaml))
-  (c_flags (< cflags.sexp))
+  (c_flags (:include cflags.sexp))
   (preprocess no_preprocessing)))

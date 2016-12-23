@@ -1,4 +1,4 @@
-open Core.Std
+open Core_kernel.Std
 open Import
 
 (* This module generates reference serialized output for various functions of

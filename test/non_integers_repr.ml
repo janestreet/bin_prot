@@ -1,10 +1,9 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-open Core.Std
+open Core_kernel.Std
 open Bigarray
 open Import
 
-#import "../src/config.h"
 (* Generate reference serialized output for various functions of
    [Bin_prot.Write] for the purpose of ensuring [Bin_prot.Size.Maximum] and
    [Bin_prot.Size.Minimum] bound correctness.
@@ -513,15 +512,9 @@ let%expect_test "Non-integer bin_prot size tests" =
     00 00 00 00 00 00 00 00 -> 0
   |}];
   gen_tests Tests.float_nan;
-#ifdef JSC_ARCH_SIXTYFOUR
   [%expect{|
-    7f f0 00 00 00 00 00 01 -> NAN
+    7f f{8,0} 00 00 00 00 00 01 -> NAN (glob)
   |}];
-#else
-  [%expect{|
-    7f f8 00 00 00 00 00 01 -> NAN
-  |}];
-#endif
   gen_tests Tests.vec;
   [%expect{|
     .. .. .. .. .. .. .. .. 00 -> ()
@@ -621,14 +614,6 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. 7f ff ff ff fd 00 02 -> (0 2147483647)
     80 00 00 00 fd 7f ff ff ff fd 02 -> (2147483647 -2147483648)
   |}];
-  gen_tests Tests.hashtbl;
-  [%expect{|
-    .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 -> ()
-    .. .. .. .. .. .. .. .. .. .. .. .. 00 00 01 -> ((0 0))
-    .. .. .. .. .. .. .. .. .. .. 00 00 01 01 02 -> ((0 0)(1 1))
-    .. .. 00 00 7f ff ff ff fd 7f ff ff ff fd 02 -> ((0 0)(2147483647 2147483647))
-    80 00 00 00 fd 80 00 00 00 fd ff ff ff ff 02 -> ((-2147483648 -2147483648)(-1 -1))
-  |}];
   gen_tests Tests.record1;
   [%expect {|
     .. .. .. .. 00 00 00 00 00 00 00 00 00 -> ((x 0)(y 0))
@@ -644,3 +629,15 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 01 01 -> (Outer(y(Inner_other()))(z()))
     .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 -> (Outer_other()) |}]
 ;;
+
+(* Polymorphic hash is not the same when running in javascript.
+   This makes the test fail because of different ordering. *)
+let%expect_test "Non-integer bin_prot size tests (no js)" [@tags "no-js"] =
+  gen_tests Tests.hashtbl;
+  [%expect{|
+    .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 -> ()
+    .. .. .. .. .. .. .. .. .. .. .. .. 00 00 01 -> ((0 0))
+    .. .. .. .. .. .. .. .. .. .. 00 00 01 01 02 -> ((0 0)(1 1))
+    .. .. 00 00 7f ff ff ff fd 7f ff ff ff fd 02 -> ((0 0)(2147483647 2147483647))
+    80 00 00 00 fd 80 00 00 00 fd ff ff ff ff 02 -> ((-2147483648 -2147483648)(-1 -1))
+  |}];

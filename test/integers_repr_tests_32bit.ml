@@ -1,9 +1,6 @@
-#import "../src/config.h"
-
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-#ifndef JSC_ARCH_SIXTYFOUR
-let%expect_test "32 bit integer tests" =
+let%expect_test "32 bit integer tests" [@tags "32-bits-only", "no-js" ] =
   Integers_repr.run_tests ();
   [%expect {|
 int| .. .. .. .. c0 00 00 00 fd -> -1073741824
@@ -14420,4 +14417,3 @@ network64_int64| .. fd ff ff ff ff ff ff 7f -> 9223372036854775805
 network64_int64| .. fe ff ff ff ff ff ff 7f -> 9223372036854775806
 network64_int64| .. ff ff ff ff ff ff ff 7f -> 9223372036854775807
 |}];
-#endif
