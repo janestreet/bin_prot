@@ -5,7 +5,7 @@
   (c_names (blit_stubs float_stubs))
   (preprocessor_deps (int_codes.mlh config.h))
   (preprocess (per_file
-               ((command "${CPP} -x c -undef") (size write read type_class))
+               ((command "${CPP} -x assembler-with-cpp -undef") (size write read type_class))
                ((pps (ppx_sexp_conv)) (common))
                ))
   (js_of_ocaml ((javascript_files (runtime.js))))))
