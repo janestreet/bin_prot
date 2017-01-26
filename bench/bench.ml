@@ -1,5 +1,5 @@
 open Bin_prot
-open Core.Std
+open Core
 
 let%bench_module "float array" = (module struct
   let a = Array.create ~len:1000 0.

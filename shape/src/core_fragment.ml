@@ -1,4 +1,4 @@
-(* fragment of [Core.Std] interface needed by [bin_shape] runtime *)
+(* fragment of [Core] interface needed by [bin_shape] runtime *)
 
 include Sexplib.Std
 include Ppx_compare_lib.Builtin
