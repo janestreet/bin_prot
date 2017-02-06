@@ -53,3 +53,16 @@ module type S2 = sig
   val bin_reader_t : ('a, 'b, ('a, 'b) t) Type_class.S2.reader
   val bin_t : ('a, 'b, ('a, 'b) t) Type_class.S2.t
 end
+
+module type S3 = sig
+  type ('a, 'b, 'c) t
+
+  val bin_shape_t : Shape.t -> Shape.t -> Shape.t -> Shape.t
+  val bin_size_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Size.sizer3
+  val bin_write_t :('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
+  val bin_read_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Read.reader3
+  val __bin_read_t__ : ('a, 'b, 'c, int -> ('a, 'b, 'c) t) Read.reader3
+  val bin_writer_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.writer
+  val bin_reader_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.reader
+  val bin_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.t
+end

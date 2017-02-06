@@ -9,7 +9,7 @@ val size_header_length : int
     and [bin_read_stream] functions below, as well as:
       - Core.Bigstring.{read,write}_bin_prot
       - Core.Unpack_buffer.unpack_bin_prot
-      - Async.Std.{Reader,Writer}.{read,write}_bin_prot
+      - Async.{Reader,Writer}.{read,write}_bin_prot
     among others.
 
     The size prefix is always 8 bytes at present. This is exposed so your program does not
@@ -96,6 +96,17 @@ end
 module Make_binable2 (Bin_spec : Make_binable2_spec)
   : Binable.S2 with type ('a, 'b) t := ('a, 'b) Bin_spec.t
 
+module type Make_binable3_spec = sig
+  module Binable : Binable.S3
+
+  type ('a, 'b, 'c) t
+
+  val to_binable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Binable.t
+  val of_binable : ('a, 'b, 'c) Binable.t -> ('a, 'b, 'c) t
+end
+
+module Make_binable3 (Bin_spec : Make_binable3_spec)
+  : Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
 
 (** Conversion of iterable types *)
 
@@ -154,3 +165,21 @@ end
 
 module Make_iterable_binable2 (Iterable_spec : Make_iterable_binable2_spec)
   : Binable.S2 with type ('a, 'b) t := ('a, 'b) Iterable_spec.t
+
+module type Make_iterable_binable3_spec = sig
+  type ('a, 'b, 'c) t
+  type ('a, 'b, 'c) el
+
+  val caller_identity : Shape.Uuid.t
+  val module_name : string option
+  val length : ('a, 'b, 'c) t -> int
+  val iter : ('a, 'b, 'c) t -> f : (('a, 'b, 'c) el -> unit) -> unit
+  val init : len:int -> next:(unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
+  val bin_size_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3
+  val bin_write_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3
+  val bin_read_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Read.reader3
+  val bin_shape_el : Shape.t -> Shape.t -> Shape.t -> Shape.t
+end
+
+module Make_iterable_binable3 (Iterable_spec : Make_iterable_binable3_spec)
+  : Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Iterable_spec.t

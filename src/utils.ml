@@ -203,6 +203,60 @@ module Make_binable2 (S : Make_binable2_spec) = struct
     }
 end
 
+module type Make_binable3_spec = sig
+  module Binable : Binable.S3
+
+  type ('a, 'b, 'c) t
+
+  val to_binable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Binable.t
+  val of_binable : ('a, 'b, 'c) Binable.t -> ('a, 'b, 'c) t
+end
+
+module Make_binable3 (S : Make_binable3_spec) = struct
+  module B = S.Binable
+
+  let bin_shape_t bin_shape_el1 bin_shape_el2 bin_shape_el3 =
+    B.bin_shape_t bin_shape_el1 bin_shape_el2 bin_shape_el3
+
+  let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
+    B.bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 (S.to_binable t)
+
+  let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
+    B.bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos (S.to_binable t)
+
+  let bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref)
+
+  let __bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n)
+
+  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
+    {
+      size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v);
+      write = (fun buf ~pos v ->
+        bin_write_t
+          bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v);
+    }
+
+  let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
+    {
+      read = (fun buf ~pos_ref ->
+        bin_read_t
+          bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref);
+      vtag_read = (fun _buf ~pos_ref _n ->
+        raise_variant_wrong_type
+          "Bin_prot.Utils.Make_binable3.bin_reader_t"
+          !pos_ref);
+    }
+
+  let bin_t type_class1 type_class2 type_class3 =
+    {
+      shape  = bin_shape_t  type_class1.shape  type_class2.shape  type_class3.shape;
+      writer = bin_writer_t type_class1.writer type_class2.writer type_class3.writer;
+      reader = bin_reader_t type_class1.reader type_class2.reader type_class3.reader;
+    }
+end
+
 module type Make_iterable_binable_spec = sig
   type t
   type el
@@ -475,3 +529,92 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     }
 end
 
+
+module type Make_iterable_binable3_spec = sig
+  type ('a, 'b, 'c) t
+  type ('a, 'b, 'c) el
+
+  val caller_identity : Shape.Uuid.t
+  val module_name : string option
+
+  val length : ('a, 'b, 'c) t -> int
+  val iter : ('a, 'b, 'c) t -> f : (('a, 'b, 'c) el -> unit) -> unit
+  val init : len:int -> next:(unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
+
+  val bin_size_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3
+  val bin_write_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3
+  val bin_read_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Read.reader3
+  val bin_shape_el : Shape.t -> Shape.t -> Shape.t -> Shape.t
+end
+
+module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
+  open S
+
+  let bin_shape_t t1 t2 t3 =
+    Shape.(basetype caller_identity [
+      basetype
+        (Uuid.of_string "f2112eda-e7d7-11e6-bb36-072e9ce159db")
+        [S.bin_shape_el t1 t2 t3]])
+
+  let bin_size_t bin_size_a bin_size_b bin_size_c t =
+    let size_ref = ref 0 in
+    let cnt_ref = ref 0 in
+    iter t ~f:(fun el ->
+      size_ref := !size_ref + bin_size_el bin_size_a bin_size_b bin_size_c el;
+      incr cnt_ref);
+    let len = length t in
+    if !cnt_ref = len then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
+    else raise_concurrent_modification ~module_name "bin_size_t"
+
+  let bin_write_t bin_write_a bin_write_b bin_write_c buf ~pos t =
+    let len = length t in
+    let plen = Nat0.unsafe_of_int len in
+    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
+    let cnt_ref = ref 0 in
+    iter t ~f:(fun el ->
+      pos_ref := bin_write_el bin_write_a bin_write_b bin_write_c buf ~pos:!pos_ref el;
+      incr cnt_ref);
+    if !cnt_ref = len then
+      !pos_ref
+    else
+      raise_concurrent_modification ~module_name "bin_write_t"
+
+  let bin_read_t bin_read_a bin_read_b bin_read_c buf ~pos_ref =
+    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
+    let idx = ref 0 in
+    let next () =
+      if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
+      incr idx;
+      bin_read_el bin_read_a bin_read_b bin_read_c buf ~pos_ref
+    in
+    let result = init ~len ~next in
+    if !idx < len then raise_read_not_enough ~module_name "bin_read_t";
+    result
+
+  let __bin_read_t__ _bin_read_a _bin_read_b _bin_read_c _buf ~pos_ref _n =
+    raise_variant_wrong_type "t" !pos_ref
+
+  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
+    {
+      size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v);
+      write = (fun buf ~pos v ->
+        bin_write_t
+          bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v);
+    }
+
+  let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
+    {
+      read = (fun buf ~pos_ref ->
+        bin_read_t
+          bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref);
+      vtag_read = (fun buf ~pos_ref n ->
+        __bin_read_t__ bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref n);
+    }
+
+  let bin_t type_class1 type_class2 type_class3 =
+    {
+      shape  = bin_shape_t  type_class1.shape  type_class2.shape  type_class3.shape;
+      writer = bin_writer_t type_class1.writer type_class2.writer type_class3.writer;
+      reader = bin_reader_t type_class1.reader type_class2.reader type_class3.reader;
+    }
+end
