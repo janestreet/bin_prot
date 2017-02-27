@@ -11,3 +11,5 @@
   (libraries (bigarray))
   (c_flags (:include cflags.sexp))
   (preprocess no_preprocessing)))
+
+(jbuild_version jane_street)

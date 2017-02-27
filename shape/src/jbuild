@@ -4,3 +4,5 @@
   (libraries (sexplib))
   (js_of_ocaml ())
   (preprocess (pps (ppx_compare ppx_sexp_conv ppx_fields_conv ppx_variants_conv ppx_custom_printf)))))
+
+(jbuild_version jane_street)

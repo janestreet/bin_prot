@@ -2,3 +2,5 @@
  ((name bin_prot_bench)
   (libraries
    (core))))
+
+(jbuild_version jane_street)

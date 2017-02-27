@@ -16,3 +16,5 @@
  ((targets (config.h))
   (deps (discover.sh test.c))
   (action "./${<} ${OCAMLC} config.h")))
+
+(jbuild_version jane_street)
