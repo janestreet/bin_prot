@@ -8,7 +8,7 @@
                ((command "${CPP} -x assembler-with-cpp -undef") (size write read type_class))
                ((pps (ppx_sexp_conv)) (common))
                ))
-  (js_of_ocaml ((javascript_files (runtime.js))))))
+))
 
 ;; config.h is created atomically by discover.sh to avoid a problem where gcc -MM on some
 ;; file that includes config.h reads a partial written file, and fails

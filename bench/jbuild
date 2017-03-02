@@ -1,6 +1,7 @@
 (library
  ((name bin_prot_bench)
   (libraries
-   (core))))
+   (core))
+  (preprocess (pps (ppx_jane)))))
 
 (jbuild_version jane_street)

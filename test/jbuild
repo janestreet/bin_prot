@@ -1,6 +1,7 @@
 (library
  ((name bin_prot_test)
   (libraries (core_kernel bin_prot))
-  (js_of_ocaml ())))
+  (preprocess (pps (ppx_jane)))
+))
 
 (jbuild_version jane_street)
