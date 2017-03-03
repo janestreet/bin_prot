@@ -1,7 +1,7 @@
 (rule
  ((targets (cflags.sexp))
   (deps    (cflags.sh))
-  (action  "./${<} > ${@}")))
+  (action  (bash "./${<} > ${@}"))))
 
 (library
  ((name        bin_prot_xen)
