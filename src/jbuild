@@ -17,4 +17,4 @@
   (deps (discover.sh test.c))
   (action (bash "./${<} ${OCAMLC} config.h"))))
 
-(jbuild_version jane_street)
+(jbuild_version 1)
