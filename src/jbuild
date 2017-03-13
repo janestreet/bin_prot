@@ -17,4 +17,6 @@
   (deps (discover.sh test.c))
   (action (bash "./${<} ${OCAMLC} config.h"))))
 
+(install ((section lib) (files (runtime.js))))
+
 (jbuild_version 1)
