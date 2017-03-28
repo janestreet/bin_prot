@@ -6,7 +6,7 @@
   (preprocessor_deps (int_codes.mlh config.h))
   (preprocess (per_file
                ((action (system "${CPP} -x assembler-with-cpp -undef ${<}")) (size write read type_class))
-               ((pps (ppx_sexp_conv ppx_driver.runner)) (common))
+               ((pps (ppx_sexp_conv -type-conv-keep-w32=both ppx_driver.runner)) (common))
                ))
 ))
 
