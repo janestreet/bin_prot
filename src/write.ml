@@ -96,6 +96,7 @@ let all_bin_write_int32 buf pos n =
   unsafe_set buf pos CODE_INT32;
   unsafe_set32le buf (pos + 1) n;
   next
+[@@inline]
 
 let all_bin_write_int64 buf pos n =
   let next = pos + 9 in
@@ -103,6 +104,7 @@ let all_bin_write_int64 buf pos n =
   unsafe_set buf pos CODE_INT64;
   unsafe_set64le buf (pos + 1) n;
   next
+[@@inline]
 
 let bin_write_char buf ~pos c =
   assert_pos pos;
@@ -172,17 +174,18 @@ let bin_write_float buf ~pos x =
   unsafe_set64le buf pos (Int64.bits_of_float x);
 #endif
   next
+[@@inline]
 
 let bin_write_int32 =
   if arch_sixtyfour then
-    fun buf ~pos n -> bin_write_int buf ~pos (Int32.to_int n)
+    (fun buf ~pos n -> bin_write_int buf ~pos (Int32.to_int n)) [@inline]
   else
-    fun buf ~pos n ->
-      if n >= 0x00008000l || n < -0x00008000l then begin
-        assert_pos pos;
-        all_bin_write_int32 buf pos n
-      end else
-        bin_write_int buf ~pos (Int32.to_int n)
+    (fun buf ~pos n ->
+       if n >= 0x00008000l || n < -0x00008000l then begin
+         assert_pos pos;
+         all_bin_write_int32 buf pos n
+       end else
+         bin_write_int buf ~pos (Int32.to_int n)) [@inline]
 
 let bin_write_int64 buf ~pos n =
   if n >= 0x80000000L || n < -0x80000000L then begin
@@ -195,6 +198,7 @@ let bin_write_int64 buf ~pos n =
     all_bin_write_int32 buf pos (Int64.to_int32 n)
   end else
     bin_write_int buf ~pos (Int64.to_int n)
+[@@inline]
 
 let bin_write_nativeint buf ~pos n =
   if arch_sixtyfour && n >= 0x80000000n || n < -0x80000000n then begin
@@ -205,6 +209,7 @@ let bin_write_nativeint buf ~pos n =
     all_bin_write_int32 buf pos (Nativeint.to_int32 n)
   end else
     bin_write_int buf ~pos (Nativeint.to_int n)
+[@@inline]
 
 let bin_write_ref bin_write_el buf ~pos r = bin_write_el buf ~pos !r
 

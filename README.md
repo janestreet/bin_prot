@@ -1,7 +1,7 @@
-`Bin_prot` - OCaml Type Converter for Binary Protocols
-======================================================
-
----------------------------------------------------------------------------
+---
+title: Bin_prot - OCaml Type Converter for Binary Protocols
+parent: ../../ppx/ppx_bin_prot/README.md
+---
 
 What is `Bin_prot`?
 -------------------
@@ -360,17 +360,3 @@ The `Utils` module may also come in handy as described in earlier sections,
 e.g. if the value can be converted to and from an intermediate representation
 that does not impose constraints, or if some sort of iteration is supported
 by the data type.
-
----------------------------------------------------------------------------
-
-Contact Information and Contributing
-------------------------------------
-
-In the case of bugs, feature requests, contributions and similar, please
-contact the maintainers:
-
-  * Jane Street Capital, LLC <opensource@janestreet.com>
-
-Up-to-date information should be available at:
-* <https://github.com/janestreet/bin_prot>
-* <https://bitbucket.org/janestreet/bin_prot>

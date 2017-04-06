@@ -1,5 +1,6 @@
 ---
-layout: default
+title: Bin_prot_shape
+parent: ../../../ppx/ppx_bin_prot/README.md
 ---
 
 What is `Bin_prot_shape`?
