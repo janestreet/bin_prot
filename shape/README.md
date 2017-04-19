@@ -363,13 +363,13 @@ Or using syntax:
 For example:
 
 ```ocaml
-    type dollars = float [@@deriving bin_shape ~annotate:"dollars", bin_io]
+    type dollars = float [@@deriving bin_io, bin_shape ~annotate:"dollars"]
 ```
 
 Other semantic invariants might be captured in a similar way:
 
 ```ocaml
-    type t = int list [@@deriving bin_shape ~annotate:"sorted", bin_io] 
+    type t = int list [@@deriving bin_io, bin_shape ~annotate:"sorted"] 
 ```
 
 Annotations have a similar shape-level benefit as could be achieved
@@ -391,8 +391,8 @@ It is worth emphasizing the difference between `basetype` and
 `annotate`.  For example, given:
 
 ```ocaml
-   type dollars1 = float [@@deriving bin_shape ~basetype:"dollars", bin_io]
-   type dollars2 = float [@@deriving bin_shape ~annotate:"dollars", bin_io]
+   type dollars1 = float [@@deriving bin_io, bin_shape ~basetype:"dollars"]
+   type dollars2 = float [@@deriving bin_io, bin_shape ~annotate:"dollars"]
 ```
 
 The shape for `dollars1` and `dollars2` are not compatible, and
@@ -412,8 +412,8 @@ stronger claim that that which results from `basetype`.
 
 Given additionally:
 ```ocaml
-   type dollars3 = Bignum.t [@@deriving bin_shape ~basetype:"dollars", bin_io]
-   type dollars4 = Bignum.t [@@deriving bin_shape ~annotate:"dollars", bin_io]
+   type dollars3 = Bignum.t [@@deriving bin_io, bin_shape ~basetype:"dollars"]
+   type dollars4 = Bignum.t [@@deriving bin_io, bin_shape ~annotate:"dollars"]
 ``
 
 The shape for `dollars3` is compatible with `dollars1`, whereas
