@@ -3,7 +3,6 @@
 (* Note: the code is this file is carefully written to avoid unnecessary allocations. When
    touching this code, be sure to run the benchmarks to check for regressions. *)
 
-#include "config.h"
 #include "int_codes.mlh"
 
 open Bigarray
@@ -290,29 +289,13 @@ let bin_read_int buf ~pos_ref =
     raise_read_error ReadError.Int_code pos
 ;;
 
-
-#ifdef JSC_ARCH_SIXTYFOUR
-(* The C stubs returns the address of buf.{pos} as a float array. This is a hack to trick
-   OCaml to read the float at this address. This way it can unbox when [bin_read_float] is
-   inlined. *)
-external get_float_offset : buf -> pos -> float array
-  = "bin_prot_get_float_offset" [@@noalloc]
-#endif
-
 let bin_read_float buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-  pos_ref := next;
-#ifdef JSC_ARCH_SIXTYFOUR
-  (* We must use the unsafe function to prevent OCaml from checking the length: the float
-     array returned by [get_float_offset] has no header! *)
-  Array.unsafe_get (get_float_offset buf pos) 0
-#else
-  (* No hack in 32bit.  (required for Javascript support) *)
+  pos_ref := next; (* No error possible either. *)
   Int64.float_of_bits (unsafe_get64le buf pos)
-#endif
 ;;
 
 let bin_read_int32 buf ~pos_ref =

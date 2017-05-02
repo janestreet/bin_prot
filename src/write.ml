@@ -3,7 +3,6 @@
 (* Note: the code is this file is carefully written to avoid unnecessary allocations. When
    touching this code, be sure to run the benchmarks to check for regressions. *)
 
-#include "config.h"
 #include "int_codes.mlh"
 
 open Bigarray
@@ -156,23 +155,11 @@ let bin_write_string buf ~pos str =
   unsafe_blit_string_buf ~src_pos:0 str ~dst_pos:new_pos buf ~len;
   next
 
-
-#ifdef JSC_ARCH_SIXTYFOUR
-(* Same trick as in read.ml *)
-external get_float_offset : buf -> pos -> float array
-  = "bin_prot_get_float_offset" [@@noalloc]
-#endif
-
 let bin_write_float buf ~pos x =
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
-#ifdef JSC_ARCH_SIXTYFOUR
-  Array.unsafe_set (get_float_offset buf pos) 0 x;
-#else
-  (* No hack in 32bit.  (required for Javascript support) *)
   unsafe_set64le buf pos (Int64.bits_of_float x);
-#endif
   next
 [@@inline]
 
@@ -201,7 +188,9 @@ let bin_write_int64 buf ~pos n =
 [@@inline]
 
 let bin_write_nativeint buf ~pos n =
-  if arch_sixtyfour && n >= 0x80000000n || n < -0x80000000n then begin
+  if arch_sixtyfour &&
+     (n >= (* 0x80000000n *) (Nativeint.shift_left 1n 31) ||
+      n < (* -0x80000000n *) Nativeint.neg (Nativeint.shift_left 1n 31)) then begin
     assert_pos pos;
     all_bin_write_int64 buf pos (Int64.of_nativeint n)
   end else if not arch_sixtyfour && n >= 0x8000n || n < -0x8000n then begin

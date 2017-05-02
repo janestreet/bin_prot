@@ -1,8 +1,8 @@
 (* Size: compute size of values in the binary protocol. *)
 
-#include "config.h"
-
 open Bigarray
+
+let arch_sixtyfour = Sys.word_size = 64
 
 open Common
 
@@ -11,13 +11,8 @@ module Maximum = struct
   let bin_size_bool            = 1
   let bin_size_char            = 1
   let bin_size_digest          = 16
-#ifdef JSC_ARCH_SIXTYFOUR
-  let bin_size_int_nat0        = 9
-  let bin_size_int_negative    = 9
-#else
-  let bin_size_int_nat0        = 5
-  let bin_size_int_negative    = 5
-#endif
+  let bin_size_int_nat0        = if arch_sixtyfour then 9 else 5
+  let bin_size_int_negative    = if arch_sixtyfour then 9 else 5
   let bin_size_int             = max bin_size_int_nat0 bin_size_int_negative
   let bin_size_float           = 8
   let bin_size_int32           = 5
@@ -93,17 +88,13 @@ let bin_size_bool _ = 1
 let bin_size_int_nat0 n =
   if      n  < 0x00000080 then 1
   else if n  < 0x00008000 then 3
-#ifdef JSC_ARCH_SIXTYFOUR
-  else if n >= 0x80000000 then 9
-#endif
+  else if arch_sixtyfour && n >= (* 0x80000000 *) (1 lsl 31) then 9
   else 5
 
 let bin_size_int_negative n =
   if      n >= -0x00000080 then 2
   else if n >= -0x00008000 then 3
-#ifdef JSC_ARCH_SIXTYFOUR
-  else if n  < -0x80000000 then 9
-#endif
+  else if arch_sixtyfour && n  < (* -0x80000000 *) -(1 lsl 31) then 9
   else 5
 
 let bin_size_char _ = 1
@@ -116,9 +107,7 @@ let bin_size_nat0 nat0 =
   let n = (nat0 : Nat0.t :> int) in
   if      n <   0x00000080 then 1
   else if n <   0x00010000 then 3
-#ifdef JSC_ARCH_SIXTYFOUR
-  else if n >= 0x100000000 then 9
-#endif
+  else if arch_sixtyfour && n >= (* 0x100000000 *) (1 lsl 32) then 9
   else 5
 
 let bin_size_string str =
@@ -139,30 +128,28 @@ let bin_size_float f =
   8
 ;;
 
-#ifdef JSC_ARCH_SIXTYFOUR
-let bin_size_int32 n = bin_size_int (Int32.to_int n)
-#else
-let bin_size_int32 n =
-  if n >= 0x00008000l || n < -0x00008000l then 5
-  else bin_size_int (Int32.to_int n)
-#endif
+let bin_size_int32 =
+  if arch_sixtyfour
+  then fun n -> bin_size_int (Int32.to_int n)
+  else fun n ->
+    if n >= 0x00008000l || n < -0x00008000l then 5
+    else bin_size_int (Int32.to_int n)
 
-#ifdef JSC_ARCH_SIXTYFOUR
-let bin_size_int64 n =
-  if n >= 0x80000000L || n < -0x80000000L then 9
-  else bin_size_int (Int64.to_int n)
-#else
-let bin_size_int64 n =
-  if n >= 0x80000000L || n < -0x80000000L then 9
-  else bin_size_int32 (Int64.to_int32 n)
-#endif
+let bin_size_int64 =
+  if arch_sixtyfour
+  then fun n ->
+    if n >= 0x80000000L || n < -0x80000000L then 9
+    else bin_size_int (Int64.to_int n)
+  else fun n ->
+    if n >= 0x80000000L || n < -0x80000000L then 9
+    else bin_size_int32 (Int64.to_int32 n)
 
-let bin_size_nativeint n =
-#ifdef JSC_ARCH_SIXTYFOUR
-  bin_size_int64 (Int64.of_nativeint n)
-#else
-  bin_size_int32 (Nativeint.to_int32 n)
-#endif
+let bin_size_nativeint =
+  if arch_sixtyfour
+  then
+    fun n -> bin_size_int64 (Int64.of_nativeint n)
+  else
+    fun n -> bin_size_int32 (Nativeint.to_int32 n)
 
 let bin_size_ref bin_size_el r = bin_size_el !r
 let bin_size_lazy_t bin_size_el lv = bin_size_el (Lazy.force lv)
