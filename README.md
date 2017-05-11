@@ -1,7 +1,5 @@
----
-title: Bin_prot - OCaml Type Converter for Binary Protocols
-parent: ../../ppx/ppx_bin_prot/README.md
----
+Bin_prot - OCaml Type Converter for Binary Protocols
+====================================================
 
 What is `Bin_prot`?
 -------------------
