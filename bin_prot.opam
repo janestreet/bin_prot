@@ -23,7 +23,7 @@ depends: [
 depopts: [
   "mirage-xen-ocaml"
 ]
-available: [ ocaml-version >= "4.03.0" ]
+available: [ ocaml-version >= "4.04.1" ]
 descr: "
 A binary protocol generator
 
