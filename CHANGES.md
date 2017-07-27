@@ -1,3 +1,7 @@
+## v0.9.1
+
+- `per_file` --> `per_module` in jbuild files
+
 ## 113.43.00
 
 - Converted `bin_prot` to use `%expect` tests. No functional changes.

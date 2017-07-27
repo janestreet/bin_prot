@@ -4,7 +4,7 @@
   (public_name bin_prot)
   (c_names (blit_stubs float_stubs))
   (preprocessor_deps (int_codes.mlh config.h))
-  (preprocess (per_file
+  (preprocess (per_module
                ((action (system "${CPP} -x assembler-with-cpp -undef ${<}")) (size write read type_class))
                ((pps (ppx_sexp_conv ppx_driver.runner)) (common))
                ))
