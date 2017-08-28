@@ -61,7 +61,7 @@ val bin_read_stream :
 (** Conversion of binable types *)
 
 module type Make_binable_spec = sig
-  module Binable : Binable.S
+  module Binable : Binable.Minimal.S
 
   type t
 
@@ -69,11 +69,13 @@ module type Make_binable_spec = sig
   val of_binable : Binable.t -> t
 end
 
+module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t
+
 module Make_binable (Bin_spec : Make_binable_spec)
   : Binable.S with type t := Bin_spec.t
 
 module type Make_binable1_spec = sig
-  module Binable : Binable.S1
+  module Binable : Binable.Minimal.S1
 
   type 'a t
 
@@ -85,7 +87,7 @@ module Make_binable1 (Bin_spec : Make_binable1_spec)
   : Binable.S1 with type 'a t := 'a Bin_spec.t
 
 module type Make_binable2_spec = sig
-  module Binable : Binable.S2
+  module Binable : Binable.Minimal.S2
 
   type ('a, 'b) t
 
@@ -97,7 +99,7 @@ module Make_binable2 (Bin_spec : Make_binable2_spec)
   : Binable.S2 with type ('a, 'b) t := ('a, 'b) Bin_spec.t
 
 module type Make_binable3_spec = sig
-  module Binable : Binable.S3
+  module Binable : Binable.Minimal.S3
 
   type ('a, 'b, 'c) t
 

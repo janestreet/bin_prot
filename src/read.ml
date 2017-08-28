@@ -640,7 +640,7 @@ let bin_read_network64_int64 buf ~pos_ref =
 external unsafe_string_set32 : string -> int -> int32 -> unit = "%caml_string_set32u";;
 external unsafe_string_set64 : string -> int -> int64 -> unit = "%caml_string_set64u";;
 
-let bin_read_digest buf ~pos_ref =
+let bin_read_md5 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 16 in
@@ -662,4 +662,4 @@ let bin_read_digest buf ~pos_ref =
     unsafe_string_set32 res  8 c;
     unsafe_string_set32 res 12 d;
   end;
-  Shape.Digest.unsafe_of_raw_string res
+  Md5_lib.unsafe_of_binary res

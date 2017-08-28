@@ -65,12 +65,11 @@ end = struct
 end
 
 module Digest : sig
-  type t [@@deriving compare, sexp]
-  val to_hex : t -> string
-  val from_hex : string -> t
+  type t = Md5_lib.t [@@deriving compare, sexp]
 
-  val unsafe_of_raw_string : string -> t
-  val unsafe_to_raw_string : t -> string
+  val to_md5 : t -> Md5_lib.t
+  val of_md5 : Md5_lib.t -> t
+  val to_hex : t -> string
 
   val constructor : string -> t list -> t
   val list : t list -> t
@@ -80,22 +79,19 @@ module Digest : sig
   val int : int -> t
   val option : t option -> t
 end = struct
-  type t = string [@@deriving compare]
-  let to_hex = Caml.Digest.to_hex
-  let from_hex = Caml.Digest.from_hex
+  include Md5_lib
+
+  let to_md5 t = t
+  let of_md5 t = t
 
   let sexp_of_t t = t |> to_hex |> sexp_of_string
-  let t_of_sexp s = s |> string_of_sexp |> from_hex
+  let t_of_sexp s = s |> string_of_sexp |> of_hex_exn
 
-  let unsafe_of_raw_string s = s
-  let unsafe_to_raw_string t = t
-
-  let string s = Caml.Digest.string s
   let uuid u = string (Uuid.to_string u)
-  let int x = Digest.string (string_of_int x)
-  let pair x y = Caml.Digest.string (x ^ y)
-  let list l = Caml.Digest.string (String.concat ~sep:"" l)
-  let constructor s l = Caml.Digest.string (s ^ (list l))
+  let int x = string (string_of_int x)
+  let pair x y = string (to_binary x ^ to_binary y)
+  let list l = string (String.concat ~sep:"" (List.map ~f:to_binary l))
+  let constructor s l = string (s ^ (to_binary (list l)))
   let option = function
     | None -> constructor "none" []
     | Some x -> constructor "some" [x]

@@ -10,7 +10,7 @@ module Maximum = struct
   let bin_size_unit            = 1
   let bin_size_bool            = 1
   let bin_size_char            = 1
-  let bin_size_digest          = 16
+  let bin_size_md5             = 16
   let bin_size_int_nat0        = if arch_sixtyfour then 9 else 5
   let bin_size_int_negative    = if arch_sixtyfour then 9 else 5
   let bin_size_int             = max bin_size_int_nat0 bin_size_int_negative
@@ -36,7 +36,7 @@ module Minimum = struct
   let bin_size_unit            = Maximum.bin_size_unit
   let bin_size_bool            = Maximum.bin_size_bool
   let bin_size_char            = Maximum.bin_size_char
-  let bin_size_digest          = 16
+  let bin_size_md5             = 16
   let bin_size_int_nat0        = 1
   let bin_size_int_negative    = 2
   let bin_size_int             = min bin_size_int_nat0 bin_size_int_negative
@@ -116,7 +116,7 @@ let bin_size_string str =
   let size_len = bin_size_nat0 plen in
   size_len + len
 
-let bin_size_digest _ = 16
+let bin_size_md5 _ = 16
 
 let bin_size_float f =
   (* If we just ignore the argument the compiler will still require it to exist and be

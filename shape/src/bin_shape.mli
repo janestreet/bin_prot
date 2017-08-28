@@ -89,10 +89,9 @@ val annotate_provisionally : Uuid.t -> t -> t
 module Digest : sig
   type t [@@deriving compare,sexp]
   val to_hex : t -> string
-  val from_hex : string -> t
 
-  val unsafe_of_raw_string : string -> t
-  val unsafe_to_raw_string : t -> string
+  val to_md5 : t -> Md5_lib.t
+  val of_md5 : Md5_lib.t -> t
 end
 
 module Canonical : sig

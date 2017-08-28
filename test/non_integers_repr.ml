@@ -106,13 +106,13 @@ module Tests = struct
     }
 
   let digest =
-    { writer   = Write.bin_write_digest
-    ; reader   = Read .bin_read_digest
-    ; values   = [ Bin_prot.Shape.Digest.from_hex "0123456789abcdef0123456789ABCDEF" ]
-    ; equal    = (fun d1 d2 -> Shape.Digest.compare d1 d2 = 0)
-    ; sexp_of  = [%sexp_of: Shape.Digest.t]
-    ; hi_bound = Some Maximum.bin_size_digest
-    ; lo_bound = Minimum.bin_size_digest
+    { writer   = Write.bin_write_md5
+    ; reader   = Read .bin_read_md5
+    ; values   = [ Md5_lib.of_hex_exn "0123456789abcdef0123456789ABCDEF" ]
+    ; equal    = (fun d1 d2 -> Md5_lib.compare d1 d2 = 0)
+    ; sexp_of  = (fun md5 -> Atom (Md5_lib.to_hex md5))
+    ; hi_bound = Some Maximum.bin_size_md5
+    ; lo_bound = Minimum.bin_size_md5
     }
 
   let float =

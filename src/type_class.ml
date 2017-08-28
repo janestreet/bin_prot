@@ -74,7 +74,6 @@ MK_BASE(int32)
 MK_BASE(int64)
 MK_BASE(nativeint)
 MK_BASE(nat0)
-MK_BASE(digest)
 
 #define MK_BASE1(NAME) \
   let bin_writer_##NAME bin_writer_el = \

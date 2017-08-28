@@ -58,7 +58,7 @@ let bin_read_stream ?max_size ~read reader =
 (* Conversion of binable types *)
 
 module type Make_binable_spec = sig
-  module Binable : Binable.S
+  module Binable : Binable.Minimal.S
 
   type t
 
@@ -67,17 +67,8 @@ module type Make_binable_spec = sig
 
 end
 
-module Make_binable (S : Make_binable_spec) = struct
-  module B = S.Binable
-
-  let bin_shape_t = B.bin_shape_t
-
-  let bin_size_t t = B.bin_size_t (S.to_binable t)
-  let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
-  let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
-
-  let __bin_read_t__ buf ~pos_ref n =
-    S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
+module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t = struct
+  include S
 
   let bin_writer_t =
     {
@@ -99,8 +90,25 @@ module Make_binable (S : Make_binable_spec) = struct
     }
 end
 
+module Make_binable (S : Make_binable_spec) = struct
+  include Of_minimal(struct
+      module B = S.Binable
+
+      type t = S.t
+
+      let bin_shape_t = B.bin_shape_t
+
+      let bin_size_t t = B.bin_size_t (S.to_binable t)
+      let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
+      let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
+
+      let __bin_read_t__ buf ~pos_ref n =
+        S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
+    end)
+end
+
 module type Make_binable1_spec = sig
-  module Binable : Binable.S1
+  module Binable : Binable.Minimal.S1
 
   type 'a t
 
@@ -150,7 +158,7 @@ module Make_binable1 (S : Make_binable1_spec) = struct
 end
 
 module type Make_binable2_spec = sig
-  module Binable : Binable.S2
+  module Binable : Binable.Minimal.S2
 
   type ('a, 'b) t
 
@@ -204,7 +212,7 @@ module Make_binable2 (S : Make_binable2_spec) = struct
 end
 
 module type Make_binable3_spec = sig
-  module Binable : Binable.S3
+  module Binable : Binable.Minimal.S3
 
   type ('a, 'b, 'c) t
 

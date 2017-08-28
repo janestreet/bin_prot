@@ -48,7 +48,7 @@ val bin_size_network64_int64 : int64 sizer
 val bin_size_array_no_length : ('a, 'a array) sizer1
   [@@deprecated
     "[since 2016-03] this function was deprecated as it is misleading and unused"]
-val bin_size_digest : Shape.Digest.t sizer
+val bin_size_md5 : Md5_lib.t sizer
 
 (* Provide the maximum sizes for fields which do not depend upon an array/vector/matrix
    length, choosing the size required for the largest architecture.  This allows for the
@@ -57,7 +57,7 @@ module Maximum : sig
   val bin_size_unit            : int
   val bin_size_bool            : int
   val bin_size_char            : int
-  val bin_size_digest          : int
+  val bin_size_md5             : int
   val bin_size_int             : int
   val bin_size_float           : int
   val bin_size_int32           : int
@@ -84,7 +84,7 @@ module Minimum : sig
   val bin_size_bool            : int
   val bin_size_string          : int
   val bin_size_char            : int
-  val bin_size_digest          : int
+  val bin_size_md5             : int
   val bin_size_int             : int
   val bin_size_float           : int
   val bin_size_int32           : int

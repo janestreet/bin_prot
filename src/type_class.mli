@@ -77,7 +77,6 @@ MK_BASE(int32)
 MK_BASE(int64)
 MK_BASE(nativeint)
 MK_BASE_TP(nat0, Nat0.t)
-MK_BASE_TP(digest, Shape.Digest.t)
 
 MK_BASE1(ref)
 MK_BASE1_TP(lazy, lazy_t)

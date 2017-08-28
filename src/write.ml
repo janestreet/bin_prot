@@ -414,8 +414,8 @@ let bin_write_array_no_length bin_write_el buf ~pos ar =
 external unsafe_string_get32 : string -> int -> int32 = "%caml_string_get32u";;
 external unsafe_string_get64 : string -> int -> int64 = "%caml_string_get64u";;
 
-let bin_write_digest buf ~pos x =
-  let x = Shape.Digest.unsafe_to_raw_string x in
+let bin_write_md5 buf ~pos x =
+  let x = Md5_lib.to_binary x in
   assert (String.length x = 16);
   assert_pos pos;
   let next = pos + 16 in
