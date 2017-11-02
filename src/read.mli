@@ -15,6 +15,7 @@ type ('a, 'b, 'c, 'd) reader3 = 'a reader -> ('b, 'c, 'd) reader2
 val bin_read_unit : unit reader
 val bin_read_bool : bool reader
 val bin_read_string : string reader
+val bin_read_bytes : bytes reader
 val bin_read_char : char reader
 val bin_read_int : int reader
 val bin_read_nat0 : Nat0.t reader

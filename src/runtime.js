@@ -13,9 +13,9 @@ function bin_prot_blit_buf_float_array_stub(v_src_pos, v_buf, v_dst_pos, v_arr, 
   }
   return 0
 }
-//Provides: bin_prot_blit_buf_string_stub
+//Provides: bin_prot_blit_buf_bytes_stub
 //Requires: caml_ba_get_1, caml_string_unsafe_set
-function bin_prot_blit_buf_string_stub(v_src_pos, v_buf, v_dst_pos, v_str, v_len){
+function bin_prot_blit_buf_bytes_stub(v_src_pos, v_buf, v_dst_pos, v_str, v_len){
   var c;
   for(var i = 0; i < v_len; i++){
     c = caml_ba_get_1(v_buf,v_src_pos+i);
@@ -39,6 +39,16 @@ function bin_prot_blit_float_array_buf_stub(v_src_pos, v_arr, v_dst_pos, v_buf, 
 //Provides: bin_prot_blit_string_buf_stub
 //Requires: caml_string_unsafe_get, caml_ba_set_1
 function bin_prot_blit_string_buf_stub (v_src_pos, v_str, v_dst_pos, v_buf, v_len){
+  var c;
+  for(var i = 0; i < v_len; i++){
+    c = caml_string_unsafe_get(v_str,v_src_pos+i);
+    caml_ba_set_1(v_buf,v_dst_pos+i,c);
+  }
+  return 0
+}
+//Provides: bin_prot_blit_bytes_buf_stub
+//Requires: caml_string_unsafe_get, caml_ba_set_1
+function bin_prot_blit_bytes_buf_stub (v_src_pos, v_str, v_dst_pos, v_buf, v_len){
   var c;
   for(var i = 0; i < v_len; i++){
     c = caml_string_unsafe_get(v_str,v_src_pos+i);

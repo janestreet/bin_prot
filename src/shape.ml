@@ -4,6 +4,7 @@ include Bin_shape_lib.Std.Shape
 let bin_shape_unit                  = basetype (Uuid.of_string "unit")               []
 let bin_shape_bool                  = basetype (Uuid.of_string "bool")               []
 let bin_shape_string                = basetype (Uuid.of_string "string")             []
+let bin_shape_bytes                 = basetype (Uuid.of_string "bytes")              []
 let bin_shape_char                  = basetype (Uuid.of_string "char")               []
 let bin_shape_float                 = basetype (Uuid.of_string "float")              []
 let bin_shape_int                   = basetype (Uuid.of_string "int")                []

@@ -67,6 +67,7 @@ let variant_wrong_type name _buf ~pos_ref _x =
 MK_BASE(unit)
 MK_BASE(bool)
 MK_BASE(string)
+MK_BASE(bytes)
 MK_BASE(char)
 MK_BASE(int)
 MK_BASE(float)

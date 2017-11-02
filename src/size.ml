@@ -55,6 +55,7 @@ module Minimum = struct
   let bin_size_array           = bin_size_len
   let bin_size_hashtbl         = bin_size_len
   let bin_size_string          = bin_size_len
+  let bin_size_bytes           = bin_size_len
   let bin_size_vec             = bin_size_len
   let bin_size_float32_vec     = bin_size_vec
   let bin_size_float64_vec     = bin_size_vec
@@ -110,11 +111,14 @@ let bin_size_nat0 nat0 =
   else if arch_sixtyfour && n >= (* 0x100000000 *) (1 lsl 32) then 9
   else 5
 
-let bin_size_string str =
-  let len = String.length str in
+let bin_size_string_or_bytes len =
   let plen = Nat0.unsafe_of_int len in
   let size_len = bin_size_nat0 plen in
   size_len + len
+
+let bin_size_string str = bin_size_string_or_bytes (String.length str)
+
+let bin_size_bytes str = bin_size_string_or_bytes (Bytes.length str)
 
 let bin_size_md5 _ = 16
 

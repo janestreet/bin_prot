@@ -10,6 +10,7 @@ type ('a, 'b, 'c, 'd) sizer3 = 'a sizer -> ('b, 'c, 'd) sizer2
 val bin_size_unit : unit sizer
 val bin_size_bool : bool sizer
 val bin_size_string : string sizer
+val bin_size_bytes : bytes sizer
 val bin_size_char : char sizer
 val bin_size_int : int sizer
 val bin_size_float : float sizer
@@ -83,6 +84,7 @@ module Minimum : sig
   val bin_size_unit            : int
   val bin_size_bool            : int
   val bin_size_string          : int
+  val bin_size_bytes           : int
   val bin_size_char            : int
   val bin_size_md5             : int
   val bin_size_int             : int

@@ -155,6 +155,16 @@ let bin_write_string buf ~pos str =
   unsafe_blit_string_buf ~src_pos:0 str ~dst_pos:new_pos buf ~len;
   next
 
+let bin_write_bytes buf ~pos str =
+  let len = Bytes.length str in
+  let plen = Nat0.unsafe_of_int len in
+  let new_pos = bin_write_nat0 buf ~pos plen in
+  let next = new_pos + len in
+  check_next buf next;
+  (* TODO: optimize for small bytes *)
+  unsafe_blit_bytes_buf ~src_pos:0 str ~dst_pos:new_pos buf ~len;
+  next
+
 let bin_write_float buf ~pos x =
   assert_pos pos;
   let next = pos + 8 in

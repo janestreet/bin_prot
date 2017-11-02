@@ -29,6 +29,11 @@
 
 #define get_buf(v_buf, v_pos) (char *) Caml_ba_data_val(v_buf) + Long_val(v_pos)
 
+/* Bytes_val is only available from 4.06 */
+#ifndef Bytes_val
+#define Bytes_val String_val
+#endif
+
 CAMLprim value bin_prot_blit_string_buf_stub(
   value v_src_pos, value v_str, value v_dst_pos, value v_buf, value v_len)
 {
@@ -38,11 +43,20 @@ CAMLprim value bin_prot_blit_string_buf_stub(
   return Val_unit;
 }
 
-CAMLprim value bin_prot_blit_buf_string_stub(
+CAMLprim value bin_prot_blit_bytes_buf_stub(
+  value v_src_pos, value v_str, value v_dst_pos, value v_buf, value v_len)
+{
+  char *str = Bytes_val(v_str) + Long_val(v_src_pos);
+  char *buf = get_buf(v_buf, v_dst_pos);
+  memcpy(buf, str, (size_t) Long_val(v_len));
+  return Val_unit;
+}
+
+CAMLprim value bin_prot_blit_buf_bytes_stub(
   value v_src_pos, value v_buf, value v_dst_pos, value v_str, value v_len)
 {
   char *buf = get_buf(v_buf, v_src_pos);
-  char *str = String_val(v_str) + Long_val(v_dst_pos);
+  char *str = Bytes_val(v_str) + Long_val(v_dst_pos);
   memcpy(str, buf, (size_t) Long_val(v_len));
   return Val_unit;
 }

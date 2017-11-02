@@ -44,11 +44,29 @@ val blit_string_buf :
     @raise Invalid_argument if the designated ranges are invalid.
 *)
 
+val blit_bytes_buf :
+  ?src_pos : int -> bytes -> ?dst_pos : int -> buf -> len : int -> unit
+(** [blit_bytes_buf ?src_pos src ?dst_pos dst ~len] blits [len]
+    bytes of the source byte sequence [src] starting at position [src_pos]
+    to buffer [dst] starting at position [dst_pos].
+
+    @raise Invalid_argument if the designated ranges are invalid.
+*)
+
 val blit_buf_string :
-  ?src_pos : int -> buf -> ?dst_pos : int -> string -> len : int -> unit
+  ?src_pos : int -> buf -> ?dst_pos : int -> bytes -> len : int -> unit
 (** [blit_buf_string ?src_pos src ?dst_pos dst ~len] blits [len]
     bytes of the source buffer [src] starting at position [src_pos]
     to string [dst] starting at position [dst_pos].
+
+    @raise Invalid_argument if the designated ranges are invalid.
+*)
+
+val blit_buf_bytes :
+  ?src_pos : int -> buf -> ?dst_pos : int -> bytes -> len : int -> unit
+(** [blit_buf_bytes ?src_pos src ?dst_pos dst ~len] blits [len]
+    bytes of the source buffer [src] starting at position [src_pos]
+    to byte sequence [dst] starting at position [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid.
 *)
@@ -157,9 +175,17 @@ external unsafe_blit_string_buf :
   src_pos : int -> string -> dst_pos : int -> buf -> len : int -> unit
   = "bin_prot_blit_string_buf_stub" [@@noalloc]
 
+external unsafe_blit_bytes_buf :
+  src_pos : int -> bytes -> dst_pos : int -> buf -> len : int -> unit
+  = "bin_prot_blit_bytes_buf_stub" [@@noalloc]
+
 external unsafe_blit_buf_string :
-  src_pos : int -> buf -> dst_pos : int -> string -> len : int -> unit
-  = "bin_prot_blit_buf_string_stub" [@@noalloc]
+  src_pos : int -> buf -> dst_pos : int -> bytes -> len : int -> unit
+  = "bin_prot_blit_buf_bytes_stub" [@@noalloc]
+
+external unsafe_blit_buf_bytes :
+  src_pos : int -> buf -> dst_pos : int -> bytes -> len : int -> unit
+  = "bin_prot_blit_buf_bytes_stub" [@@noalloc]
 
 external unsafe_blit_float_array_buf :
   src_pos : int -> float array -> dst_pos : int -> buf -> len : int -> unit

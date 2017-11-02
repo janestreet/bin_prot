@@ -251,7 +251,7 @@ let bin_read_nat0 buf ~pos_ref =
     raise_read_error ReadError.Nat0_code pos
 ;;
 
-let bin_read_string buf ~pos_ref =
+let bin_read_bytes buf ~pos_ref =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > Sys.max_string_length then
@@ -261,8 +261,12 @@ let bin_read_string buf ~pos_ref =
   check_next buf next;
   pos_ref := next;
   let str = Bytes.create len in
-  unsafe_blit_buf_string ~src_pos:pos buf ~dst_pos:0 str ~len;
+  unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
   str
+
+let bin_read_string buf ~pos_ref =
+  let str = bin_read_bytes buf ~pos_ref in
+  Bytes.unsafe_to_string str
 
 let bin_read_char buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -637,8 +641,8 @@ let bin_read_network64_int64 buf ~pos_ref =
   pos_ref := next;
   unsafe_get64be buf pos
 
-external unsafe_string_set32 : string -> int -> int32 -> unit = "%caml_string_set32u";;
-external unsafe_string_set64 : string -> int -> int64 -> unit = "%caml_string_set64u";;
+external unsafe_bytes_set32 : bytes -> int -> int32 -> unit = "%caml_string_set32u";;
+external unsafe_bytes_set64 : bytes -> int -> int64 -> unit = "%caml_string_set64u";;
 
 let bin_read_md5 buf ~pos_ref =
   let pos = !pos_ref in
@@ -650,16 +654,16 @@ let bin_read_md5 buf ~pos_ref =
   if arch_sixtyfour then begin
     let a = unsafe_get64 buf  pos      in
     let b = unsafe_get64 buf (pos + 8) in
-    unsafe_string_set64 res 0 a;
-    unsafe_string_set64 res 8 b;
+    unsafe_bytes_set64 res 0 a;
+    unsafe_bytes_set64 res 8 b;
   end else begin
     let a = unsafe_get32 buf  pos       in
     let b = unsafe_get32 buf (pos +  4) in
     let c = unsafe_get32 buf (pos +  8) in
     let d = unsafe_get32 buf (pos + 12) in
-    unsafe_string_set32 res  0 a;
-    unsafe_string_set32 res  4 b;
-    unsafe_string_set32 res  8 c;
-    unsafe_string_set32 res 12 d;
+    unsafe_bytes_set32 res  0 a;
+    unsafe_bytes_set32 res  4 b;
+    unsafe_bytes_set32 res  8 c;
+    unsafe_bytes_set32 res 12 d;
   end;
-  Md5_lib.unsafe_of_binary res
+  Md5_lib.unsafe_of_binary (Bytes.unsafe_to_string res)

@@ -14,6 +14,7 @@ type ('a, 'b, 'c, 'd) writer3 = 'a writer -> ('b, 'c, 'd) writer2
 val bin_write_unit : unit writer
 val bin_write_bool : bool writer
 val bin_write_string : string writer
+val bin_write_bytes : bytes writer
 val bin_write_char : char writer
 val bin_write_int : int writer
 val bin_write_nat0 : Nat0.t writer

@@ -32,6 +32,15 @@ let bin_read_string = Read.bin_read_string
 let __bin_read_string__ _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "string" !pos_ref
 
+let bin_bytes = Type_class.bin_bytes
+let bin_shape_bytes = Type_class.bin_shape_bytes
+let bin_writer_bytes = Type_class.bin_writer_bytes
+let bin_write_bytes = Write.bin_write_bytes
+let bin_reader_bytes = Type_class.bin_reader_bytes
+let bin_read_bytes = Read.bin_read_bytes
+let __bin_read_bytes__ _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "bytes" !pos_ref
+
 let bin_char = Type_class.bin_char
 let bin_shape_char = Type_class.bin_shape_char
 let bin_writer_char = Type_class.bin_writer_char

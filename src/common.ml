@@ -131,6 +131,10 @@ external unsafe_blit_string_buf :
   src_pos : int -> string -> dst_pos : int -> buf -> len : int -> unit
   = "bin_prot_blit_string_buf_stub" [@@noalloc]
 
+external unsafe_blit_bytes_buf :
+  src_pos : int -> bytes -> dst_pos : int -> buf -> len : int -> unit
+  = "bin_prot_blit_bytes_buf_stub" [@@noalloc]
+
 let blit_string_buf ?src_pos str ?dst_pos buf ~len =
   let loc = "blit_string_buf" in
   let src_pos = get_opt_pos ~loc ~var:"src_pos" src_pos in
@@ -148,11 +152,32 @@ let blit_string_buf ?src_pos str ?dst_pos buf ~len =
       invalid_arg "Bin_prot.Common.blit_string_buf: src_pos + len > buf"
     else unsafe_blit_string_buf ~src_pos str ~dst_pos buf ~len)
 
-external unsafe_blit_buf_string :
-  src_pos : int -> buf -> dst_pos : int -> string -> len : int -> unit
-  = "bin_prot_blit_buf_string_stub" [@@noalloc]
+let blit_bytes_buf ?src_pos str ?dst_pos buf ~len =
+  let loc = "blit_bytes_buf" in
+  let src_pos = get_opt_pos ~loc ~var:"src_pos" src_pos in
+  let dst_pos = get_opt_pos ~loc ~var:"dst_pos" dst_pos in
+  if len < 0 then invalid_arg "Bin_prot.Common.blit_bytes_buf: len < 0"
+  else if len = 0 then (
+    if src_pos > Bytes.length str then
+      invalid_arg "Bin_prot.Common.blit_bytes_buf: src_pos > str_len";
+    if dst_pos > Array1.dim buf then
+      invalid_arg "Bin_prot.Common.blit_bytes_buf: src_pos > buf")
+  else (
+    if src_pos + len > Bytes.length str then
+      invalid_arg "Bin_prot.Common.blit_bytes_buf: src_pos + len > str_len"
+    else if dst_pos + len > Array1.dim buf then
+      invalid_arg "Bin_prot.Common.blit_bytes_buf: src_pos + len > buf"
+    else unsafe_blit_bytes_buf ~src_pos str ~dst_pos buf ~len)
 
-let blit_buf_string ?src_pos buf ?dst_pos str ~len =
+external unsafe_blit_buf_string :
+  src_pos : int -> buf -> dst_pos : int -> bytes -> len : int -> unit
+  = "bin_prot_blit_buf_bytes_stub" [@@noalloc]
+
+external unsafe_blit_buf_bytes :
+  src_pos : int -> buf -> dst_pos : int -> bytes -> len : int -> unit
+  = "bin_prot_blit_buf_bytes_stub" [@@noalloc]
+
+let blit_buf_bytes ?src_pos buf ?dst_pos str ~len =
   let loc = "blit_buf_string" in
   let src_pos = get_opt_pos ~loc ~var:"src_pos" src_pos in
   let dst_pos = get_opt_pos ~loc ~var:"dst_pos" dst_pos in
@@ -160,15 +185,17 @@ let blit_buf_string ?src_pos buf ?dst_pos str ~len =
   else if len = 0 then (
     if src_pos > Array1.dim buf then
       invalid_arg "Bin_prot.Common.blit_buf_string: src_pos > buf_len";
-    if dst_pos > String.length str then
+    if dst_pos > Bytes.length str then
       invalid_arg "Bin_prot.Common.blit_buf_string: src_pos > str_len")
   else (
     if src_pos + len > Array1.dim buf then
       invalid_arg "Bin_prot.Common.blit_buf_string: src_pos + len > buf_len"
-    else if dst_pos + len > String.length str then
+    else if dst_pos + len > Bytes.length str then
       invalid_arg "Bin_prot.Common.blit_buf_string: src_pos + len > str_len"
-    else unsafe_blit_buf_string ~src_pos buf ~dst_pos str ~len)
 
+    else unsafe_blit_buf_bytes ~src_pos buf ~dst_pos str ~len)
+
+let blit_buf_string = blit_buf_bytes
 
 (* Miscellaneous *)
 
