@@ -2,6 +2,7 @@
  ((name bin_prot)
   (libraries (bigarray bin_shape_lib base base.caml))
   (public_name bin_prot)
+  (flags (:standard -unsafe-string))
   (c_names (blit_stubs float_stubs))
   (preprocessor_deps (int_codes.mlh config.h))
   (preprocess (per_module
