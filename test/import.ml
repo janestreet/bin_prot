@@ -11,7 +11,7 @@ let hex_char n =
 let to_hex buf max_len =
   let len = String.length buf in
   assert (len <= max_len);
-  let str = String.make (max_len * 3 - 1) ' ' in
+  let str = Bytes.make (max_len * 3 - 1) ' ' in
   for column = 0 to max_len - 1 do
     let ofs = (max_len - 1 - column) in
     if ofs >= len then begin
@@ -23,4 +23,4 @@ let to_hex buf max_len =
       Bytes.set str (column * 3 + 1) (hex_char (byte land 0xf));
     end
   done;
-  str
+  Bytes.unsafe_to_string ~no_mutation_while_string_reachable:str
