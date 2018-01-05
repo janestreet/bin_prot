@@ -291,7 +291,7 @@ of type definitions is NOT significant.  Given:
 
     type u2 = UT of t2 | UU of u2 | UB
     and t2 = TT of t2 | TU of u2 | TB
-```ocaml
+```
 
 Then: `t1` and `t2` are compatible, and `u1` and `u2` are compatible.
 
@@ -369,7 +369,7 @@ For example:
 Other semantic invariants might be captured in a similar way:
 
 ```ocaml
-    type t = int list [@@deriving bin_io, bin_shape ~annotate:"sorted"] 
+    type t = int list [@@deriving bin_io, bin_shape ~annotate:"sorted"]
 ```
 
 Annotations have a similar shape-level benefit as could be achieved
@@ -414,7 +414,7 @@ Given additionally:
 ```ocaml
    type dollars3 = Bignum.t [@@deriving bin_io, bin_shape ~basetype:"dollars"]
    type dollars4 = Bignum.t [@@deriving bin_io, bin_shape ~annotate:"dollars"]
-``
+```
 
 The shape for `dollars3` is compatible with `dollars1`, whereas
 `dollars4` is incompatible with `dollars2`.
@@ -461,4 +461,3 @@ the following stages of allowed connections:
 * `[V1;V2]` -- check shapes as long as the other side is shape-aware
 * `[   V2]` -- insist on checking shapes; refuse to communicate to
   parties not shape-aware
-

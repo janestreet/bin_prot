@@ -1,7 +1,7 @@
 (* fragment of [Core] interface needed by [bin_shape] runtime *)
 
-include Sexplib.Std
 include Ppx_compare_lib.Builtin
+include Ppx_sexp_conv_lib.Conv
 
 open Printf
 (* [sort_uniq] is missing from the [List] exposed by [StdLabels] *)
@@ -12,7 +12,7 @@ module Caml = struct
   module Digest = Digest
 end
 
-module Sexp = Sexplib.Sexp
+module Sexp = Base.Sexp
 
 let failwithf fmt = ksprintf (fun s () -> failwith s) fmt
 

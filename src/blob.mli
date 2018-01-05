@@ -48,7 +48,14 @@ include Binable.S1 with type 'a t = 'a
     analogous to reading a sexp file / operating on a sexp stream and using
     (de-)serialization functions for a type involving [Sexp.t].
 *)
-module Opaque : Binable.S
+module Opaque : sig
+  module Bigstring : sig
+    include Binable.S
+
+    val to_opaque     : 'a  -> 'a Type_class.writer -> t
+    val of_opaque_exn : t   -> 'a Type_class.reader -> 'a
+  end
+end
 
 (** An [Ignored.t] is an unusable value with special bin-prot converters. The reader reads
     the size and drops that much data from the buffer. Writing is not supported, however
@@ -70,7 +77,3 @@ module Ignored : sig
   val __bin_read_t__ : (int -> t) Read.reader
   val bin_reader_t : t Type_class.reader
 end
-
-val to_opaque : 'a t -> 'a Type_class.writer -> Opaque.t
-
-val of_opaque_exn : Opaque.t -> 'a Type_class.reader -> 'a
