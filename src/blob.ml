@@ -49,14 +49,20 @@ include Utils.Make_binable1(struct
 
 module Opaque = struct
 
+  (* [Bigstring] and [String] share [bin_shape_t] because they have exactly the same
+     serialization format and they denote the same values.
+
+     In fact almost certainly [Blob.t] itself should have the same bin_shape_t as well. *)
+  let bin_shape_t =
+    Shape.(basetype (Uuid.of_string "85a1f76e-490a-11e6-86a9-5bef585f2602") [])
+
   module Bigstring = struct
     (* [buf] is the bin-io data excluding the size header. When (de-)serialized, the size
        header is included. *)
     module T = struct
-      type t = buf
 
-      let bin_shape_t =
-        Shape.(basetype (Uuid.of_string "85a1f76e-490a-11e6-86a9-5bef585f2602") [])
+      type t = buf
+      let bin_shape_t = bin_shape_t
 
       let bin_size_t t =
         Utils.size_header_length + (buf_len t)
@@ -92,6 +98,71 @@ module Opaque = struct
 
     let of_opaque_exn (t : t) bin_reader =
       bin_reader.Type_class.read t ~pos_ref:(ref 0)
+  end
+
+  module String = struct
+    module T = struct
+      type t = string
+
+      let bin_shape_t = bin_shape_t
+
+      let bin_size_t t =
+        Utils.size_header_length + (String.length t)
+
+      let bin_write_t buf ~pos t =
+        let size = String.length t in
+        let pos = Utils.bin_write_size_header buf ~pos size in
+        Common.blit_string_buf
+          t ~src_pos:0
+          buf ~dst_pos:pos
+          ~len:size;
+        pos + size
+      ;;
+
+      let string_of_bigstring buf ~pos ~len =
+        let str = Bytes.create len in
+        blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
+        Bytes.unsafe_to_string str
+      ;;
+
+      let bin_read_t buf ~pos_ref =
+        let len = Utils.bin_read_size_header buf ~pos_ref in
+        let t = string_of_bigstring buf ~pos:!pos_ref ~len in
+        pos_ref := !pos_ref + len;
+        t
+      ;;
+
+      let __bin_read_t__ _ ~pos_ref =
+        raise_variant_wrong_type "Bin_prot.Blob.Opaque.t" !pos_ref
+      ;;
+    end
+
+    include T
+    include Utils.Of_minimal(T)
+
+    let length t = String.length t
+
+    let to_opaque ~buf v bin_writer_v : t =
+      let pos = 0 in
+      let len = bin_writer_v.Type_class.write buf ~pos v in
+      string_of_bigstring buf ~pos ~len
+    ;;
+
+    let of_opaque_exn ~buf (t : t) bin_reader_v =
+      let len = String.length t in
+      Common.blit_string_buf t buf ~len;
+      let pos_ref = ref 0 in
+      let res = bin_reader_v.Type_class.read buf ~pos_ref in
+      if !pos_ref <> len then begin
+        let error =
+          Printf.sprintf
+            "Opaque blob has %d bytes but [of_opaque_exn] read %d" len !pos_ref
+        in
+        failwith error
+      end else begin
+        res
+      end
+    ;;
   end
 
 end

@@ -1,4 +1,3 @@
-
 (** ['a Blob.t] is type-equivalent to ['a], but has different bin-prot serializers that
     prefix the representation with the size of ['a].
 
@@ -21,7 +20,7 @@
     An application that filters events to downsteam consumers based on just [source] or
     [time] (but doesn't need to parse [details]) may use:
 
-      {[type opaque_event = Blob.Opaque.t event with bin_io]}
+      {[type opaque_event = Blob.Opaque.Bigstring.t event with bin_io]}
 
     This has two advantages:
       - (de)serializing messages is faster because potentially costly (de)serialization of
@@ -38,8 +37,8 @@
 *)
 include Binable.S1 with type 'a t = 'a
 
-(** An [Opaque.t] is an arbitrary piece of bin-prot. The bin-prot (de-)serializers simply
-    read/write the data, prefixed with its size.
+(** An [Opaque.Bigstring.t] or [Opaque.String.t] is an arbitrary piece of bin-prot. The
+    bin-prot (de-)serializers simply read/write the data, prefixed with its size.
 
     When reading bin-prot data, sometimes you won't care about deserializing a particular
     piece: perhaps you want to operate on a bin-prot stream, transforming some bits of
@@ -47,6 +46,9 @@ include Binable.S1 with type 'a t = 'a
     deserialize using the bin-prot converters for a type involving [Opaque.t]. This is
     analogous to reading a sexp file / operating on a sexp stream and using
     (de-)serialization functions for a type involving [Sexp.t].
+
+    The internal representation of [Opaque.Bigstring.t] is a Bigstring, while
+    [Opaque.String.t] is a string.
 *)
 module Opaque : sig
   module Bigstring : sig
@@ -54,6 +56,32 @@ module Opaque : sig
 
     val to_opaque     : 'a  -> 'a Type_class.writer -> t
     val of_opaque_exn : t   -> 'a Type_class.reader -> 'a
+  end
+
+  module String : sig
+    include Binable.S
+
+    (** For performance's concern, we require caller of [to_opaque] and [of_opaque_exn] to
+        pass in the [buf] as the intermediate buffer for bin_prot conversion. These two
+        functions will write bytes into the buffer, but will not resize the buffer. So the
+        caller should prepare big enough buffer for their need.
+
+        For [of_opaque_exn t], the minimum buffer size should be [length t].
+
+        For [to_opaque] the necessary buffer size can be computed using [size] from
+        Type_class.writer or you can catch the exception [Bin_prot.Common.Buffer_short]
+        (although the latter is not very reliable because some custom bin_io
+        implementations raise a different exception).
+
+        Additional caveat: if the opaque blob is malformed/partial then [of_opaque_exn]
+        can read past the end of the blob, which can result in:
+        - confusing/non-deterministic error messages (referring to the contents of [buf]
+        rather than the contents of the blob)
+        - degraded performance (having to read through the buffer just to fail at the end)
+    *)
+    val length        : t -> int
+    val to_opaque     : buf:Common.buf -> 'a  -> 'a Type_class.writer -> t
+    val of_opaque_exn : buf:Common.buf -> t   -> 'a Type_class.reader -> 'a
   end
 end
 
