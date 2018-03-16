@@ -312,7 +312,7 @@ module Tests = struct
     ; equal    = (fun t1 t2 ->
         let to_list tbl =
           Caml.Hashtbl.fold (fun k v acc -> (k, v) :: acc) tbl []
-          |> List.sort ~cmp:compare
+          |> List.sort ~compare
         in
         to_list t1 = to_list t2)
     ; sexp_of  = [%sexp_of: (int32, int32) Sexplib.Std.Hashtbl.t]

@@ -2,7 +2,7 @@
  ((name bin_prot_test)
   (libraries (core_kernel bin_prot base.md5))
   (flags (:standard -safe-string))
-  (preprocess (pps (ppx_jane ppx_driver.runner)))
+  (preprocess (pps (ppx_jane ppxlib.runner)))
 ))
 
 (alias (

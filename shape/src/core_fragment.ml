@@ -47,7 +47,7 @@ end
 
 module List = struct
   include List
-  let sort_uniq ~cmp l = sort_uniq ~cmp l
+  let sort_uniq ~compare l = sort_uniq ~cmp:compare l
   module Assoc = struct
     let find xs ~equal key =
       try Some (snd (List.find xs ~f:(fun (k,_) -> equal k key)))
