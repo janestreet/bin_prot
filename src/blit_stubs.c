@@ -46,7 +46,7 @@ CAMLprim value bin_prot_blit_string_buf_stub(
 CAMLprim value bin_prot_blit_bytes_buf_stub(
   value v_src_pos, value v_str, value v_dst_pos, value v_buf, value v_len)
 {
-  char *str = Bytes_val(v_str) + Long_val(v_src_pos);
+  unsigned char *str = Bytes_val(v_str) + Long_val(v_src_pos);
   char *buf = get_buf(v_buf, v_dst_pos);
   memcpy(buf, str, (size_t) Long_val(v_len));
   return Val_unit;
@@ -56,7 +56,7 @@ CAMLprim value bin_prot_blit_buf_bytes_stub(
   value v_src_pos, value v_buf, value v_dst_pos, value v_str, value v_len)
 {
   char *buf = get_buf(v_buf, v_src_pos);
-  char *str = Bytes_val(v_str) + Long_val(v_dst_pos);
+  unsigned char *str = Bytes_val(v_str) + Long_val(v_dst_pos);
   memcpy(str, buf, (size_t) Long_val(v_len));
   return Val_unit;
 }

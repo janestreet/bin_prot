@@ -1,7 +1,6 @@
 (library
  ((name bin_prot)
   (libraries (bigarray bin_shape_lib base.md5 base base.caml))
-  (flags (:standard -safe-string))
   (public_name bin_prot)
   (c_names (blit_stubs))
   (preprocessor_deps (int_codes.mlh))
