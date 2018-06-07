@@ -37,7 +37,7 @@
 CAMLprim value bin_prot_blit_string_buf_stub(
   value v_src_pos, value v_str, value v_dst_pos, value v_buf, value v_len)
 {
-  char *str = String_val(v_str) + Long_val(v_src_pos);
+  const char *str = String_val(v_str) + Long_val(v_src_pos);
   char *buf = get_buf(v_buf, v_dst_pos);
   memcpy(buf, str, (size_t) Long_val(v_len));
   return Val_unit;
