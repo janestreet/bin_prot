@@ -562,6 +562,8 @@ let bin_read_float64_cube buf ~pos_ref =
 ;;
 
 let bin_read_cube = bin_read_float64_cube
+let bin_read_cube32 = bin_read_float32_cube
+let bin_read_cube64 = bin_read_float64_cube
 
 let bin_read_bigstring buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in

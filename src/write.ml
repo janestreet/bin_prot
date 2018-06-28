@@ -362,6 +362,8 @@ let bin_write_float64_cube buf ~pos m =
   next
 
 let bin_write_cube = bin_write_float64_cube
+let bin_write_cube32 = bin_write_float32_cube
+let bin_write_cube64 = bin_write_float64_cube
 
 let bin_write_bigstring buf ~pos s =
   let len = Array1.dim s in

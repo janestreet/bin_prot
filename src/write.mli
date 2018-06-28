@@ -39,6 +39,8 @@ val bin_write_mat : mat writer
 val bin_write_float32_cube : cube32 writer
 val bin_write_float64_cube : cube64 writer
 val bin_write_cube : cube writer
+val bin_write_cube32 : cube32 writer
+val bin_write_cube64 : cube64 writer
 val bin_write_bigstring : buf writer
 val bin_write_float_array : float array writer
 val bin_write_md5 : Md5_lib.t writer

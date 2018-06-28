@@ -40,6 +40,8 @@ val bin_read_mat : mat reader
 val bin_read_float32_cube : cube32 reader
 val bin_read_float64_cube : cube64 reader
 val bin_read_cube : cube reader
+val bin_read_cube32 : cube32 reader
+val bin_read_cube64 : cube64 reader
 val bin_read_bigstring : buf reader
 val bin_read_float_array : float array reader
 val bin_read_variant_int : int reader
