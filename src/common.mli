@@ -158,6 +158,9 @@ type mat32 = (float, float32_elt, fortran_layout) Array2.t
 type mat64 = (float, float64_elt, fortran_layout) Array2.t
 type mat = mat64
 
+type cube32 = (float, float32_elt, fortran_layout) Array3.t
+type cube64 = (float, float64_elt, fortran_layout) Array3.t
+type cube = cube64
 
 (** {2 Miscellaneous} *)
 

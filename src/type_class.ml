@@ -173,6 +173,9 @@ MK_BASE(vec)
 MK_BASE(float32_mat)
 MK_BASE(float64_mat)
 MK_BASE(mat)
+MK_BASE(float32_cube)
+MK_BASE(float64_cube)
+MK_BASE(cube)
 MK_BASE(bigstring)
 
 type float_array = float array

@@ -476,6 +476,8 @@ external buf_of_vec32 : vec32 -> buf = "%identity"
 external buf_of_vec64 : vec64 -> buf = "%identity"
 external buf_of_mat32 : mat32 -> buf = "%identity"
 external buf_of_mat64 : mat64 -> buf = "%identity"
+external buf_of_cube32 : cube32 -> buf = "%identity"
+external buf_of_cube64 : cube64 -> buf = "%identity"
 
 let bin_read_float32_vec buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
@@ -530,6 +532,36 @@ let bin_read_float64_mat buf ~pos_ref =
 ;;
 
 let bin_read_mat = bin_read_float64_mat
+
+let bin_read_float32_cube buf ~pos_ref =
+  let len1 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len2 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len3 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let size = len1 * len2 * len3 * 4 in
+  let pos = !pos_ref in
+  let next = pos + size in
+  check_next buf next;
+  let cube = Array3.create float32 fortran_layout len1 len2 len3 in
+  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_cube32 cube) ~dst_pos:0 ~len:size;
+  pos_ref := next;
+  cube
+;;
+
+let bin_read_float64_cube buf ~pos_ref =
+  let len1 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len2 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len3 = (bin_read_nat0 buf ~pos_ref :> int) in
+  let size = len1 * len2 * len3 * 8 in
+  let pos = !pos_ref in
+  let next = pos + size in
+  check_next buf next;
+  let cube = Array3.create float64 fortran_layout len1 len2 len3 in
+  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_cube64 cube) ~dst_pos:0 ~len:size;
+  pos_ref := next;
+  cube
+;;
+
+let bin_read_cube = bin_read_float64_cube
 
 let bin_read_bigstring buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in

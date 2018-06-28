@@ -286,6 +286,8 @@ external buf_of_vec32 : vec32 -> buf = "%identity"
 external buf_of_vec64 : vec64 -> buf = "%identity"
 external buf_of_mat32 : mat32 -> buf = "%identity"
 external buf_of_mat64 : mat64 -> buf = "%identity"
+external buf_of_cube32 : cube32 -> buf = "%identity"
+external buf_of_cube64 : cube64 -> buf = "%identity"
 
 let bin_write_float32_vec buf ~pos v =
   let len = Array1.dim v in
@@ -332,6 +334,34 @@ let bin_write_float64_mat buf ~pos m =
   next
 
 let bin_write_mat = bin_write_float64_mat
+
+let bin_write_float32_cube buf ~pos m =
+  let len1 = Array3.dim1 m in
+  let len2 = Array3.dim2 m in
+  let len3 = Array3.dim3 m in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len1) in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len2) in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len3) in
+  let size = len1 * len2 * len3 * 4 in
+  let next = pos + size in
+  check_next buf next;
+  unsafe_blit_buf ~src:(buf_of_cube32 m) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
+  next
+
+let bin_write_float64_cube buf ~pos m =
+  let len1 = Array3.dim1 m in
+  let len2 = Array3.dim2 m in
+  let len3 = Array3.dim3 m in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len1) in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len2) in
+  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len3) in
+  let size = len1 * len2 * len3 * 8 in
+  let next = pos + size in
+  check_next buf next;
+  unsafe_blit_buf ~src:(buf_of_cube64 m) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
+  next
+
+let bin_write_cube = bin_write_float64_cube
 
 let bin_write_bigstring buf ~pos s =
   let len = Array1.dim s in

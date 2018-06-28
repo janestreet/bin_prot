@@ -102,6 +102,9 @@ MK_BASE(vec)
 MK_BASE_TP(float32_mat, mat32)
 MK_BASE_TP(float64_mat, mat64)
 MK_BASE(mat)
+MK_BASE_TP(float32_cube, cube32)
+MK_BASE_TP(float64_cube, cube64)
+MK_BASE(cube)
 MK_BASE_TP(bigstring, buf)
 
 type float_array = float array
