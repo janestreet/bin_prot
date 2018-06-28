@@ -65,6 +65,8 @@ module Minimum = struct
   let bin_size_cube            = bin_size_len + bin_size_len + bin_size_len
   let bin_size_float32_cube    = bin_size_cube
   let bin_size_float64_cube    = bin_size_cube
+  let bin_size_cube32          = bin_size_cube
+  let bin_size_cube64          = bin_size_cube
   let bin_size_bigstring       = bin_size_len
   let bin_size_float_array     = bin_size_len
   let bin_size_variant_int     = Maximum.bin_size_variant_int
@@ -243,6 +245,8 @@ let bin_size_gen_cube cube multiplier =
 let bin_size_float32_cube cube = bin_size_gen_cube cube 4
 let bin_size_float64_cube cube = bin_size_gen_cube cube 8
 let bin_size_cube = bin_size_float64_cube
+let bin_size_cube64 = bin_size_float64_cube
+let bin_size_cube32 = bin_size_float32_cube
 
 let bin_size_bigstring buf = bin_size_gen_vec buf 1
 
