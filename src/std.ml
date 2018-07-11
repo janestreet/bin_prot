@@ -177,6 +177,49 @@ let bin_read_bigstring = Read.bin_read_bigstring
 let __bin_read_bigstring__ _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "bigstring" !pos_ref
 
+let bin_cube = Type_class.bin_cube
+let bin_shape_cube = Type_class.bin_shape_cube
+let bin_writer_cube = Type_class.bin_writer_cube
+let bin_write_cube = Write.bin_write_cube
+let bin_reader_cube = Type_class.bin_reader_cube
+let bin_read_cube = Read.bin_read_cube
+let __bin_read_cube__ _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "cube" !pos_ref
+
+let bin_float32_cube = Type_class.bin_float32_cube
+let bin_shape_float32_cube = Type_class.bin_shape_float32_cube
+let bin_writer_float32_cube = Type_class.bin_writer_float32_cube
+let bin_write_float32_cube = Write.bin_write_float32_cube
+let bin_reader_float32_cube = Type_class.bin_reader_float32_cube
+let bin_read_float32_cube = Read.bin_read_float32_cube
+let __bin_read_float32_cube__ _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "float32_cube" !pos_ref
+
+let bin_float64_cube = Type_class.bin_float64_cube
+let bin_shape_float64_cube = Type_class.bin_shape_float64_cube
+let bin_writer_float64_cube = Type_class.bin_writer_float64_cube
+let bin_write_float64_cube = Write.bin_write_float64_cube
+let bin_reader_float64_cube = Type_class.bin_reader_float64_cube
+let bin_read_float64_cube = Read.bin_read_float64_cube
+let __bin_read_float64_cube__ _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "float64_cube" !pos_ref
+
+let bin_cube64 = bin_float64_cube 
+let bin_shape_cube64 = bin_shape_float64_cube 
+let bin_writer_cube64 = bin_writer_float64_cube 
+let bin_write_cube64 = bin_write_float64_cube 
+let bin_reader_cube64 = bin_reader_float64_cube 
+let bin_read_cube64 = bin_read_float64_cube 
+let __bin_read_cube64__ = __bin_read_float64_cube__
+
+let bin_cube32 = bin_float32_cube 
+let bin_shape_cube32 = bin_shape_float32_cube 
+let bin_writer_cube32 = bin_writer_float32_cube 
+let bin_write_cube32 = bin_write_float32_cube 
+let bin_reader_cube32 = bin_reader_float32_cube 
+let bin_read_cube32 = bin_read_float32_cube 
+let __bin_read_cube32__ = __bin_read_float32_cube__
+
 let bin_mat = Type_class.bin_mat
 let bin_shape_mat = Type_class.bin_shape_mat
 let bin_writer_mat = Type_class.bin_writer_mat

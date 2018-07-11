@@ -33,6 +33,11 @@ val bin_size_vec : vec sizer
 val bin_size_float32_mat : mat32 sizer
 val bin_size_float64_mat : mat64 sizer
 val bin_size_mat : mat sizer
+val bin_size_float32_cube : cube32 sizer
+val bin_size_float64_cube : cube64 sizer
+val bin_size_cube : cube sizer
+val bin_size_cube32 : cube32 sizer
+val bin_size_cube64 : cube64 sizer
 val bin_size_bigstring : buf sizer
 val bin_size_float_array : float array sizer
 val bin_size_variant_int : int sizer
