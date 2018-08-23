@@ -43,7 +43,7 @@ module Vec = struct
 
   let sexp_of_t t = [%sexp_of: float array] (to_array t)
 
-  let equal t1 t2 = Array.equal ~equal:Float.equal (to_array t1) (to_array t2)
+  let equal t1 t2 = Array.equal Float.equal  (to_array t1) (to_array t2)
 end
 
 module Mat = struct
@@ -69,7 +69,7 @@ module Mat = struct
   let sexp_of_t t = [%sexp_of: float array array] (to_array t)
 
   let equal t1 t2 =
-    Array.equal ~equal:(Array.equal ~equal:Float.equal) (to_array t1) (to_array t2)
+    Array.equal (Array.equal Float.equal)  (to_array t1) (to_array t2)
   ;;
 end
 
@@ -208,7 +208,7 @@ module Tests = struct
     { writer   = Write.bin_write_float_array
     ; reader   = Read .bin_read_float_array
     ; values   = [ [| |]; [| 0. |] ]
-    ; equal    = Array.equal ~equal:Float.equal
+    ; equal    = Array.equal Float.equal
     ; sexp_of  = [%sexp_of: float array]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_float_array
@@ -279,7 +279,7 @@ module Tests = struct
     ; values   = [ []; [ 0l ]; [ 0l; 1l ]; [ 1l; (-1l) ]; [ 0l; Int32.max_value ]
                  ; [ Int32.max_value; Int32.min_value ]
                  ]
-    ; equal    = List.equal ~equal:Int32.equal
+    ; equal    = List.equal Int32.equal
     ; sexp_of  = [%sexp_of: int32 list]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_list
@@ -291,7 +291,7 @@ module Tests = struct
     ; values   = [ [||]; [| 0l |]; [| 0l; 1l |]; [| 1l; (-1l) |]; [| 0l; Int32.max_value |]
                  ; [| Int32.max_value; Int32.min_value |]
                  ]
-    ; equal    = Array.equal ~equal:Int32.equal
+    ; equal    = Array.equal Int32.equal
     ; sexp_of  = [%sexp_of: int32 array]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_array

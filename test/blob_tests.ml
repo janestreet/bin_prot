@@ -97,7 +97,7 @@ let%expect_test "" =
     bin dump (blob) : \n\000\000\000\000\000\000\000\btesthost{
     bin dump as opaque big string and string are the same? true
   |}];
-  run_test (bin_list Int.Stable.V1.bin_t) (List.equal ~equal:Int.equal) [1 ; 3 ; 1 ; 5];
+  run_test (bin_list Int.Stable.V1.bin_t) (List.equal Int.equal) [1 ; 3 ; 1 ; 5];
   [%expect {|
     bin dump : \004\001\003\001\005
     bin dump (blob) : \005\000\000\000\000\000\000\000\004\001\003\001\005

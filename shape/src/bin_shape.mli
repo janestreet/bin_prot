@@ -29,6 +29,7 @@ end
 (** [Uuid.t] is used by [basetype] and [annotate]. *)
 module Uuid : sig
   type t
+
   (** [of_string s] returns a [Uuid.t] wrapping [s].
       There are currently no requirements of the format of [s] although it is common to
       use string in `uuid' format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -54,6 +55,7 @@ val inherit_ : Location.t -> t -> poly_variant_row
 val poly_variant : Location.t -> poly_variant_row list -> t
 
 val rec_app : Tid.t -> t list -> t (** recursive apps within the current group *)
+
 val top_app : group -> Tid.t -> t list -> t (** apps from outside the group *)
 
 val var : Location.t -> Vid.t -> t

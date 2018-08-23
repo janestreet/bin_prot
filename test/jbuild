@@ -10,7 +10,7 @@
   ;; This check is to make sure the warning at top of blob_tests.ml doesn't get ignored
   ;; easily. The test here should force whoever make changes to blob_tests.ml to give a
   ;; second thought.
-  (action (bash "diff <(echo 0bdfc91315be642d77031c3bb03978d9) <(cat blob_tests.ml | md5sum | sed 's# .*##')"))
+  (action (bash "diff <(echo 520f274d0966abdf5e36d31c2ce4d230) <(cat blob_tests.ml | md5sum | sed 's# .*##')"))
   ))
 
 
