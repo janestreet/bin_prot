@@ -47,7 +47,7 @@ val bin_read_stream :
     data of a given length into a given buffer.  Requires a header.
     The [reader] type class will be used for conversion to OCaml-values.
 
-    @param max_size = nothing
+    @param max_size default = nothing
 
     @raise Failure if the size of the value disagrees with the one
     specified in the header, and any other exceptions that the binary
