@@ -7,9 +7,9 @@ val size_header_length : int
 (** [size_header_length] is the standard number of bytes allocated for the size header in
     size-prefixed bin-io payloads. This size-prefixed layout is used by the [bin_dump]
     and [bin_read_stream] functions below, as well as:
-      - Core.Bigstring.{read,write}_bin_prot
-      - Core.Unpack_buffer.unpack_bin_prot
-      - Async.{Reader,Writer}.{read,write}_bin_prot
+      - [Core.Bigstring.{read,write}_bin_prot]
+      - [Core.Unpack_buffer.unpack_bin_prot]
+      - [Async.{Reader,Writer}.{read,write}_bin_prot]
     among others.
 
     The size prefix is always 8 bytes at present. This is exposed so your program does not
