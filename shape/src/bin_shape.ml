@@ -479,8 +479,6 @@ module Expression = struct
 
   let basetype = base
 
-  let annotate_provisionally = annotate
-
   (* "VR" stands for "variant or record" *)
 
   let is_cyclic_0 ~(via_VR:bool) : group -> Tid.t -> bool =

@@ -68,7 +68,7 @@ val basetype : Uuid.t -> t list -> t
     Very much as [record [(s,t)]] does.
     But with [annotate] the ocaml record type does not exist. *)
 
-val annotate_provisionally : Uuid.t -> t -> t
+val annotate : Uuid.t -> t -> t
 
 (** [Shape.Canonical.t] is the result of [eval]uating a shape to a canonical form, and
     represents the shape of Ocaml types w.r.t. bin_io serialization.
