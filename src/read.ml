@@ -245,8 +245,11 @@ let bin_read_nat0 buf ~pos_ref =
     safe_bin_read_nat0_16 buf ~pos_ref ~pos:(pos + 1)
   | CODE_INT32 ->
     safe_bin_read_nat0_32 buf ~pos_ref ~pos:(pos + 1)
-  | CODE_INT64 when arch_sixtyfour ->
-    safe_bin_read_nat0_64 buf ~pos_ref ~pos:(pos + 1)
+  | CODE_INT64 ->
+    if arch_sixtyfour then
+      safe_bin_read_nat0_64 buf ~pos_ref ~pos:(pos + 1)
+    else
+      raise_read_error ReadError.Nat0_overflow pos
   | _ ->
     raise_read_error ReadError.Nat0_code pos
 ;;
@@ -287,8 +290,11 @@ let bin_read_int buf ~pos_ref =
     safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1)
   | CODE_INT32 ->
     safe_bin_read_int32_as_int buf ~pos_ref ~pos:(pos + 1)
-  | CODE_INT64 when arch_sixtyfour ->
-    safe_bin_read_int64_as_int buf ~pos_ref ~pos:(pos + 1)
+  | CODE_INT64 ->
+    if arch_sixtyfour then
+      safe_bin_read_int64_as_int buf ~pos_ref ~pos:(pos + 1)
+    else
+      raise_read_error ReadError.Int_overflow pos
   | _ ->
     raise_read_error ReadError.Int_code pos
 ;;

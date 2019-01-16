@@ -223,3 +223,7 @@ external unsafe_blit_float_array_buf :
 external unsafe_blit_buf_float_array :
   src_pos : int -> buf -> dst_pos : int -> float array -> len : int -> unit
   = "bin_prot_blit_buf_float_array_stub" [@@noalloc]
+
+(**)
+
+let (+) = (+)
