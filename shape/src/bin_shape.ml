@@ -1,4 +1,4 @@
-open Core_fragment
+open! Base
 
 module Location : sig
   include Identifiable.S
@@ -12,7 +12,9 @@ end = struct
   include String
 end
 
-let eval_fail loc fmt = Printf.ksprintf (fun s -> failwithf !"%{Location}: %s" loc s) fmt
+let eval_fail loc fmt =
+  Printf.ksprintf (fun s ->
+    failwith (Printf.sprintf !"%{Location}: %s" loc s)) fmt
 
 let equal_option equal a b = match a,b with
   | (Some _,None)|(None,Some _) -> false
@@ -52,7 +54,7 @@ end = struct
       | (key,value)::xs -> loop [(key,value)] ~last_key:key ~last_value:value xs
 
   let create loc ~eq xs =
-    let sorted = List.sort ~cmp:(fun (s1,_) (s2,_) -> String.compare s1 s2) xs in
+    let sorted = List.sort ~compare:(fun (s1,_) (s2,_) -> String.compare s1 s2) xs in
     match merge_check_adjacent_dups ~eq sorted with
     | `Ok sorted -> {sorted}
     | `Mismatch s ->
@@ -88,7 +90,7 @@ end = struct
   let t_of_sexp s = s |> string_of_sexp |> of_hex_exn
 
   let uuid u = string (Uuid.to_string u)
-  let int x = string (string_of_int x)
+  let int x = string (Int.to_string x)
   let pair x y = string (to_binary x ^ to_binary y)
   let list l = string (String.concat ~sep:"" (List.map ~f:to_binary l))
   let constructor s l = string (s ^ (to_binary (list l)))
@@ -202,7 +204,7 @@ module type Canonical = sig
     val opaque : _ t -> Visibility.opaque t
     val get_poly_variant :
       Visibility.visible t -> (Visibility.opaque t option Sorted_table.t,
-                               string) result
+                               string) Result.t
   end
 
   module Def : sig
@@ -484,7 +486,7 @@ module Expression = struct
   let is_cyclic_0 ~(via_VR:bool) : group -> Tid.t -> bool =
     fun group tid ->
       let set = ref [] in
-      let visited tid = List.mem tid ~set:(!set) in
+      let visited tid = List.mem (!set) tid ~equal:(Tid.equal)  in
       let add tid = set := (tid :: !set) in
       let rec trav = function
         (* We look for cycles by traversing the structure of type-expressions *)
@@ -535,12 +537,13 @@ module Evaluation(Canonical : Canonical) = struct
     val lookup : t -> Vid.t -> Visibility.visible Canonical.Exp1.t option
     val create : (Vid.t * Visibility.visible Canonical.Exp1.t) list -> t
   end = struct
-    module M = Map.Make(struct type t = Vid.t [@@deriving compare] end)
-    type t = Visibility.visible Canonical.Exp1.t M.t
-    let create = List.fold ~init:M.empty ~f:(fun t (k,v) -> M.add k v t)
+    type t = Visibility.visible Canonical.Exp1.t Map.M(Vid).t
+    let create =
+      List.fold
+        ~init:(Map.empty (module Vid))
+        ~f:(fun t (k,v) -> Map.set ~key:k ~data:v t)
     let lookup t k =
-      try Some (M.find k t)
-      with Not_found -> None
+      Map.find t k
   end
 
   module Applicand = struct
@@ -558,12 +561,20 @@ module Evaluation(Canonical : Canonical) = struct
     val empty : t
     val extend : t -> key -> [`Recursion_level of int] -> t
   end = struct
-    type key = Gid.t * Tid.t [@@deriving compare]
-    module M = Map.Make(struct type t = key [@@deriving compare] end)
-    type t = [`Recursion_level of int] M.t
-    let find t k = try Some (M.find k t) with Not_found -> None
-    let empty = M.empty
-    let extend t k v = M.add k v t
+
+    module Key = struct
+      module T = struct
+        type t = Gid.t * Tid.t [@@deriving compare, sexp_of]
+      end
+      include T
+      include Comparator.Make(T)
+    end
+    type key = Key.t
+
+    type t = [`Recursion_level of int] Map.M(Key).t
+    let find t k = Map.find t k
+    let empty = Map.empty (module Key)
+    let extend t k v = Map.set ~key:k ~data:v t
   end
 
   (* [Defining.t]
@@ -730,8 +741,8 @@ module Evaluation(Canonical : Canonical) = struct
       ) else
         let venv =
           match (List.zip formals args) with
-          | Some x -> Venv.create x
-          | None ->  failwith "apply, incorrect type application arity"
+          | Ok x -> Venv.create x
+          | Unequal_lengths ->  failwith "apply, incorrect type application arity"
         in
         eval group venv body
 
