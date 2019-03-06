@@ -35,7 +35,10 @@
    Whereas [opaque_event]s roundtrip, [ignored_event]s actually drop the bytes
    representing [details] when deserializing, and therefore do not roundtrip.
 *)
-include Binable.S1 with type 'a t = 'a
+type 'a id = 'a (*_ This type synonym is introduced because older versions of OCaml
+                    do not support destructive substitutions with `type 'a t1 = t2`. *)
+type 'a t = 'a [@@deriving compare]
+include Binable.S1 with type 'a t := 'a id
 
 (** An [Opaque.Bigstring.t] or [Opaque.String.t] is an arbitrary piece of bin-prot. The
     bin-prot (de-)serializers simply read/write the data, prefixed with its size.

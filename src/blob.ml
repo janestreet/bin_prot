@@ -1,7 +1,7 @@
 open Common
 
 module T = struct
-  type 'a t = 'a
+  type 'a t = 'a [@@deriving compare]
 
   let bin_shape_t t =
     Shape.(basetype (Uuid.of_string "85a2557e-490a-11e6-98ac-4b8953d525fe") [t])
@@ -36,6 +36,7 @@ module T = struct
   ;;
 end
 
+type 'a id = 'a
 include T
 include Utils.Make_binable1(struct
     module Binable = T
