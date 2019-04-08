@@ -1,6 +1,7 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
 open Core_kernel
+open Poly
 open Bigarray
 open Import
 

@@ -1,4 +1,5 @@
 open Core_kernel
+open Poly
 open Import
 
 (* This module generates reference serialized output for various functions of
