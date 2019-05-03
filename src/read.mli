@@ -51,3 +51,6 @@ val bin_read_network32_int32 : int32 reader
 val bin_read_network64_int : int reader
 val bin_read_network64_int64 : int64 reader
 val bin_read_md5 : Md5_lib.t reader
+
+(** Fail early if the list is larger than [max_len]. *)
+val bin_read_list_with_max_len : max_len:int -> ('a, 'a list) reader1

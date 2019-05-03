@@ -1,7 +1,4 @@
----
-title: Bin_prot_shape
-parent: ../../../ppx/ppx_bin_prot/README.md
----
+# Bin_prot_shape
 
 What is `Bin_prot_shape`?
 =========================

@@ -12,7 +12,6 @@ exception Buffer_short
 exception No_variant_match
 
 module ReadError = struct
-  (* Order of variants matters.  It must jibe with read_stubs.c. *)
   type t =
     | Neg_int8
     | Int_code
@@ -28,6 +27,7 @@ module ReadError = struct
     | String_too_long
     | Variant_tag
     | Array_too_long
+    | List_too_long of { len : int; max_len : int }
     | Hashtbl_too_long
     | Sum_tag of string
     | Variant of string
@@ -51,6 +51,7 @@ module ReadError = struct
     | String_too_long -> "String_too_long"
     | Variant_tag -> "Variant_tag"
     | Array_too_long -> "Array_too_long"
+    | List_too_long { len; max_len } -> sprintf "List_too_long / %d (max %d)" len max_len
     | Hashtbl_too_long -> "Hashtbl_too_long"
     | Sum_tag loc -> "Sum_tag / " ^ loc
     | Variant loc -> "Variant / " ^ loc

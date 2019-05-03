@@ -103,6 +103,7 @@ module ReadError : sig
     | String_too_long  (** String too long *)
     | Variant_tag  (** Untagged integer encoding for variant tag *)
     | Array_too_long  (** Array too long *)
+    | List_too_long of { len: int; max_len: int }  (** List too long *)
     | Hashtbl_too_long  (** Hashtable too long *)
     | Sum_tag of string  (** Illegal sum tag for given type *)
     | Variant of string  (** Illegal variant for given type *)

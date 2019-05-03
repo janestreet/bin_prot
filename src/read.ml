@@ -402,10 +402,15 @@ let bin_read_n_rev_list bin_read_el buf ~pos_ref len =
   in
   loop len []
 
-let bin_read_list bin_read_el buf ~pos_ref =
+let bin_read_list_with_max_len ~max_len bin_read_el buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
+  if len > max_len
+  then raise_read_error (List_too_long {len; max_len}) !pos_ref;
   let rev_lst = bin_read_n_rev_list bin_read_el buf ~pos_ref len in
   List.rev rev_lst
+
+let bin_read_list bin_read_el buf ~pos_ref =
+  bin_read_list_with_max_len ~max_len:max_int bin_read_el buf ~pos_ref
 
 let dummy_float_buf = create_buf 8
 let () = ignore (Write.bin_write_float dummy_float_buf ~pos:0 3.1)
