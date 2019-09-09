@@ -2,11 +2,11 @@
 
 open Common
 
-type 'a reader = buf -> pos_ref : pos_ref -> 'a
 (** Type of reader functions for the binary protocol.  They take a
     buffer and a reference to a read position, and return the unmarshalled
     value.  The next buffer position after reading in the value will be
     stored in the position reference. *)
+type 'a reader = buf -> pos_ref:pos_ref -> 'a
 
 type ('a, 'b) reader1 = 'a reader -> 'b reader
 type ('a, 'b, 'c) reader2 = 'a reader -> ('b, 'c) reader1

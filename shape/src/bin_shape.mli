@@ -1,4 +1,3 @@
-
 (** [Shape.t] are constructed by the [bin_shape] syntax extension from Ocaml type
     definitions & expressions.
 
@@ -8,21 +7,26 @@
 type t [@@deriving sexp_of]
 
 (** [Tid.t] & [Vid.t] are identifiers for type-constructors & type-vars.
-   i.e. Given [type 'a t = ... ] *)
+    i.e. Given [type 'a t = ... ] *)
 
-module Tid : sig (* [t] *)
+module Tid : sig
+  (* [t] *)
   type t
+
   val of_string : string -> t
 end
 
-module Vid : sig (* ['a] *)
+module Vid : sig
+  (* ['a] *)
   type t
+
   val of_string : string -> t
 end
 
 (** [Location.t] is required when constructing shapes for which evaluation might fail. *)
 module Location : sig
   type t
+
   val of_string : string -> t
 end
 
@@ -51,12 +55,13 @@ type poly_variant_row
 
 val constr : string -> t option -> poly_variant_row
 val inherit_ : Location.t -> t -> poly_variant_row
-
 val poly_variant : Location.t -> poly_variant_row list -> t
 
-val rec_app : Tid.t -> t list -> t (** recursive apps within the current group *)
+(** recursive apps within the current group *)
+val rec_app : Tid.t -> t list -> t
 
-val top_app : group -> Tid.t -> t list -> t (** apps from outside the group *)
+(** apps from outside the group *)
+val top_app : group -> Tid.t -> t list -> t
 
 val var : Location.t -> Vid.t -> t
 
@@ -85,13 +90,13 @@ val annotate : Uuid.t -> t -> t
     hence equivalence at the Shape.t level.
 
     [Canonical.t] may also be constructed with various functions:
-        [annotate, basetype, tuple, record, variant, poly_variant, fix, recurse, ..]
+    [annotate, basetype, tuple, record, variant, poly_variant, fix, recurse, ..]
     which might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t [@@deriving compare,sexp]
-  val to_hex : t -> string
+  type t [@@deriving compare, sexp]
 
+  val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t
   val of_md5 : Md5_lib.t -> t
 end
@@ -102,8 +107,13 @@ module Canonical : sig
   val to_string_hum : t -> string
   val to_digest : t -> Digest.t
 
-  module Exp : sig type t end
-  module Def : sig type t end
+  module Exp : sig
+    type t
+  end
+
+  module Def : sig
+    type t
+  end
 
   module Create : sig
     (** [Create.create defs exp] constructs a canonical-shape. The [defs] give context for
@@ -116,6 +126,7 @@ module Canonical : sig
         Within a definition body, [var i] refers to the i'th formal type-var, and
         corresponds to the i'the argument of an application [args]. *)
     val annotate : Uuid.t -> Exp.t -> Exp.t
+
     val basetype : Uuid.t -> Exp.t list -> Exp.t
     val tuple : Exp.t list -> Exp.t
     val poly_variant : Location.t -> (string * Exp.t option) list -> Exp.t
@@ -127,7 +138,6 @@ module Canonical : sig
     val variant : (string * Exp.t list) list -> Exp.t
     val create : Exp.t -> t
   end
-
 end
 
 (** [eval t] returns the canonical-shape for a shape-expression [Shape.t]. Type aliases
@@ -140,7 +150,7 @@ val eval : t -> Canonical.t
     avoiding the intermediate [Canonical.t] from being constructed. This is important as
     the size of a canonical-shape might be exponential in terms of the size of the shape
     expression.  The following holds:
-        [ Digest.(eval_to_digest exp = Canonical.to_digest (eval exp)) ] *)
+    [ Digest.(eval_to_digest exp = Canonical.to_digest (eval exp)) ] *)
 val eval_to_digest : t -> Digest.t
 
 (** [eval_to_digest_string t] ==  [Digest.to_hex (eval_to_digest t)]

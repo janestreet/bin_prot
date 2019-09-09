@@ -1,8 +1,9 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-let%expect_test "javascript integer tests" [@tags "js-only"] =
+let%expect_test ("javascript integer tests"[@tags "js-only"]) =
   Integers_repr.run_tests ();
-  [%expect {|
+  [%expect
+    {|
 int| .. .. .. .. 80 00 00 00 fd -> -2147483648
 int| .. .. .. .. 80 00 00 01 fd -> -2147483647
 int| .. .. .. .. 80 00 00 02 fd -> -2147483646
@@ -14467,4 +14468,5 @@ network64_int64| .. fc ff ff ff ff ff ff 7f -> 9223372036854775804
 network64_int64| .. fd ff ff ff ff ff ff 7f -> 9223372036854775805
 network64_int64| .. fe ff ff ff ff ff ff 7f -> 9223372036854775806
 network64_int64| .. ff ff ff ff ff ff ff 7f -> 9223372036854775807
-|}];
+|}]
+;;

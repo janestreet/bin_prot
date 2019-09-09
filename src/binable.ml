@@ -22,6 +22,7 @@ end
 
 module type S = sig
   type t
+
   include S_only_functions with type t := t
 
   val bin_shape_t : Shape.t
@@ -35,7 +36,7 @@ module type S1 = sig
 
   val bin_shape_t : Shape.t -> Shape.t
   val bin_size_t : ('a, 'a t) Size.sizer1
-  val bin_write_t :('a, 'a t) Write.writer1
+  val bin_write_t : ('a, 'a t) Write.writer1
   val bin_read_t : ('a, 'a t) Read.reader1
   val __bin_read_t__ : ('a, int -> 'a t) Read.reader1
   val bin_writer_t : ('a, 'a t) Type_class.S1.writer
@@ -48,7 +49,7 @@ module type S2 = sig
 
   val bin_shape_t : Shape.t -> Shape.t -> Shape.t
   val bin_size_t : ('a, 'b, ('a, 'b) t) Size.sizer2
-  val bin_write_t :('a, 'b, ('a, 'b) t) Write.writer2
+  val bin_write_t : ('a, 'b, ('a, 'b) t) Write.writer2
   val bin_read_t : ('a, 'b, ('a, 'b) t) Read.reader2
   val __bin_read_t__ : ('a, 'b, int -> ('a, 'b) t) Read.reader2
   val bin_writer_t : ('a, 'b, ('a, 'b) t) Type_class.S2.writer
@@ -61,7 +62,7 @@ module type S3 = sig
 
   val bin_shape_t : Shape.t -> Shape.t -> Shape.t -> Shape.t
   val bin_size_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Size.sizer3
-  val bin_write_t :('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
+  val bin_write_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
   val bin_read_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Read.reader3
   val __bin_read_t__ : ('a, 'b, 'c, int -> ('a, 'b, 'c) t) Read.reader3
   val bin_writer_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.writer
@@ -85,7 +86,7 @@ module Minimal = struct
 
     val bin_shape_t : Shape.t -> Shape.t
     val bin_size_t : ('a, 'a t) Size.sizer1
-    val bin_write_t :('a, 'a t) Write.writer1
+    val bin_write_t : ('a, 'a t) Write.writer1
     val bin_read_t : ('a, 'a t) Read.reader1
     val __bin_read_t__ : ('a, int -> 'a t) Read.reader1
   end
@@ -95,7 +96,7 @@ module Minimal = struct
 
     val bin_shape_t : Shape.t -> Shape.t -> Shape.t
     val bin_size_t : ('a, 'b, ('a, 'b) t) Size.sizer2
-    val bin_write_t :('a, 'b, ('a, 'b) t) Write.writer2
+    val bin_write_t : ('a, 'b, ('a, 'b) t) Write.writer2
     val bin_read_t : ('a, 'b, ('a, 'b) t) Read.reader2
     val __bin_read_t__ : ('a, 'b, int -> ('a, 'b) t) Read.reader2
   end
@@ -105,9 +106,8 @@ module Minimal = struct
 
     val bin_shape_t : Shape.t -> Shape.t -> Shape.t -> Shape.t
     val bin_size_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Size.sizer3
-    val bin_write_t :('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
+    val bin_write_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
     val bin_read_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Read.reader3
     val __bin_read_t__ : ('a, 'b, 'c, int -> ('a, 'b, 'c) t) Read.reader3
   end
-
 end

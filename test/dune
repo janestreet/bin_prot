@@ -4,4 +4,4 @@
 (alias (name runtest) (deps blob_tests.ml)
  (action
   (bash
-   "diff <(echo 520f274d0966abdf5e36d31c2ce4d230) <(cat blob_tests.ml | md5sum | sed 's# .*##')")))
+   "diff <(echo e6e9404b65524d1b543284e2b10fb9fb) <(cat blob_tests.ml | md5sum | sed 's# .*##')")))
