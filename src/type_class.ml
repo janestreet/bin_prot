@@ -45,11 +45,7 @@ let variant_wrong_type name _buf ~pos_ref _x =
 (*$ open Bin_prot_cinaps.Str *)
 (*$ mk_base "unit" *)
 let bin_writer_unit = { size = Size.bin_size_unit; write = Write.bin_write_unit }
-
-let bin_reader_unit =
-  { read = Read.bin_read_unit; vtag_read = variant_wrong_type "unit" }
-;;
-
+let bin_reader_unit = { read = Read.bin_read_unit; vtag_read = variant_wrong_type "unit" }
 let bin_shape_unit = Shape.bin_shape_unit
 
 let bin_unit =
@@ -58,11 +54,7 @@ let bin_unit =
 
 (*$ mk_base "bool" *)
 let bin_writer_bool = { size = Size.bin_size_bool; write = Write.bin_write_bool }
-
-let bin_reader_bool =
-  { read = Read.bin_read_bool; vtag_read = variant_wrong_type "bool" }
-;;
-
+let bin_reader_bool = { read = Read.bin_read_bool; vtag_read = variant_wrong_type "bool" }
 let bin_shape_bool = Shape.bin_shape_bool
 
 let bin_bool =
@@ -97,11 +89,7 @@ let bin_bytes =
 
 (*$ mk_base "char" *)
 let bin_writer_char = { size = Size.bin_size_char; write = Write.bin_write_char }
-
-let bin_reader_char =
-  { read = Read.bin_read_char; vtag_read = variant_wrong_type "char" }
-;;
-
+let bin_reader_char = { read = Read.bin_read_char; vtag_read = variant_wrong_type "char" }
 let bin_shape_char = Shape.bin_shape_char
 
 let bin_char =
@@ -173,11 +161,7 @@ let bin_nativeint =
 
 (*$ mk_base "nat0" *)
 let bin_writer_nat0 = { size = Size.bin_size_nat0; write = Write.bin_write_nat0 }
-
-let bin_reader_nat0 =
-  { read = Read.bin_read_nat0; vtag_read = variant_wrong_type "nat0" }
-;;
-
+let bin_reader_nat0 = { read = Read.bin_read_nat0; vtag_read = variant_wrong_type "nat0" }
 let bin_shape_nat0 = Shape.bin_shape_nat0
 
 let bin_nat0 =
@@ -280,11 +264,7 @@ let bin_pair bin_el1 bin_el2 =
 let bin_writer_triple bin_writer_el1 bin_writer_el2 bin_writer_el3 =
   { size =
       (fun v ->
-         Size.bin_size_triple
-           bin_writer_el1.size
-           bin_writer_el2.size
-           bin_writer_el3.size
-           v)
+         Size.bin_size_triple bin_writer_el1.size bin_writer_el2.size bin_writer_el3.size v)
   ; write =
       (fun buf ~pos v ->
          Write.bin_write_triple
@@ -716,8 +696,7 @@ let bin_network64_int64 =
 
 (*$*)
 let bin_writer_array_no_length bin_writer_el =
-  { size =
-      (fun v -> (Size.bin_size_array_no_length [@warning "-3"]) bin_writer_el.size v)
+  { size = (fun v -> (Size.bin_size_array_no_length [@warning "-3"]) bin_writer_el.size v)
   ; write =
       (fun buf ~pos v ->
          (Write.bin_write_array_no_length [@warning "-3"]) bin_writer_el.write buf ~pos v)
