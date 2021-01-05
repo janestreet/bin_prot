@@ -1,8 +1,4 @@
----
-title: Bin_prot_shape
-parent: ../../../ppx/ppx_bin_prot/README.md
-uuid: 166865db-4a4e-3af5-cc63-dcedc56aa607
----
+# Bin_prot_shape
 
 What is `Bin_prot_shape`?
 =========================
