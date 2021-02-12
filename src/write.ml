@@ -221,9 +221,10 @@ let bin_write_int64 buf ~pos n =
 ;;
 
 let bin_write_nativeint buf ~pos n =
-  if arch_sixtyfour
-  && (n >= (* 0x80000000n *) Nativeint.shift_left 1n 31
-      || n < (* -0x80000000n *) Nativeint.neg (Nativeint.shift_left 1n 31))
+  if
+    arch_sixtyfour
+    && (n >= (* 0x80000000n *) Nativeint.shift_left 1n 31
+        || n < (* -0x80000000n *) Nativeint.neg (Nativeint.shift_left 1n 31))
   then (
     assert_pos pos;
     all_bin_write_int64 buf pos (Int64.of_nativeint n))
