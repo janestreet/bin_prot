@@ -261,16 +261,18 @@ let bin_write_triple bin_write_a bin_write_b bin_write_c buf ~pos (a, b, c) =
   bin_write_c buf ~pos:next2 c
 ;;
 
-let bin_write_list bin_write_el buf ~pos lst =
-  let rec loop els_pos = function
+let bin_write_list =
+  let rec loop ~bin_write_el ~buf ~els_pos lst =
+    match lst with
     | [] -> els_pos
-    | h :: t ->
-      let new_els_pos = bin_write_el buf ~pos:els_pos h in
-      loop new_els_pos t
+    | hd :: tl ->
+      let new_els_pos = bin_write_el buf ~pos:els_pos hd in
+      loop ~bin_write_el ~buf ~els_pos:new_els_pos tl
   in
-  let len = Nat0.unsafe_of_int (List.length lst) in
-  let els_pos = bin_write_nat0 buf ~pos len in
-  loop els_pos lst
+  fun bin_write_el buf ~pos lst ->
+    let len = Nat0.unsafe_of_int (List.length lst) in
+    let els_pos = bin_write_nat0 buf ~pos len in
+    loop ~bin_write_el ~buf ~els_pos lst
 ;;
 
 let bin_write_float_array buf ~pos a =

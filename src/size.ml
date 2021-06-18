@@ -178,14 +178,14 @@ let bin_size_triple bin_size_a bin_size_b bin_size_c (a, b, c) =
   bin_size_a a + bin_size_b b + bin_size_c c
 ;;
 
-let bin_size_list bin_size_el lst =
-  let rec loop len = function
-    | [] -> len
-    | h :: t -> loop (len + bin_size_el h) t
+let bin_size_list =
+  let rec loop ~bin_size_el ~size_acc ~len_acc lst =
+    match lst with
+    | [] -> size_acc + bin_size_nat0 (Nat0.unsafe_of_int len_acc)
+    | hd :: tl ->
+      loop ~bin_size_el ~size_acc:(size_acc + bin_size_el hd) ~len_acc:(len_acc + 1) tl
   in
-  let len = Nat0.unsafe_of_int (List.length lst) in
-  let size_len = bin_size_nat0 len in
-  loop size_len lst
+  fun bin_size_el lst -> loop ~bin_size_el ~size_acc:0 ~len_acc:0 lst
 ;;
 
 let bin_size_len len =
