@@ -124,7 +124,6 @@ val bin_writer_option : ('a, 'a option) S1.writer
 val bin_reader_option : ('a, 'a option) S1.reader
 val bin_shape_option : Shape.t -> Shape.t
 val bin_option : ('a, 'a option) S1.t
-
 (*$*)
 
 val bin_writer_pair : ('a, 'b, 'a * 'b) S2.writer
@@ -193,7 +192,6 @@ val bin_writer_bigstring : buf writer
 val bin_reader_bigstring : buf reader
 val bin_shape_bigstring : Shape.t
 val bin_bigstring : buf t
-
 (*$*)
 
 type float_array = float array
@@ -203,7 +201,6 @@ val bin_writer_float_array : float_array writer
 val bin_reader_float_array : float_array reader
 val bin_shape_float_array : Shape.t
 val bin_float_array : float_array t
-
 (*$*)
 
 val bin_writer_variant_int : int writer
@@ -269,7 +266,6 @@ val bin_writer_network64_int64 : int64 writer
 val bin_reader_network64_int64 : int64 reader
 val bin_shape_network64_int64 : Shape.t
 val bin_network64_int64 : int64 t
-
 (*$*)
 
 val bin_writer_array_no_length : ('a, 'a array) S1.writer

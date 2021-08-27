@@ -47,9 +47,8 @@ let safe_nativeint_of_int64 =
   then fun _pos x -> Int64.to_nativeint x
   else
     fun [@inline always] pos x ->
-      if
-        x >= Int64.of_nativeint Nativeint.min_int
-        && x <= Int64.of_nativeint Nativeint.max_int
+      if x >= Int64.of_nativeint Nativeint.min_int
+      && x <= Int64.of_nativeint Nativeint.max_int
       then Int64.to_nativeint x
       else raise_read_error ReadError.Int_overflow pos
 ;;

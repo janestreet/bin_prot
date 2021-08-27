@@ -750,7 +750,7 @@ let%expect_test "Non-integer bin_prot size tests" =
 
 (* Polymorphic hash is not the same when running in javascript.
    This makes the test fail because of different ordering. *)
-let%expect_test ("Non-integer bin_prot size tests (no js)"[@tags "no-js"]) =
+let%expect_test ("Non-integer bin_prot size tests (no js)" [@tags "no-js"]) =
   gen_tests Tests.hashtbl;
   [%expect
     {|
