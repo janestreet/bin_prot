@@ -220,6 +220,17 @@ module Tests = struct
     }
   ;;
 
+  let floatarray =
+    { writer = Write.bin_write_floatarray
+    ; reader = Read.bin_read_floatarray
+    ; values = [ Float_array.empty; Float_array.create ~len:1 0.0 ]
+    ; equal = Float_array.equal Float.equal
+    ; sexp_of = [%sexp_of: Float_array.t]
+    ; hi_bound = None
+    ; lo_bound = Minimum.bin_size_floatarray
+    }
+  ;;
+
   let float_array =
     { writer = Write.bin_write_float_array
     ; reader = Read.bin_read_float_array
@@ -228,7 +239,7 @@ module Tests = struct
     ; sexp_of = [%sexp_of: float array]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_float_array
-    }
+    } [@ocaml.alert "-deprecated"]
   ;;
 
   let ref =
@@ -656,6 +667,12 @@ let%expect_test "Non-integer bin_prot size tests" =
   [%expect {|
     .. .. .. .. .. 00 -> ""
     6f 6c 6c 65 68 05 -> hello
+  |}];
+  gen_tests Tests.floatarray;
+  [%expect
+    {|
+    .. .. .. .. .. .. .. .. 00 -> ()
+    00 00 00 00 00 00 00 00 01 -> (0)
   |}];
   gen_tests Tests.float_array;
   [%expect

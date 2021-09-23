@@ -274,15 +274,33 @@ let bin_write_list =
     loop ~bin_write_el ~buf ~els_pos lst
 ;;
 
-let bin_write_float_array buf ~pos a =
-  let len = Array.length a in
+let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
+  let len = length a in
   let plen = Nat0.unsafe_of_int len in
   let pos = bin_write_nat0 buf ~pos plen in
   let size = len * 8 in
   let next = pos + size in
   check_next buf next;
-  unsafe_blit_float_array_buf a buf ~src_pos:0 ~dst_pos:pos ~len;
+  blit ~src_pos:0 a ~dst_pos:pos buf ~len;
   next
+;;
+
+let bin_write_floatarray buf ~pos a =
+  bin_write_float_array_gen
+    ~length:Float.Array.length
+    ~blit:unsafe_blit_floatarray_buf
+    buf
+    ~pos
+    a
+;;
+
+let bin_write_float_array buf ~pos a =
+  bin_write_float_array_gen
+    ~length:Array.length
+    ~blit:unsafe_blit_float_array_buf
+    buf
+    ~pos
+    a
 ;;
 
 let bin_write_array_loop bin_write_el buf ~els_pos ~n ar =

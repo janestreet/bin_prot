@@ -471,26 +471,48 @@ let bin_bigstring =
   }
 ;;
 
-(*$*)
-type float_array = float array
-
-(*$ mk_base "float_array" *)
-let bin_writer_float_array =
-  { size = Size.bin_size_float_array; write = Write.bin_write_float_array }
+(*$ mk_base "floatarray" *)
+let bin_writer_floatarray =
+  { size = Size.bin_size_floatarray; write = Write.bin_write_floatarray }
 ;;
 
-let bin_reader_float_array =
-  { read = Read.bin_read_float_array; vtag_read = variant_wrong_type "float_array" }
+let bin_reader_floatarray =
+  { read = Read.bin_read_floatarray; vtag_read = variant_wrong_type "floatarray" }
 ;;
 
-let bin_shape_float_array = Shape.bin_shape_float_array
+let bin_shape_floatarray = Shape.bin_shape_floatarray
 
-let bin_float_array =
-  { shape = bin_shape_float_array
-  ; writer = bin_writer_float_array
-  ; reader = bin_reader_float_array
+let bin_floatarray =
+  { shape = bin_shape_floatarray
+  ; writer = bin_writer_floatarray
+  ; reader = bin_reader_floatarray
   }
 ;;
+
+(*$*)
+
+type float_array = float array
+
+include struct
+  (*$ mk_base "float_array" *)
+  let bin_writer_float_array =
+    { size = Size.bin_size_float_array; write = Write.bin_write_float_array }
+  ;;
+
+  let bin_reader_float_array =
+    { read = Read.bin_read_float_array; vtag_read = variant_wrong_type "float_array" }
+  ;;
+
+  let bin_shape_float_array = Shape.bin_shape_float_array
+
+  let bin_float_array =
+    { shape = bin_shape_float_array
+    ; writer = bin_writer_float_array
+    ; reader = bin_reader_float_array
+    }
+  ;;
+  (*$*)
+end [@alert "-deprecated"]
 
 (*$ mk_base "variant_int" *)
 let bin_writer_variant_int =

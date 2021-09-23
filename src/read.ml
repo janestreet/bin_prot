@@ -427,7 +427,7 @@ let max_float_array_length =
   if arch_sixtyfour then Sys.max_array_length else Sys.max_array_length / 2
 ;;
 
-let bin_read_float_array buf ~pos_ref =
+let[@inline always] bin_read_float_array_gen ~create ~blit buf ~pos_ref =
   let pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > max_float_array_length then raise_read_error ReadError.Array_too_long pos;
@@ -435,10 +435,26 @@ let bin_read_float_array buf ~pos_ref =
   let pos = !pos_ref in
   let next = pos + size in
   check_next buf next;
-  let arr = Array.create_float len in
-  unsafe_blit_buf_float_array buf arr ~src_pos:pos ~dst_pos:0 ~len;
+  let arr = create len in
+  blit ~src_pos:pos buf ~dst_pos:0 arr ~len;
   pos_ref := next;
   arr
+;;
+
+let bin_read_floatarray buf ~pos_ref =
+  bin_read_float_array_gen
+    ~create:Float.Array.create
+    ~blit:unsafe_blit_buf_floatarray
+    buf
+    ~pos_ref
+;;
+
+let bin_read_float_array buf ~pos_ref =
+  bin_read_float_array_gen
+    ~create:Array.create_float
+    ~blit:unsafe_blit_buf_float_array
+    buf
+    ~pos_ref
 ;;
 
 let bin_read_array (type a) bin_read_el buf ~pos_ref =

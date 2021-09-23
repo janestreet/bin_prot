@@ -63,6 +63,7 @@ module Minimum = struct
   let bin_size_float32_mat = bin_size_mat
   let bin_size_float64_mat = bin_size_mat
   let bin_size_bigstring = bin_size_len
+  let bin_size_floatarray = bin_size_len
   let bin_size_float_array = bin_size_len
   let bin_size_variant_int = Maximum.bin_size_variant_int
   let bin_size_int_8bit = Maximum.bin_size_int_8bit
@@ -191,6 +192,11 @@ let bin_size_list =
 let bin_size_len len =
   let plen = Nat0.unsafe_of_int len in
   bin_size_nat0 plen
+;;
+
+let bin_size_floatarray ar =
+  let len = Float.Array.length ar in
+  bin_size_len len + (8 * len)
 ;;
 
 let bin_size_float_array ar =

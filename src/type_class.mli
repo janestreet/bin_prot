@@ -194,14 +194,46 @@ val bin_shape_bigstring : Shape.t
 val bin_bigstring : buf t
 (*$*)
 
-type float_array = float array
-
-(*$ mk_base "float_array" *)
-val bin_writer_float_array : float_array writer
-val bin_reader_float_array : float_array reader
-val bin_shape_float_array : Shape.t
-val bin_float_array : float_array t
+(*$ mk_base "floatarray" *)
+val bin_writer_floatarray : floatarray writer
+val bin_reader_floatarray : floatarray reader
+val bin_shape_floatarray : Shape.t
+val bin_floatarray : floatarray t
 (*$*)
+
+(*$
+  mk_base_tp
+    ~deprecate:
+      "[@@ocaml.deprecated \"[since 2021-09] use ppx_bin_prot with type [float array] or \
+       [floatarray] or the 'floatarray' functions\"]"
+    "float_array"
+    "float array"
+*)
+val bin_writer_float_array : float array writer
+[@@ocaml.deprecated
+  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
+   'floatarray' functions"]
+
+val bin_reader_float_array : float array reader
+[@@ocaml.deprecated
+  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
+   'floatarray' functions"]
+
+val bin_shape_float_array : Shape.t
+[@@ocaml.deprecated
+  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
+   'floatarray' functions"]
+
+val bin_float_array : float array t
+[@@ocaml.deprecated
+  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
+   'floatarray' functions"]
+(*$*)
+
+type float_array = float array
+[@@ocaml.deprecated
+  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
+   'floatarray' functions"]
 
 val bin_writer_variant_int : int writer
 val bin_reader_variant_int : int reader
