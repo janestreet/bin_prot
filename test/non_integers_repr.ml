@@ -16,7 +16,6 @@ open Import
 
 module Read = Bin_prot.Read
 module Write = Bin_prot.Write
-module Shape = Bin_prot.Shape
 
 type 'a to_test =
   { writer : 'a Write.writer

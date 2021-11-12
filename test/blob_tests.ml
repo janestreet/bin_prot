@@ -2,10 +2,7 @@ open! Core
 open! Import
 module Blob = Bin_prot.Blob
 module Opaque = Blob.Opaque
-module Read = Bin_prot.Read
-module Shape = Bin_prot.Shape
 module Type_class = Bin_prot.Type_class
-module Write = Bin_prot.Write
 
 let buf = lazy (Bin_prot.Common.create_buf 10_000)
 
