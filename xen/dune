@@ -2,5 +2,5 @@
  (action (bash "./%{first_dep} > %{targets}")))
 
 (library (name bin_prot_xen) (public_name bin_prot.xen) (optional)
- (virtual_deps mirage-xen-ocaml) (libraries bigarray)
+ (virtual_deps mirage-xen-ocaml)
  (c_flags (:include cflags.sexp)) (preprocess no_preprocessing))
