@@ -1,2 +1,0 @@
-(executables (names check_no_uuid_duplication) (libraries core async)
- (preprocess (pps ppx_jane)))
