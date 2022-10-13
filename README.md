@@ -55,27 +55,13 @@ Usage
 The API (`.mli`-files) in the `bin_prot` library directory (`lib`)
 is fully documented, and HTML-documentation can be built from it on
 installation.  The documentation for the latest release can also be found
-[online](https://ocaml.janestreet.com/ocaml-core/latest/doc/bin_prot/Bin_prot/index.html).
+[online](https://v3.ocaml.org/p/bin_prot).
 
 Module `Common` defines some globally used types, functions, exceptions,
 and values.  `Nat0` implements natural numbers including zero.
 
 Modules `Read_ml` and `Write_ml` contain read and write functions respectively
-for all basic types and are implemented in OCaml as far as reasonable.
-Some operations are most easily performed in C.  If you only want to read
-or write single, basic, unstructured values, using this module is probably
-the most efficient and convenient way of doing this.
-
-Otherwise you should annotate your type definitions to generate type
-converters automatically (see later sections for details).  The preprocessor
-in `syntax/pa_bin_prot.ml` will then generate highly optimized functions for
-converting your OCaml-values to and from the binary representation.  This
-automatically generated code will use functions in modules `Unsafe_common`,
-`Unsafe_read_c` and `Unsafe_write_c`, which employ unsafe internal
-representations to achieve optimal performance.  The auto-generated code is
-extremely well-tested and should use these unsafe representations correctly.
-Developers who want to make manual use of these unsafe calling conventions
-for efficiency are strongly encouraged to test their code carefully.
+for all basic types.
 
 The module `Size` allows you to compute the size of basic OCaml-values in the
 binary representation before writing them to a buffer.  The code generator
@@ -91,14 +77,6 @@ the top of files using this library:
 
 Note that you can shadow the definitions in the above module in the unlikely
 event that the predefined ways of converting data are unsatisfactory to you.
-
-The modules `Read_c` and `Write_c` wrap the unsafe low-level converters for
-basic values to ones accessible safely from within OCaml and vice versa.  They
-also export functions for wrapping user-defined converters.  This should help
-developers make their converters available in the respective other
-representation (low- or high-level).  The test applications in the distribution
-use these wrappers to verify the correctness of implementations for low-level
-(C) and high-level (OCaml) representations.
 
 The module `Type_class` contains some extra definitions for type classes of
 basic values.  These definitions can be passed to the function `bin_dump` in

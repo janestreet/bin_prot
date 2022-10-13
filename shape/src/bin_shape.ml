@@ -314,13 +314,7 @@ module Canonical_digest : Canonical = struct
   end
 end
 
-module Canonical_full : sig
-  type t [@@deriving compare, sexp]
-
-  include Canonical with type t := t
-
-  val to_string_hum : t -> string
-end = struct
+module Canonical_full = struct
   module CD = Create_digest
 
   module Exp1 = struct
@@ -393,11 +387,11 @@ end
 
 module Gid : sig
   (* unique group-id, used as key for Tenv below *)
-  type t [@@deriving compare, sexp_of]
+  type t [@@deriving compare, equal, sexp]
 
   val create : unit -> t
 end = struct
-  type t = int [@@deriving compare, sexp_of]
+  type t = int [@@deriving compare, equal, sexp]
 
   let r = ref 0
 
@@ -413,10 +407,10 @@ module Expression = struct
     [ `Constr of string * 't option
     | `Inherit of Location.t * 't
     ]
-  [@@deriving compare, sexp_of]
+  [@@deriving compare, equal, sexp]
 
   module Group : sig
-    type 'a t [@@deriving compare, sexp_of]
+    type 'a t [@@deriving compare, equal, sexp]
 
     val create : Location.t -> (Tid.t * Vid.t list * 'a) list -> 'a t
     val id : 'a t -> Gid.t
@@ -427,7 +421,7 @@ module Expression = struct
       ; loc : Location.t
       ; members : (Tid.t * (Vid.t list * 'a)) list
       }
-    [@@deriving compare, sexp_of]
+    [@@deriving compare, equal, sexp]
 
     let create loc trips =
       let gid = Gid.create () in
@@ -449,17 +443,23 @@ module Expression = struct
     ;;
   end
 
-  type t =
-    | Annotate of Uuid.t * t
-    | Base of Uuid.t * t list
-    | Record of (string * t) list
-    | Variant of (string * t list) list
-    | Tuple of t list
-    | Poly_variant of (Location.t * t poly_constr list)
-    | Var of (Location.t * Vid.t)
-    | Rec_app of Tid.t * t list
-    | Top_app of t Group.t * Tid.t * t list
-  [@@deriving variants, sexp_of]
+  module Stable = struct
+    module V1 = struct
+      type t =
+        | Annotate of Uuid.t * t
+        | Base of Uuid.t * t list
+        | Record of (string * t) list
+        | Variant of (string * t list) list
+        | Tuple of t list
+        | Poly_variant of (Location.t * t poly_constr list)
+        | Var of (Location.t * Vid.t)
+        | Rec_app of Tid.t * t list
+        | Top_app of t Group.t * Tid.t * t list
+      [@@deriving equal, sexp, variants]
+    end
+  end
+
+  include Stable.V1
 
   type group = t Group.t
 
@@ -765,4 +765,10 @@ module For_typerep = struct
     | Tuple ts -> ts
     | _ -> raise (Not_a_tuple t)
   ;;
+end
+
+module Expert = struct
+  module Sorted_table = Sorted_table
+  module Canonical_exp_constructor = Canonical_exp_constructor
+  module Canonical = Canonical
 end

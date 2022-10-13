@@ -207,7 +207,7 @@ canonical shapes and hence equivalence at the `Shape.t` level.
 ```
 
 The intention is that a shape digest can be passed between
-server/client of an RPC protocol to check that the both sides have the
+server/client of an RPC protocol to check that both sides have the
 same opinion of the types being passed.
 
 We can convert directly from a base shape to its digest, avoiding

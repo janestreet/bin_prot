@@ -39,6 +39,8 @@ module Uuid : sig
       use string in `uuid' format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
       There is also no attempt to detect & reject duplicates *)
   val of_string : string -> t
+
+  val to_string : t -> string
 end
 
 (** group of mutually recursive type definitions *)
@@ -75,6 +77,12 @@ val basetype : Uuid.t -> t list -> t
 
 val annotate : Uuid.t -> t -> t
 
+module Stable : sig
+  module V1 : sig
+    type nonrec t = t [@@deriving equal, sexp]
+  end
+end
+
 (** [Shape.Canonical.t] is the result of [eval]uating a shape to a canonical form, and
     represents the shape of Ocaml types w.r.t. bin_io serialization.
 
@@ -101,8 +109,38 @@ module Digest : sig
   val of_md5 : Md5_lib.t -> t
 end
 
+module Expert : sig
+  module Sorted_table : sig
+    type 'a t [@@deriving compare, sexp_of]
+
+    val expose : 'a t -> (string * 'a) list
+  end
+
+  module Canonical_exp_constructor : sig
+    type 'a t =
+      | Annotate of Uuid.t * 'a
+      | Base of Uuid.t * 'a list
+      | Tuple of 'a list
+      | Record of (string * 'a) list
+      | Variant of (string * 'a list) list
+      | Poly_variant of 'a option Sorted_table.t
+      | Application of 'a * 'a list
+      | Rec_app of int * 'a list
+      | Var of int
+    [@@deriving compare, sexp_of]
+  end
+
+  module Canonical : sig
+    module Exp1 : sig
+      type t0 = Exp of t0 Canonical_exp_constructor.t [@@deriving compare, sexp_of]
+    end
+
+    type t = Exp1.t0 [@@deriving compare, sexp_of]
+  end
+end
+
 module Canonical : sig
-  type t [@@deriving compare, sexp_of]
+  type t = Expert.Canonical.t [@@deriving compare, sexp_of]
 
   val to_string_hum : t -> string
   val to_digest : t -> Digest.t
