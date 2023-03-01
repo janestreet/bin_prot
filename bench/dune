@@ -1,1 +1,4 @@
-(library (name bin_prot_bench) (libraries core) (preprocess (pps ppx_jane)))
+(library (name bin_prot_bench)
+ (libraries bin_prot ppx_expect.collector ppx_bench.runtime-lib
+  ppx_module_timer.runtime)
+ (preprocess (pps ppx_jane)))

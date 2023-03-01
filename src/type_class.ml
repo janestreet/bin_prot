@@ -491,29 +491,6 @@ let bin_floatarray =
 
 (*$*)
 
-type float_array = float array
-
-include struct
-  (*$ mk_base "float_array" *)
-  let bin_writer_float_array =
-    { size = Size.bin_size_float_array; write = Write.bin_write_float_array }
-  ;;
-
-  let bin_reader_float_array =
-    { read = Read.bin_read_float_array; vtag_read = variant_wrong_type "float_array" }
-  ;;
-
-  let bin_shape_float_array = Shape.bin_shape_float_array
-
-  let bin_float_array =
-    { shape = bin_shape_float_array
-    ; writer = bin_writer_float_array
-    ; reader = bin_reader_float_array
-    }
-  ;;
-  (*$*)
-end [@alert "-deprecated"]
-
 (*$ mk_base "variant_int" *)
 let bin_writer_variant_int =
   { size = Size.bin_size_variant_int; write = Write.bin_write_variant_int }
@@ -717,13 +694,6 @@ let bin_network64_int64 =
 ;;
 
 (*$*)
-let bin_writer_array_no_length bin_writer_el =
-  { size = (fun v -> (Size.bin_size_array_no_length [@warning "-3"]) bin_writer_el.size v)
-  ; write =
-      (fun buf ~pos v ->
-         (Write.bin_write_array_no_length [@warning "-3"]) bin_writer_el.write buf ~pos v)
-  }
-;;
 
 (* Conversion of binable types *)
 

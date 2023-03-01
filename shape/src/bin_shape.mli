@@ -74,7 +74,6 @@ val basetype : Uuid.t -> t list -> t
 (** [a = annotate s t] creates a shape [a] distinguished, but dependent on shape [t].
     Very much as [record [(s,t)]] does.
     But with [annotate] the ocaml record type does not exist. *)
-
 val annotate : Uuid.t -> t -> t
 
 module Stable : sig

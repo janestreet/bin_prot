@@ -265,7 +265,3 @@ let bin_size_network32_int _ = 4
 let bin_size_network32_int32 _ = 4
 let bin_size_network64_int _ = 8
 let bin_size_network64_int64 _ = 8
-
-let bin_size_array_no_length bin_size_el ar =
-  bin_size_array_loop bin_size_el ar ~total_len:0 ~n:(Array.length ar)
-;;

@@ -36,12 +36,6 @@ val bin_size_float64_mat : mat64 sizer
 val bin_size_mat : mat sizer
 val bin_size_bigstring : buf sizer
 val bin_size_floatarray : floatarray sizer
-
-val bin_size_float_array : float array sizer
-[@@ocaml.deprecated
-  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
-   'floatarray' functions"]
-
 val bin_size_variant_int : int sizer
 val bin_size_int_8bit : int sizer
 val bin_size_int_16bit : int sizer
@@ -53,11 +47,6 @@ val bin_size_network32_int : int sizer
 val bin_size_network32_int32 : int32 sizer
 val bin_size_network64_int : int sizer
 val bin_size_network64_int64 : int64 sizer
-
-val bin_size_array_no_length : ('a, 'a array) sizer1
-[@@deprecated
-  "[since 2016-03] this function was deprecated as it is misleading and unused"]
-
 val bin_size_md5 : Md5_lib.t sizer
 
 (* Provide the maximum sizes for fields which do not depend upon an array/vector/matrix

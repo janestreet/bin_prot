@@ -308,11 +308,6 @@ module Make_binable3_without_uuid (S : Make_binable3_without_uuid_spec) =
     let maybe_caller_identity = None
   end)
 
-module Make_binable = Make_binable_without_uuid
-module Make_binable1 = Make_binable1_without_uuid
-module Make_binable2 = Make_binable2_without_uuid
-module Make_binable3 = Make_binable3_without_uuid
-
 let with_module_name f ~module_name function_name =
   match module_name with
   | None -> f function_name

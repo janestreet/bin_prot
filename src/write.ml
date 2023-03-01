@@ -484,10 +484,6 @@ let bin_write_network64_int64 buf ~pos n =
   next
 ;;
 
-let bin_write_array_no_length bin_write_el buf ~pos ar =
-  bin_write_array_loop bin_write_el buf ~els_pos:pos ~n:(Array.length ar) ar
-;;
-
 external unsafe_string_get32 : string -> int -> int32 = "%caml_string_get32u"
 external unsafe_string_get64 : string -> int -> int64 = "%caml_string_get64u"
 

@@ -1,4 +1,4 @@
-include Bin_shape_lib.Std.Shape
+include Bin_shape
 
 (* new base shapes *)
 let bin_shape_unit = basetype (Uuid.of_string "unit") []
@@ -40,13 +40,6 @@ let bin_shape_option x = basetype (Uuid.of_string "option") [ x ]
 let bin_shape_list x = basetype (Uuid.of_string "list") [ x ]
 let bin_shape_array x = basetype (Uuid.of_string "array") [ x ]
 let bin_shape_hashtbl x y = basetype (Uuid.of_string "hashtbl") [ x; y ]
-
-(* shape alias *)
-let bin_shape_float_array = bin_shape_array bin_shape_float
-[@@ocaml.deprecated
-  "[since 2021-09] use ppx_bin_prot with type [float array] or [floatarray] or the \
-   'floatarray' functions"]
-;;
 
 (* shape-constructor aliases *)
 let bin_shape_lazy x = x

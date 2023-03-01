@@ -1,4 +1,5 @@
-(library (name bin_prot_test) (libraries core bin_prot float_array base.md5)
+(library (name bin_prot_test)
+ (libraries core bin_prot expect_test_patterns float_array base.md5)
  (preprocess (pps ppx_jane)))
 
 (alias (name runtest)

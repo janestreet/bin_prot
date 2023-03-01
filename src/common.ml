@@ -237,7 +237,7 @@ let blit_buf_string = blit_buf_bytes
 let rec copy_htbl_list htbl = function
   | [] -> htbl
   | (k, v) :: rest ->
-    Caml.Hashtbl.add htbl k v;
+    Stdlib.Hashtbl.add htbl k v;
     copy_htbl_list htbl rest
 ;;
 

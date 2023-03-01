@@ -230,17 +230,6 @@ module Tests = struct
     }
   ;;
 
-  let float_array =
-    { writer = Write.bin_write_float_array
-    ; reader = Read.bin_read_float_array
-    ; values = [ [||]; [| 0. |] ]
-    ; equal = Array.equal Float.equal
-    ; sexp_of = [%sexp_of: float array]
-    ; hi_bound = None
-    ; lo_bound = Minimum.bin_size_float_array
-    } [@ocaml.alert "-deprecated"]
-  ;;
-
   let ref =
     { writer = Write.bin_write_ref Write.bin_write_int32
     ; reader = Read.bin_read_ref Read.bin_read_int32
@@ -363,13 +352,14 @@ module Tests = struct
           ; [ -1l, -1l; Int32.min_value, Int32.min_value ]
           ]
           ~f:(fun l ->
-            let hashtbl = Caml.Hashtbl.create (List.length l) in
-            List.iter l ~f:(fun (key, data) -> Caml.Hashtbl.add hashtbl key data);
+            let hashtbl = Stdlib.Hashtbl.create (List.length l) in
+            List.iter l ~f:(fun (key, data) -> Stdlib.Hashtbl.add hashtbl key data);
             hashtbl)
     ; equal =
         (fun t1 t2 ->
            let to_list tbl =
-             Caml.Hashtbl.fold (fun k v acc -> (k, v) :: acc) tbl [] |> List.sort ~compare
+             Stdlib.Hashtbl.fold (fun k v acc -> (k, v) :: acc) tbl []
+             |> List.sort ~compare
            in
            to_list t1 = to_list t2)
     ; sexp_of = [%sexp_of: (int32, int32) Sexplib.Std.Hashtbl.t]
@@ -625,9 +615,11 @@ let%expect_test "Non-integer bin_prot size tests" =
     00 00 00 00 00 00 00 00 -> 0
   |}];
   gen_tests Tests.float_nan;
-  [%expect {|
+  Expect_test_patterns.require_match
+    [%here]
+    {|
     7f f{8,0} 00 00 00 00 00 01 -> NAN (glob)
-  |}];
+  |};
   gen_tests Tests.vec;
   [%expect
     {|
@@ -668,12 +660,6 @@ let%expect_test "Non-integer bin_prot size tests" =
     6f 6c 6c 65 68 05 -> hello
   |}];
   gen_tests Tests.floatarray;
-  [%expect
-    {|
-    .. .. .. .. .. .. .. .. 00 -> ()
-    00 00 00 00 00 00 00 00 01 -> (0)
-  |}];
-  gen_tests Tests.float_array;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 -> ()
