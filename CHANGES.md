@@ -1,3 +1,22 @@
+## Release v0.16.0
+
+Insert the changelog here. When making the release, we will keep this
+section and delete the section above.
+
+- In `Bin_prot.Bin_shape`, expose the structure of `Expert.Canonical.t`
+  * The purpose is so that custom bin shape traversals can be built.
+
+- Add a `stable_witness` idiom
+  * This is an idiom of stable types that is checked by the compiler, instead of relying on convention.
+
+- Remove deprecated functions for dealing with float arrays.
+  * Users should now use `ppx_bin_prot` with type `float array` or `floatarray`
+
+- Remove the deprecated `Make_binable*` functor family
+  * Users are advised to use `*_with_uuid` or `*_without_uuid` alternatives
+
+## Old pre-v0.15 changelogs (very likely stale and incomplete)
+
 ## 113.43.00
 
 - Converted `bin_prot` to use `%expect` tests. No functional changes.
