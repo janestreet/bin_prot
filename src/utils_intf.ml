@@ -188,6 +188,7 @@ module type Utils = sig
   (** Conversion of binable types *)
 
   module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t
+  module Of_minimal1 (S : Binable.Minimal.S1) : Binable.S1 with type 'a t := 'a S.t
 
   module type Make_binable_with_uuid_spec = Make_binable_with_uuid_spec
   module type Make_binable1_with_uuid_spec = Make_binable1_with_uuid_spec

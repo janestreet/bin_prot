@@ -70,6 +70,25 @@ module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t = struc
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
+module Of_minimal1 (S : Binable.Minimal.S1) : Binable.S1 with type 'a t := 'a S.t = struct
+  include S
+
+  let bin_writer_t bin_writer_a =
+    { size = bin_size_t bin_writer_a.size; write = bin_write_t bin_writer_a.write }
+  ;;
+
+  let bin_reader_t bin_reader_a =
+    { read = bin_read_t bin_reader_a.read; vtag_read = __bin_read_t__ bin_reader_a.read }
+  ;;
+
+  let bin_t bin_a =
+    { shape = bin_shape_t bin_a.shape
+    ; writer = bin_writer_t bin_a.writer
+    ; reader = bin_reader_t bin_a.reader
+    }
+  ;;
+end
+
 let maybe_annotate_shape maybe_uuid shape =
   match maybe_uuid with
   | None -> shape

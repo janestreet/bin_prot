@@ -642,35 +642,35 @@ module Evaluation (Canonical : Canonical) = struct
 
   let rec eval : group -> Venv.t -> t -> Visibility.visible Canonical.Exp1.t defining =
     fun group venv t ->
-      match t with
-      | Record binds ->
-        sequence_defining binds ~f:(fun (s, x) ->
-          eval group venv x >>= fun y -> return (s, y))
-        >>= fun binds -> return (Canonical.Create.record binds)
-      | Variant alts ->
-        sequence_defining alts ~f:(fun (s, xs) ->
-          eval_list group venv xs >>= fun ys -> return (s, ys))
-        >>= fun alts -> return (Canonical.Create.variant alts)
-      | Var (loc, vid) ->
-        (match Venv.lookup venv vid with
-         | Some x -> return x
-         | None -> eval_fail loc !"Free type variable: '%{Vid}" vid ())
-      | Annotate (s, t) ->
-        eval group venv t >>= fun v -> return (Canonical.Create.annotate s v)
-      | Base (s, ts) ->
-        eval_list group venv ts >>= fun vs -> return (Canonical.Create.basetype s vs)
-      | Tuple ts -> eval_list group venv ts >>= fun vs -> return (Canonical.Create.tuple vs)
-      | Top_app (in_group, tid, args) ->
-        eval_list group venv args
-        >>= fun args ->
-        (* args evaluated in current group *)
-        eval_app in_group tid args
-      (* group changed here *)
-      | Rec_app (tid, args) ->
-        eval_list group venv args >>= fun args -> eval_app group tid args
-      | Poly_variant (loc, cs) ->
-        sequence_defining ~f:(eval_poly_constr group venv) cs
-        >>= fun xss -> return (Canonical.Create.poly_variant loc (List.concat xss))
+    match t with
+    | Record binds ->
+      sequence_defining binds ~f:(fun (s, x) ->
+        eval group venv x >>= fun y -> return (s, y))
+      >>= fun binds -> return (Canonical.Create.record binds)
+    | Variant alts ->
+      sequence_defining alts ~f:(fun (s, xs) ->
+        eval_list group venv xs >>= fun ys -> return (s, ys))
+      >>= fun alts -> return (Canonical.Create.variant alts)
+    | Var (loc, vid) ->
+      (match Venv.lookup venv vid with
+       | Some x -> return x
+       | None -> eval_fail loc !"Free type variable: '%{Vid}" vid ())
+    | Annotate (s, t) ->
+      eval group venv t >>= fun v -> return (Canonical.Create.annotate s v)
+    | Base (s, ts) ->
+      eval_list group venv ts >>= fun vs -> return (Canonical.Create.basetype s vs)
+    | Tuple ts -> eval_list group venv ts >>= fun vs -> return (Canonical.Create.tuple vs)
+    | Top_app (in_group, tid, args) ->
+      eval_list group venv args
+      >>= fun args ->
+      (* args evaluated in current group *)
+      eval_app in_group tid args
+    (* group changed here *)
+    | Rec_app (tid, args) ->
+      eval_list group venv args >>= fun args -> eval_app group tid args
+    | Poly_variant (loc, cs) ->
+      sequence_defining ~f:(eval_poly_constr group venv) cs
+      >>= fun xss -> return (Canonical.Create.poly_variant loc (List.concat xss))
 
   and eval_list : group -> Venv.t -> t list -> _ Canonical.Exp1.t list defining =
     fun group venv ts -> sequence_defining ts ~f:(eval group venv)
@@ -680,65 +680,65 @@ module Evaluation (Canonical : Canonical) = struct
       -> (string * Visibility.opaque Canonical.Exp1.t option) list defining
     =
     fun group venv c ->
-      match c with
-      | `Constr (s, None) -> return [ s, None ]
-      | `Constr (s, Some t) ->
-        eval group venv t >>= fun v -> return [ s, Some (Canonical.Exp1.opaque v) ]
-      | `Inherit (loc, t) ->
-        eval group venv t
-        >>= fun v ->
-        (match Canonical.Exp1.get_poly_variant v with
-         | Ok tab -> return (Sorted_table.expose tab)
-         | Error desc ->
-           eval_fail
-             loc
-             "The shape for an inherited type is not described as a polymorphic-variant: %s"
-             desc
-             ())
+    match c with
+    | `Constr (s, None) -> return [ s, None ]
+    | `Constr (s, Some t) ->
+      eval group venv t >>= fun v -> return [ s, Some (Canonical.Exp1.opaque v) ]
+    | `Inherit (loc, t) ->
+      eval group venv t
+      >>= fun v ->
+      (match Canonical.Exp1.get_poly_variant v with
+       | Ok tab -> return (Sorted_table.expose tab)
+       | Error desc ->
+         eval_fail
+           loc
+           "The shape for an inherited type is not described as a polymorphic-variant: %s"
+           desc
+           ())
 
   and eval_definition : group -> Vid.t list -> t -> Canonical.Def.t defining =
     fun group formals body ->
-      let venv = Venv.create (List.mapi formals ~f:(fun i x -> x, Canonical.Exp1.var i)) in
-      eval group venv body >>= fun v -> return (Canonical.Create.define v)
+    let venv = Venv.create (List.mapi formals ~f:(fun i x -> x, Canonical.Exp1.var i)) in
+    eval group venv body >>= fun v -> return (Canonical.Create.define v)
 
   and eval_app : group -> Tid.t -> _ Canonical.Exp1.t list -> _ Canonical.Exp1.t defining =
     fun group tid args ->
-      let gid = Group.id group in
-      let formals, body = Group.lookup group tid in
-      let record_or_normal_variant =
-        match body with
-        | Record _ | Variant _ -> true
-        | Tuple _ | Annotate _ | Base _ | Poly_variant _ | Var _ | Rec_app _ | Top_app _ ->
-          false
+    let gid = Group.id group in
+    let formals, body = Group.lookup group tid in
+    let record_or_normal_variant =
+      match body with
+      | Record _ | Variant _ -> true
+      | Tuple _ | Annotate _ | Base _ | Poly_variant _ | Var _ | Rec_app _ | Top_app _ ->
+        false
+    in
+    let cyclic = is_cyclic group tid in
+    let cyclic_no_VR = is_cyclic_with_no_intervening_VR group tid in
+    if (record_or_normal_variant && cyclic) || cyclic_no_VR
+    then
+      Defining.look_env (gid, tid)
+      >>= (function
+        | Some recurse -> return recurse
+        | None ->
+          Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
+      >>= function
+      | Recursion_level r -> return (Canonical.Exp1.recurse r args)
+      | Definition def -> return (Canonical.Exp1.apply def args)
+    else (
+      let venv =
+        match List.zip formals args with
+        | Ok x -> Venv.create x
+        | Unequal_lengths -> failwith "apply, incorrect type application arity"
       in
-      let cyclic = is_cyclic group tid in
-      let cyclic_no_VR = is_cyclic_with_no_intervening_VR group tid in
-      if (record_or_normal_variant && cyclic) || cyclic_no_VR
-      then
-        Defining.look_env (gid, tid)
-        >>= (function
-          | Some recurse -> return recurse
-          | None ->
-            Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
-        >>= function
-        | Recursion_level r -> return (Canonical.Exp1.recurse r args)
-        | Definition def -> return (Canonical.Exp1.apply def args)
-      else (
-        let venv =
-          match List.zip formals args with
-          | Ok x -> Venv.create x
-          | Unequal_lengths -> failwith "apply, incorrect type application arity"
-        in
-        eval group venv body)
+      eval group venv body)
   ;;
 
   (* top level entry point for evaluation *)
   let eval : t -> Canonical.t =
     fun t ->
-      let group = group (Location.of_string "top-level") [] in
-      let venv = Venv.create [] in
-      let v = Defining.exec (eval group venv t) in
-      Canonical.Create.create v
+    let group = group (Location.of_string "top-level") [] in
+    let venv = Venv.create [] in
+    let v = Defining.exec (eval group venv t) in
+    Canonical.Create.create v
   ;;
 end
 
