@@ -38,6 +38,7 @@ module Write = Bin_prot.Write
 type 'a to_test =
   { name : string
   ; writer : 'a Write.writer
+  ; writer_local : 'a Write.writer_local
   ; reader : 'a Read.reader
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a
@@ -61,6 +62,7 @@ let tests =
   [ T
       { name = "int"
       ; writer = Write.bin_write_int
+      ; writer_local = Write.bin_write_int__local
       ; reader = Read.bin_read_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -72,6 +74,7 @@ let tests =
   ; T
       { name = "int32"
       ; writer = Write.bin_write_int32
+      ; writer_local = Write.bin_write_int32__local
       ; reader = Read.bin_read_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
@@ -83,6 +86,7 @@ let tests =
   ; T
       { name = "int64"
       ; writer = Write.bin_write_int64
+      ; writer_local = Write.bin_write_int64__local
       ; reader = Read.bin_read_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
@@ -94,6 +98,7 @@ let tests =
   ; T
       { name = "nat0"
       ; writer = Write.bin_write_nat0
+      ; writer_local = Write.bin_write_nat0__local
       ; reader = Read.bin_read_nat0
       ; to_int64 = (fun x -> Int64.of_int (x : Nat0.t :> int))
       ; of_int64 = (fun x -> Nat0.of_int (Int64.to_int_exn x))
@@ -105,6 +110,7 @@ let tests =
   ; T
       { name = "variant_int"
       ; writer = Write.bin_write_variant_int
+      ; writer_local = Write.bin_write_variant_int__local
       ; reader = Read.bin_read_variant_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -116,6 +122,7 @@ let tests =
   ; T
       { name = "int_16bit"
       ; writer = Write.bin_write_int_16bit
+      ; writer_local = Write.bin_write_int_16bit__local
       ; reader = Read.bin_read_int_16bit
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -127,6 +134,7 @@ let tests =
   ; T
       { name = "int_32bit"
       ; writer = Write.bin_write_int_32bit
+      ; writer_local = Write.bin_write_int_32bit__local
       ; reader = Read.bin_read_int_32bit
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -138,6 +146,7 @@ let tests =
   ; T
       { name = "int_64bit"
       ; writer = Write.bin_write_int_64bit
+      ; writer_local = Write.bin_write_int_64bit__local
       ; reader = Read.bin_read_int_64bit
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -149,6 +158,7 @@ let tests =
   ; T
       { name = "int64_bits"
       ; writer = Write.bin_write_int64_bits
+      ; writer_local = Write.bin_write_int64_bits__local
       ; reader = Read.bin_read_int64_bits
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
@@ -160,6 +170,7 @@ let tests =
   ; T
       { name = "network16_int"
       ; writer = Write.bin_write_network16_int
+      ; writer_local = Write.bin_write_network16_int__local
       ; reader = Read.bin_read_network16_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -171,6 +182,7 @@ let tests =
   ; T
       { name = "network32_int"
       ; writer = Write.bin_write_network32_int
+      ; writer_local = Write.bin_write_network32_int__local
       ; reader = Read.bin_read_network32_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -182,6 +194,7 @@ let tests =
   ; T
       { name = "network64_int"
       ; writer = Write.bin_write_network64_int
+      ; writer_local = Write.bin_write_network64_int__local
       ; reader = Read.bin_read_network64_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -193,6 +206,7 @@ let tests =
   ; T
       { name = "network32_int32"
       ; writer = Write.bin_write_network32_int32
+      ; writer_local = Write.bin_write_network32_int32__local
       ; reader = Read.bin_read_network32_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
@@ -204,6 +218,7 @@ let tests =
   ; T
       { name = "network64_int64"
       ; writer = Write.bin_write_network64_int64
+      ; writer_local = Write.bin_write_network64_int64__local
       ; reader = Read.bin_read_network64_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
@@ -342,6 +357,10 @@ let gen_tests (T t) =
       let len = t.writer buf ~pos:0 (t.of_int64 n) in
       let s = Bigstring.To_string.sub buf ~pos:0 ~len in
       printf "%s| %s -> %Ld" t.name (to_hex s 9) n;
+      let len_local = t.writer_local buf ~pos:0 (t.of_int64 n) in
+      let s_local = Bigstring.To_string.sub buf ~pos:0 ~len:len_local in
+      if String.( <> ) s s_local
+      then printf ", write_local output (%s) differs from write output (%s)" s_local s;
       let pos_ref = ref 0 in
       let n' = t.reader buf ~pos_ref |> t.to_int64 in
       let len' = !pos_ref in

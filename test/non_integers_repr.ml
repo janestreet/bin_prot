@@ -19,6 +19,7 @@ module Write = Bin_prot.Write
 
 type 'a to_test =
   { writer : 'a Write.writer
+  ; writer_local : 'a Write.writer_local option
   ; reader : 'a Read.reader
   ; values : 'a list
   ; equal : 'a -> 'a -> bool
@@ -72,6 +73,7 @@ module Tests = struct
   (* max and min *)
   let unit =
     { writer = Write.bin_write_unit
+    ; writer_local = Some Write.bin_write_unit__local
     ; reader = Read.bin_read_unit
     ; values = [ () ]
     ; equal = Unit.equal
@@ -83,6 +85,7 @@ module Tests = struct
 
   let bool =
     { writer = Write.bin_write_bool
+    ; writer_local = Some Write.bin_write_bool__local
     ; reader = Read.bin_read_bool
     ; values = [ true; false ]
     ; equal = Bool.equal
@@ -94,6 +97,7 @@ module Tests = struct
 
   let char =
     { writer = Write.bin_write_char
+    ; writer_local = Some Write.bin_write_char__local
     ; reader = Read.bin_read_char
     ; values = [ '\x00'; 'A'; 'z'; ';'; '\xFF' ]
     ; equal = Char.equal
@@ -105,6 +109,7 @@ module Tests = struct
 
   let digest =
     { writer = Write.bin_write_md5
+    ; writer_local = Some Write.bin_write_md5__local
     ; reader = Read.bin_read_md5
     ; values = [ Md5_lib.of_hex_exn "0123456789abcdef0123456789ABCDEF" ]
     ; equal = (fun d1 d2 -> Md5_lib.compare d1 d2 = 0)
@@ -116,6 +121,7 @@ module Tests = struct
 
   let float =
     { writer = Write.bin_write_float
+    ; writer_local = Some Write.bin_write_float__local
     ; reader = Read.bin_read_float
     ; values =
         [ Float.epsilon_float
@@ -143,6 +149,7 @@ module Tests = struct
   (* min only *)
   let vec =
     { writer = Write.bin_write_vec
+    ; writer_local = Some Write.bin_write_vec__local
     ; reader = Read.bin_read_vec
     ; values = [ Vec.mk_float64 0; Vec.mk_float64 1 ]
     ; equal = Vec.equal
@@ -154,6 +161,7 @@ module Tests = struct
 
   let float32_vec =
     { writer = Write.bin_write_float32_vec
+    ; writer_local = Some Write.bin_write_float32_vec__local
     ; reader = Read.bin_read_float32_vec
     ; values = [ Vec.mk_float32 0; Vec.mk_float32 1 ]
     ; equal = Vec.equal
@@ -165,6 +173,7 @@ module Tests = struct
 
   let float64_vec =
     { writer = Write.bin_write_float64_vec
+    ; writer_local = Some Write.bin_write_float64_vec__local
     ; reader = Read.bin_read_float64_vec
     ; values = [ Vec.mk_float64 0; Vec.mk_float64 1 ]
     ; equal = Vec.equal
@@ -176,6 +185,7 @@ module Tests = struct
 
   let mat =
     { writer = Write.bin_write_mat
+    ; writer_local = Some Write.bin_write_mat__local
     ; reader = Read.bin_read_mat
     ; values = [ Mat.mk_float64 0 0; Mat.mk_float64 1 1 ]
     ; equal = Mat.equal
@@ -187,6 +197,7 @@ module Tests = struct
 
   let float32_mat =
     { writer = Write.bin_write_float32_mat
+    ; writer_local = Some Write.bin_write_float32_mat__local
     ; reader = Read.bin_read_float32_mat
     ; values = [ Mat.mk_float32 0 0; Mat.mk_float32 1 1 ]
     ; equal = Mat.equal
@@ -198,6 +209,7 @@ module Tests = struct
 
   let float64_mat =
     { writer = Write.bin_write_float64_mat
+    ; writer_local = Some Write.bin_write_float64_mat__local
     ; reader = Read.bin_read_float64_mat
     ; values = [ Mat.mk_float64 0 0; Mat.mk_float64 1 1 ]
     ; equal = Mat.equal
@@ -209,6 +221,7 @@ module Tests = struct
 
   let bigstring =
     { writer = Write.bin_write_bigstring
+    ; writer_local = Some Write.bin_write_bigstring__local
     ; reader = Read.bin_read_bigstring
     ; values = [ Bigstring.of_string ""; Bigstring.of_string "hello" ]
     ; equal =
@@ -221,6 +234,7 @@ module Tests = struct
 
   let floatarray =
     { writer = Write.bin_write_floatarray
+    ; writer_local = Some Write.bin_write_floatarray__local
     ; reader = Read.bin_read_floatarray
     ; values = [ Float_array.empty; Float_array.create ~len:1 0.0 ]
     ; equal = Float_array.equal Float.equal
@@ -232,6 +246,7 @@ module Tests = struct
 
   let ref =
     { writer = Write.bin_write_ref Write.bin_write_int32
+    ; writer_local = Some (Write.bin_write_ref__local Write.bin_write_int32__local)
     ; reader = Read.bin_read_ref Read.bin_read_int32
     ; values = [ ref 0l; ref 1l; ref (-1l); ref Int32.max_value; ref Int32.min_value ]
     ; equal = (fun v1 v2 -> !v1 = !v2)
@@ -243,6 +258,7 @@ module Tests = struct
 
   let lazy_t =
     { writer = Write.bin_write_lazy Write.bin_write_int32
+    ; writer_local = Some (Write.bin_write_lazy__local Write.bin_write_int32__local)
     ; reader = Read.bin_read_lazy Read.bin_read_int32
     ; values =
         [ lazy 0l; lazy 1l; lazy (-1l); lazy Int32.max_value; lazy Int32.min_value ]
@@ -255,6 +271,7 @@ module Tests = struct
 
   let option =
     { writer = Write.bin_write_option Write.bin_write_int32
+    ; writer_local = Some (Write.bin_write_option__local Write.bin_write_int32__local)
     ; reader = Read.bin_read_option Read.bin_read_int32
     ; values =
         [ None; Some 0l; Some 1l; Some (-1l); Some Int32.max_value; Some Int32.min_value ]
@@ -267,6 +284,11 @@ module Tests = struct
 
   let pair =
     { writer = Write.bin_write_pair Write.bin_write_int32 Write.bin_write_int32
+    ; writer_local =
+        Some
+          (Write.bin_write_pair__local
+             Write.bin_write_int32__local
+             Write.bin_write_int32__local)
     ; reader = Read.bin_read_pair Read.bin_read_int32 Read.bin_read_int32
     ; values =
         [ 0l, 0l
@@ -288,6 +310,12 @@ module Tests = struct
           Write.bin_write_int32
           Write.bin_write_int32
           Write.bin_write_int32
+    ; writer_local =
+        Some
+          (Write.bin_write_triple__local
+             Write.bin_write_int32__local
+             Write.bin_write_int32__local
+             Write.bin_write_int32__local)
     ; reader =
         Read.bin_read_triple Read.bin_read_int32 Read.bin_read_int32 Read.bin_read_int32
     ; values =
@@ -306,6 +334,7 @@ module Tests = struct
 
   let list =
     { writer = Write.bin_write_list Write.bin_write_int32
+    ; writer_local = Some (Write.bin_write_list__local Write.bin_write_int32__local)
     ; reader = Read.bin_read_list Read.bin_read_int32
     ; values =
         [ []
@@ -324,6 +353,7 @@ module Tests = struct
 
   let array =
     { writer = Write.bin_write_array Write.bin_write_int32
+    ; writer_local = Some (Write.bin_write_array__local Write.bin_write_int32__local)
     ; reader = Read.bin_read_array Read.bin_read_int32
     ; values =
         [ [||]
@@ -342,6 +372,7 @@ module Tests = struct
 
   let hashtbl =
     { writer = Write.bin_write_hashtbl Write.bin_write_int32 Write.bin_write_int32
+    ; writer_local = None
     ; reader = Read.bin_read_hashtbl Read.bin_read_int32 Read.bin_read_int32
     ; values =
         List.map
@@ -392,7 +423,9 @@ module Tests = struct
 
   let record1 =
     let open R1 in
-    { writer = bin_write_t
+    { writer =
+        bin_write_t
+    ; writer_local = None
     ; reader = bin_read_t
     ; values = [ { x = 0l; y = 0.0 }; { x = Int32.max_value; y = Float.max_value } ]
     ; equal = ( = )
@@ -446,7 +479,9 @@ module Tests = struct
 
   let record2 =
     let open R2 in
-    { writer = bin_write_t
+    { writer =
+        bin_write_t
+    ; writer_local = None
     ; reader = bin_read_t
     ; values =
         [ { y = { w = 0L; x = 0l }; z = () }
@@ -513,7 +548,9 @@ module Tests = struct
 
   let inline_record =
     let open Inline_record in
-    { writer = bin_write_t
+    { writer =
+        bin_write_t
+    ; writer_local = None
     ; reader = bin_read_t
     ; values =
         [ Outer { y = Inner { w = 0L; x = 0l }; z = () }
@@ -535,7 +572,16 @@ let gen_tests t =
   let bin_protted_values =
     List.map t.values ~f:(fun v ->
       let len = t.writer buf ~pos:0 v in
-      Bigstring.To_string.sub buf ~pos:0 ~len)
+      let str = Bigstring.To_string.sub buf ~pos:0 ~len in
+      (match t.writer_local with
+       | None -> ()
+       | Some writer_local ->
+         let len = writer_local buf ~pos:0 v in
+         let str_local = Bigstring.To_string.sub buf ~pos:0 ~len in
+         if String.( <> ) str str_local
+         then
+           printf ", write_local output (%s) differs from write output (%s)" str_local str);
+      str)
   in
   let hex_size =
     List.fold bin_protted_values ~init:0 ~f:(fun acc s -> Int.max acc (String.length s))

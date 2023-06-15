@@ -6,6 +6,10 @@ type 'a sizer = 'a -> int
 type ('a, 'b) sizer1 = 'a sizer -> 'b sizer
 type ('a, 'b, 'c) sizer2 = 'a sizer -> ('b, 'c) sizer1
 type ('a, 'b, 'c, 'd) sizer3 = 'a sizer -> ('b, 'c, 'd) sizer2
+type 'a sizer_local = ('a[@local]) -> int
+type ('a, 'b) sizer_local1 = 'a sizer_local -> 'b sizer_local
+type ('a, 'b, 'c) sizer_local2 = 'a sizer_local -> ('b, 'c) sizer_local1
+type ('a, 'b, 'c, 'd) sizer_local3 = 'a sizer_local -> ('b, 'c, 'd) sizer_local2
 
 val bin_size_unit : unit sizer
 val bin_size_bool : bool sizer
@@ -48,6 +52,48 @@ val bin_size_network32_int32 : int32 sizer
 val bin_size_network64_int : int sizer
 val bin_size_network64_int64 : int64 sizer
 val bin_size_md5 : Md5_lib.t sizer
+
+(* Local versions *)
+
+val bin_size_unit__local : unit sizer_local
+val bin_size_bool__local : bool sizer_local
+val bin_size_string__local : string sizer_local
+val bin_size_bytes__local : bytes sizer_local
+val bin_size_char__local : char sizer_local
+val bin_size_int__local : int sizer_local
+val bin_size_float__local : float sizer_local
+val bin_size_int32__local : int32 sizer_local
+val bin_size_int64__local : int64 sizer_local
+val bin_size_nativeint__local : nativeint sizer_local
+val bin_size_nat0__local : Nat0.t sizer_local
+val bin_size_ref__local : ('a, 'a ref) sizer_local1
+val bin_size_lazy_t__local : ('a, 'a lazy_t) sizer_local1
+val bin_size_lazy__local : ('a, 'a lazy_t) sizer_local1
+val bin_size_option__local : ('a, 'a option) sizer_local1
+val bin_size_pair__local : ('a, 'b, 'a * 'b) sizer_local2
+val bin_size_triple__local : ('a, 'b, 'c, 'a * 'b * 'c) sizer_local3
+val bin_size_list__local : ('a, 'a list) sizer_local1
+val bin_size_array__local : ('a, 'a array) sizer_local1
+val bin_size_float32_vec__local : vec32 sizer_local
+val bin_size_float64_vec__local : vec64 sizer_local
+val bin_size_vec__local : vec sizer_local
+val bin_size_float32_mat__local : mat32 sizer_local
+val bin_size_float64_mat__local : mat64 sizer_local
+val bin_size_mat__local : mat sizer_local
+val bin_size_bigstring__local : buf sizer_local
+val bin_size_floatarray__local : floatarray sizer_local
+val bin_size_variant_int__local : int sizer_local
+val bin_size_int_8bit__local : int sizer_local
+val bin_size_int_16bit__local : int sizer_local
+val bin_size_int_32bit__local : int sizer_local
+val bin_size_int_64bit__local : int sizer_local
+val bin_size_int64_bits__local : int64 sizer_local
+val bin_size_network16_int__local : int sizer_local
+val bin_size_network32_int__local : int sizer_local
+val bin_size_network32_int32__local : int32 sizer_local
+val bin_size_network64_int__local : int sizer_local
+val bin_size_network64_int64__local : int64 sizer_local
+val bin_size_md5__local : Md5_lib.t sizer_local
 
 (* Provide the maximum sizes for fields which do not depend upon an array/vector/matrix
    length, choosing the size required for the largest architecture.  This allows for the

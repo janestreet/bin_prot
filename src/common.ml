@@ -107,7 +107,7 @@ let get_opt_pos ~loc ~var = function
 
 external unsafe_blit_buf
   :  src_pos:int
-  -> src:buf
+  -> src:(buf[@local_opt])
   -> dst_pos:int
   -> dst:buf
   -> len:int
@@ -135,7 +135,7 @@ let blit_buf ?src_pos ~src ?dst_pos ~dst len =
 
 external unsafe_blit_string_buf
   :  src_pos:int
-  -> string
+  -> (string[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -145,7 +145,7 @@ external unsafe_blit_string_buf
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -254,7 +254,7 @@ type mat = mat64
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
-  -> float array
+  -> (float array[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -274,7 +274,7 @@ external unsafe_blit_buf_float_array
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
-  -> floatarray
+  -> (floatarray[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int

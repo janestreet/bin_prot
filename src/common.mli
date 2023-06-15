@@ -166,7 +166,7 @@ val copy_htbl_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 external unsafe_blit_buf
   :  src_pos:int
-  -> src:buf
+  -> src:(buf[@local_opt])
   -> dst_pos:int
   -> dst:buf
   -> len:int
@@ -175,7 +175,7 @@ external unsafe_blit_buf
 
 external unsafe_blit_string_buf
   :  src_pos:int
-  -> string
+  -> (string[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -185,7 +185,7 @@ external unsafe_blit_string_buf
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -215,7 +215,7 @@ external unsafe_blit_buf_bytes
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
-  -> float array
+  -> (float array[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
@@ -235,7 +235,7 @@ external unsafe_blit_buf_float_array
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
-  -> floatarray
+  -> (floatarray[@local_opt])
   -> dst_pos:int
   -> buf
   -> len:int
