@@ -24,7 +24,7 @@ let unsafe_get8_signed buf pos =
 let arch_sixtyfour = Sys.word_size = 64
 let arch_big_endian = Sys.big_endian
 let max_int_int32 = if arch_sixtyfour then Int32.max_int else Int32.of_int max_int
-let min_int_int32 = if arch_sixtyfour then Int32.max_int else Int32.of_int min_int
+let min_int_int32 = if arch_sixtyfour then Int32.min_int else Int32.of_int min_int
 let max_int_int64 = Int64.of_int max_int
 let min_int_int64 = Int64.of_int min_int
 
