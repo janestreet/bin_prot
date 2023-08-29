@@ -404,7 +404,7 @@ module Tests = struct
       { x : Int32.t
       ; y : float
       }
-    [@@deriving bin_io, fields, sexp_of]
+    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size =
       Fields.fold
@@ -423,9 +423,8 @@ module Tests = struct
 
   let record1 =
     let open R1 in
-    { writer =
-        bin_write_t
-    ; writer_local = None
+    { writer = bin_write_t
+    ; writer_local = Some bin_write_t__local
     ; reader = bin_read_t
     ; values = [ { x = 0l; y = 0.0 }; { x = Int32.max_value; y = Float.max_value } ]
     ; equal = ( = )
@@ -440,7 +439,7 @@ module Tests = struct
       { w : Int64.t
       ; x : Int32.t
       }
-    [@@deriving bin_io, fields, sexp_of]
+    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size_of_inner =
       Fields_of_inner.fold
@@ -460,7 +459,7 @@ module Tests = struct
       { y : inner
       ; z : unit
       }
-    [@@deriving bin_io, fields, sexp_of]
+    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size =
       Fields.fold
@@ -479,9 +478,8 @@ module Tests = struct
 
   let record2 =
     let open R2 in
-    { writer =
-        bin_write_t
-    ; writer_local = None
+    { writer = bin_write_t
+    ; writer_local = Some bin_write_t__local
     ; reader = bin_read_t
     ; values =
         [ { y = { w = 0L; x = 0l }; z = () }
@@ -501,7 +499,7 @@ module Tests = struct
           ; x : Int32.t
           }
       | Inner_other of unit
-    [@@deriving bin_io, sexp_of, variants]
+    [@@deriving bin_io ~localize, sexp_of, variants]
 
     let maximum_bin_size_of_inner =
       1
@@ -525,7 +523,7 @@ module Tests = struct
           { y : inner
           ; z : unit
           }
-    [@@deriving bin_io, sexp_of, variants]
+    [@@deriving bin_io ~localize, sexp_of, variants]
 
     let maximum_bin_size =
       1
@@ -548,9 +546,8 @@ module Tests = struct
 
   let inline_record =
     let open Inline_record in
-    { writer =
-        bin_write_t
-    ; writer_local = None
+    { writer = bin_write_t
+    ; writer_local = Some bin_write_t__local
     ; reader = bin_read_t
     ; values =
         [ Outer { y = Inner { w = 0L; x = 0l }; z = () }

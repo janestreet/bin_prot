@@ -200,9 +200,6 @@ module type Canonical = sig
     val basetype : Uuid.t -> _ Exp1.t list -> _ Exp1.t
     val tuple : _ Exp1.t list -> _ Exp1.t
     val poly_variant : Location.t -> (string * _ Exp1.t option) list -> _ Exp1.t
-    val var : int -> _ Exp1.t
-    val recurse : int -> _ Exp1.t list -> _ Exp1.t
-    val apply : 'a Exp1.t -> 'a Exp1.t list -> _ Exp1.t
     val define : Visibility.visible Exp1.t -> Def.t
     val record : (string * _ Exp1.t) list -> _ Exp1.t
     val variant : (string * _ Exp1.t list) list -> _ Exp1.t
@@ -304,9 +301,6 @@ module Canonical_digest : Canonical = struct
       Exp1.create (Poly_variant (Sorted_table.create loc ~eq:(equal_option Exp1.equal) l))
     ;;
 
-    let var x = Exp1.create (Var x)
-    let apply x l = Exp1.create (Application (x, l))
-    let recurse t l = Exp1.create (Rec_app (t, l))
     let define x = x
     let record l = Exp1.create (Record l)
     let variant l = Exp1.create (Variant l)
