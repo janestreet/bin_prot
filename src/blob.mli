@@ -1,4 +1,3 @@
-
 (** ['a Blob.t] is type-equivalent to ['a], but has different bin-prot serializers that
     prefix the representation with the size of ['a].
 

@@ -34,7 +34,7 @@ end = struct
 
   let merge_check_adjacent_dups
     :  eq:('a -> 'a -> bool) -> (string * 'a) list
-      -> [ `Ok of (string * 'a) list | `Mismatch of string ]
+    -> [ `Ok of (string * 'a) list | `Mismatch of string ]
     =
     fun ~eq ->
     let rec loop acc ~last_key ~last_value = function
@@ -671,7 +671,7 @@ module Evaluation (Canonical : Canonical) = struct
 
   and eval_poly_constr
     :  group -> Venv.t -> t poly_constr
-      -> (string * Visibility.opaque Canonical.Exp1.t option) list defining
+    -> (string * Visibility.opaque Canonical.Exp1.t option) list defining
     =
     fun group venv c ->
     match c with
@@ -711,9 +711,9 @@ module Evaluation (Canonical : Canonical) = struct
     then
       Defining.look_env (gid, tid)
       >>= (function
-        | Some recurse -> return recurse
-        | None ->
-          Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
+            | Some recurse -> return recurse
+            | None ->
+              Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
       >>= function
       | Recursion_level r -> return (Canonical.Exp1.recurse r args)
       | Definition def -> return (Canonical.Exp1.apply def args)

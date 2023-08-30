@@ -51,7 +51,6 @@ val blit_string_buf : ?src_pos:int -> string -> ?dst_pos:int -> buf -> len:int -
 *)
 val blit_bytes_buf : ?src_pos:int -> bytes -> ?dst_pos:int -> buf -> len:int -> unit
 
-
 (** [blit_buf_string ?src_pos src ?dst_pos dst ~len] blits [len]
     bytes of the source buffer [src] starting at position [src_pos]
     to string [dst] starting at position [dst_pos].
@@ -108,11 +107,11 @@ module ReadError : sig
     | Sum_tag of string (** Illegal sum tag for given type *)
     | Variant of string (** Illegal variant for given type *)
     | Poly_rec_bound of string
-    (** Attempt to read data bound through polymorphic record fields *)
+        (** Attempt to read data bound through polymorphic record fields *)
     | Variant_wrong_type of string
-    (** Unexpected attempt to read variant with given non-variant type *)
+        (** Unexpected attempt to read variant with given non-variant type *)
     | Silly_type of string
-    (** [Silly_type type_name] indicates unhandled but silly case
+        (** [Silly_type type_name] indicates unhandled but silly case
         where a type of the sort [type 'a type_name = 'a] is used
         with a polymorphic variant as type parameter and included
         in another polymorphic variant type. *)
@@ -181,7 +180,7 @@ external unsafe_blit_string_buf
   -> len:int
   -> unit
   = "bin_prot_blit_string_buf_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
@@ -191,7 +190,7 @@ external unsafe_blit_bytes_buf
   -> len:int
   -> unit
   = "bin_prot_blit_bytes_buf_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_buf_string
   :  src_pos:int
@@ -201,7 +200,7 @@ external unsafe_blit_buf_string
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_buf_bytes
   :  src_pos:int
@@ -211,7 +210,7 @@ external unsafe_blit_buf_bytes
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
@@ -221,7 +220,7 @@ external unsafe_blit_float_array_buf
   -> len:int
   -> unit
   = "bin_prot_blit_float_array_buf_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_buf_float_array
   :  src_pos:int
@@ -231,7 +230,7 @@ external unsafe_blit_buf_float_array
   -> len:int
   -> unit
   = "bin_prot_blit_buf_float_array_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
@@ -241,7 +240,7 @@ external unsafe_blit_floatarray_buf
   -> len:int
   -> unit
   = "bin_prot_blit_float_array_buf_stub"
-[@@noalloc]
+  [@@noalloc]
 
 external unsafe_blit_buf_floatarray
   :  src_pos:int
@@ -251,6 +250,6 @@ external unsafe_blit_buf_floatarray
   -> len:int
   -> unit
   = "bin_prot_blit_buf_float_array_stub"
-[@@noalloc]
+  [@@noalloc]
 
 val ( + ) : int -> int -> int

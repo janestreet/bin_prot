@@ -1,7 +1,6 @@
 open Common
 open Type_class
 
-
 module type Make_binable_without_uuid_spec = sig
   module Binable : Binable.Minimal.S
 
@@ -214,19 +213,19 @@ module type Utils = sig
 
   module Make_binable_without_uuid (Bin_spec : Make_binable_without_uuid_spec) :
     Binable.S with type t := Bin_spec.t
-    [@@alert legacy "Use [Make_binable_with_uuid] if possible."]
+  [@@alert legacy "Use [Make_binable_with_uuid] if possible."]
 
   module Make_binable1_without_uuid (Bin_spec : Make_binable1_without_uuid_spec) :
     Binable.S1 with type 'a t := 'a Bin_spec.t
-    [@@alert legacy "Use [Make_binable1_with_uuid] if possible."]
+  [@@alert legacy "Use [Make_binable1_with_uuid] if possible."]
 
   module Make_binable2_without_uuid (Bin_spec : Make_binable2_without_uuid_spec) :
     Binable.S2 with type ('a, 'b) t := ('a, 'b) Bin_spec.t
-    [@@alert legacy "Use [Make_binable2_with_uuid] if possible."]
+  [@@alert legacy "Use [Make_binable2_with_uuid] if possible."]
 
   module Make_binable3_without_uuid (Bin_spec : Make_binable3_without_uuid_spec) :
     Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
-    [@@alert legacy "Use [Make_binable3_with_uuid] if possible."]
+  [@@alert legacy "Use [Make_binable3_with_uuid] if possible."]
 
   (** Conversion of iterable types *)
 

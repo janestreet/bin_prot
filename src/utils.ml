@@ -96,29 +96,29 @@ let maybe_annotate_shape maybe_uuid shape =
 ;;
 
 module Make_binable_gen (S : sig
-    include Make_binable_without_uuid_spec
+  include Make_binable_without_uuid_spec
 
-    val maybe_caller_identity : Shape.Uuid.t option
-  end) =
+  val maybe_caller_identity : Shape.Uuid.t option
+end) =
 struct
   include Of_minimal (struct
-      module B = S.Binable
+    module B = S.Binable
 
-      type t = S.t
+    type t = S.t
 
-      let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
-      let bin_size_t t = B.bin_size_t (S.to_binable t)
-      let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
-      let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
-      let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
-    end)
+    let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
+    let bin_size_t t = B.bin_size_t (S.to_binable t)
+    let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
+    let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
+    let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
+  end)
 end
 
 module Make_binable1_gen (S : sig
-    include Make_binable1_without_uuid_spec
+  include Make_binable1_without_uuid_spec
 
-    val maybe_caller_identity : Shape.Uuid.t option
-  end) =
+  val maybe_caller_identity : Shape.Uuid.t option
+end) =
 struct
   module B = S.Binable
 
@@ -150,7 +150,7 @@ struct
     { read = (fun buf ~pos_ref -> bin_read_t bin_reader.read buf ~pos_ref)
     ; vtag_read =
         (fun _buf ~pos_ref _n ->
-           raise_variant_wrong_type "Bin_prot.Utils.Make_binable1.bin_reader_t" !pos_ref)
+          raise_variant_wrong_type "Bin_prot.Utils.Make_binable1.bin_reader_t" !pos_ref)
     }
   ;;
 
@@ -163,10 +163,10 @@ struct
 end
 
 module Make_binable2_gen (S : sig
-    include Make_binable2_without_uuid_spec
+  include Make_binable2_without_uuid_spec
 
-    val maybe_caller_identity : Shape.Uuid.t option
-  end) =
+  val maybe_caller_identity : Shape.Uuid.t option
+end) =
 struct
   module B = S.Binable
 
@@ -204,7 +204,7 @@ struct
         (fun buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read buf ~pos_ref)
     ; vtag_read =
         (fun _buf ~pos_ref _n ->
-           raise_variant_wrong_type "Bin_prot.Utils.Make_binable2.bin_reader_t" !pos_ref)
+          raise_variant_wrong_type "Bin_prot.Utils.Make_binable2.bin_reader_t" !pos_ref)
     }
   ;;
 
@@ -217,10 +217,10 @@ struct
 end
 
 module Make_binable3_gen (S : sig
-    include Make_binable3_without_uuid_spec
+  include Make_binable3_without_uuid_spec
 
-    val maybe_caller_identity : Shape.Uuid.t option
-  end) =
+  val maybe_caller_identity : Shape.Uuid.t option
+end) =
 struct
   module B = S.Binable
 
@@ -250,17 +250,17 @@ struct
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
-           bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
+          bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
     }
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
     { read =
         (fun buf ~pos_ref ->
-           bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
+          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
     ; vtag_read =
         (fun _buf ~pos_ref _n ->
-           raise_variant_wrong_type "Bin_prot.Utils.Make_binable3.bin_reader_t" !pos_ref)
+          raise_variant_wrong_type "Bin_prot.Utils.Make_binable3.bin_reader_t" !pos_ref)
     }
   ;;
 
@@ -273,59 +273,59 @@ struct
 end
 
 module Make_binable_with_uuid (S : Make_binable_with_uuid_spec) = Make_binable_gen (struct
-    include S
+  include S
 
-    let maybe_caller_identity = Some S.caller_identity
-  end)
+  let maybe_caller_identity = Some S.caller_identity
+end)
 
 module Make_binable1_with_uuid (S : Make_binable1_with_uuid_spec) =
-  Make_binable1_gen (struct
-    include S
+Make_binable1_gen (struct
+  include S
 
-    let maybe_caller_identity = Some S.caller_identity
-  end)
+  let maybe_caller_identity = Some S.caller_identity
+end)
 
 module Make_binable2_with_uuid (S : Make_binable2_with_uuid_spec) =
-  Make_binable2_gen (struct
-    include S
+Make_binable2_gen (struct
+  include S
 
-    let maybe_caller_identity = Some S.caller_identity
-  end)
+  let maybe_caller_identity = Some S.caller_identity
+end)
 
 module Make_binable3_with_uuid (S : Make_binable3_with_uuid_spec) =
-  Make_binable3_gen (struct
-    include S
+Make_binable3_gen (struct
+  include S
 
-    let maybe_caller_identity = Some S.caller_identity
-  end)
+  let maybe_caller_identity = Some S.caller_identity
+end)
 
 module Make_binable_without_uuid (S : Make_binable_without_uuid_spec) =
-  Make_binable_gen (struct
-    include S
+Make_binable_gen (struct
+  include S
 
-    let maybe_caller_identity = None
-  end)
+  let maybe_caller_identity = None
+end)
 
 module Make_binable1_without_uuid (S : Make_binable1_without_uuid_spec) =
-  Make_binable1_gen (struct
-    include S
+Make_binable1_gen (struct
+  include S
 
-    let maybe_caller_identity = None
-  end)
+  let maybe_caller_identity = None
+end)
 
 module Make_binable2_without_uuid (S : Make_binable2_without_uuid_spec) =
-  Make_binable2_gen (struct
-    include S
+Make_binable2_gen (struct
+  include S
 
-    let maybe_caller_identity = None
-  end)
+  let maybe_caller_identity = None
+end)
 
 module Make_binable3_without_uuid (S : Make_binable3_without_uuid_spec) =
-  Make_binable3_gen (struct
-    include S
+Make_binable3_gen (struct
+  include S
 
-    let maybe_caller_identity = None
-  end)
+  let maybe_caller_identity = None
+end)
 
 let with_module_name f ~module_name function_name =
   match module_name with
@@ -541,7 +541,7 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
         (fun buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read buf ~pos_ref)
     ; vtag_read =
         (fun buf ~pos_ref n ->
-           __bin_read_t__ bin_reader1.read bin_reader2.read buf ~pos_ref n)
+          __bin_read_t__ bin_reader1.read bin_reader2.read buf ~pos_ref n)
     }
   ;;
 
@@ -612,17 +612,17 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
-           bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
+          bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
     }
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
     { read =
         (fun buf ~pos_ref ->
-           bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
+          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
     ; vtag_read =
         (fun buf ~pos_ref n ->
-           __bin_read_t__ bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref n)
+          __bin_read_t__ bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref n)
     }
   ;;
 

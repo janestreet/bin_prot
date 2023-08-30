@@ -4,7 +4,7 @@ open! Import
 let require_no_allocation here f =
   let ( result
       , ({ major_words_allocated; minor_words_allocated } :
-           Gc.For_testing.Allocation_report.t) )
+          Gc.For_testing.Allocation_report.t) )
     =
     Gc.For_testing.measure_allocation f
   in
@@ -13,8 +13,8 @@ let require_no_allocation here f =
     raise_s
       [%sexp
         "Unexpected allocations"
-      , (here : Source_code_position.t)
-      , { major_words_allocated : int; minor_words_allocated : int }];
+        , (here : Source_code_position.t)
+        , { major_words_allocated : int; minor_words_allocated : int }];
   result
 ;;
 

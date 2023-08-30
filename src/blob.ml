@@ -33,9 +33,7 @@ module T = struct
     a
   ;;
 
-  let __bin_read_t__ _ _ ~pos_ref =
-    raise_variant_wrong_type "Bin_prot.Blob.t" !pos_ref
-  ;;
+  let __bin_read_t__ _ _ ~pos_ref = raise_variant_wrong_type "Bin_prot.Blob.t" !pos_ref
 end
 
 type 'a id = 'a
@@ -43,13 +41,13 @@ type 'a id = 'a
 include T
 
 include Utils.Make_binable1_without_uuid [@alert "-legacy"] (struct
-    module Binable = T
+  module Binable = T
 
-    type 'a t = 'a T.t
+  type 'a t = 'a T.t
 
-    let of_binable t = t
-    let to_binable t = t
-  end)
+  let of_binable t = t
+  let to_binable t = t
+end)
 
 module Opaque = struct
   (* [Bigstring] and [String] share [bin_shape_t] because they have exactly the same

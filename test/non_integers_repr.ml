@@ -388,11 +388,11 @@ module Tests = struct
             hashtbl)
     ; equal =
         (fun t1 t2 ->
-           let to_list tbl =
-             Stdlib.Hashtbl.fold (fun k v acc -> (k, v) :: acc) tbl []
-             |> List.sort ~compare
-           in
-           to_list t1 = to_list t2)
+          let to_list tbl =
+            Stdlib.Hashtbl.fold (fun k v acc -> (k, v) :: acc) tbl []
+            |> List.sort ~compare
+          in
+          to_list t1 = to_list t2)
     ; sexp_of = [%sexp_of: (int32, int32) Sexplib.Std.Hashtbl.t]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_hashtbl
@@ -589,24 +589,24 @@ let gen_tests t =
       bin_protted_values
       ~init:(Int.max_value, 0)
       ~f:(fun (min, max) v s ->
-        let len = String.length s in
-        printf !"%s -> %{Sexp}" (to_hex s hex_size) (t.sexp_of v);
-        Bigstring.From_string.blito ~src:s ~dst:buf ();
-        let pos_ref = ref 0 in
-        let v' = t.reader buf ~pos_ref in
-        let len' = !pos_ref in
-        let hi_bound = Option.value t.hi_bound ~default:Int.max_value in
-        if len < t.lo_bound || len > hi_bound
-        then printf ", bin_size outside of range %d..%d: %d" t.lo_bound hi_bound len;
-        if (not (t.equal v v')) || len <> len'
-        then
-          printf
-            !", read test failed: read %d byte%s as %{Sexp}"
-            len'
-            (if len' = 1 then "" else "s")
-            (t.sexp_of v');
-        Out_channel.output_char stdout '\n';
-        Int.min min len, Int.max max len)
+      let len = String.length s in
+      printf !"%s -> %{Sexp}" (to_hex s hex_size) (t.sexp_of v);
+      Bigstring.From_string.blito ~src:s ~dst:buf ();
+      let pos_ref = ref 0 in
+      let v' = t.reader buf ~pos_ref in
+      let len' = !pos_ref in
+      let hi_bound = Option.value t.hi_bound ~default:Int.max_value in
+      if len < t.lo_bound || len > hi_bound
+      then printf ", bin_size outside of range %d..%d: %d" t.lo_bound hi_bound len;
+      if (not (t.equal v v')) || len <> len'
+      then
+        printf
+          !", read test failed: read %d byte%s as %{Sexp}"
+          len'
+          (if len' = 1 then "" else "s")
+          (t.sexp_of v');
+      Out_channel.output_char stdout '\n';
+      Int.min min len, Int.max max len)
   in
   match t.hi_bound with
   | None ->

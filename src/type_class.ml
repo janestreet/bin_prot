@@ -239,14 +239,14 @@ let bin_writer_pair bin_writer_el1 bin_writer_el2 =
   { size = (fun v -> Size.bin_size_pair bin_writer_el1.size bin_writer_el2.size v)
   ; write =
       (fun buf ~pos v ->
-         Write.bin_write_pair bin_writer_el1.write bin_writer_el2.write buf ~pos v)
+        Write.bin_write_pair bin_writer_el1.write bin_writer_el2.write buf ~pos v)
   }
 ;;
 
 let bin_reader_pair bin_reader_el1 bin_reader_el2 =
   { read =
       (fun buf ~pos_ref ->
-         Read.bin_read_pair bin_reader_el1.read bin_reader_el2.read buf ~pos_ref)
+        Read.bin_read_pair bin_reader_el1.read bin_reader_el2.read buf ~pos_ref)
   ; vtag_read = variant_wrong_type "pair"
   }
 ;;
@@ -264,28 +264,28 @@ let bin_pair bin_el1 bin_el2 =
 let bin_writer_triple bin_writer_el1 bin_writer_el2 bin_writer_el3 =
   { size =
       (fun v ->
-         Size.bin_size_triple bin_writer_el1.size bin_writer_el2.size bin_writer_el3.size v)
+        Size.bin_size_triple bin_writer_el1.size bin_writer_el2.size bin_writer_el3.size v)
   ; write =
       (fun buf ~pos v ->
-         Write.bin_write_triple
-           bin_writer_el1.write
-           bin_writer_el2.write
-           bin_writer_el3.write
-           buf
-           ~pos
-           v)
+        Write.bin_write_triple
+          bin_writer_el1.write
+          bin_writer_el2.write
+          bin_writer_el3.write
+          buf
+          ~pos
+          v)
   }
 ;;
 
 let bin_reader_triple bin_reader_el1 bin_reader_el2 bin_reader_el3 =
   { read =
       (fun buf ~pos_ref ->
-         Read.bin_read_triple
-           bin_reader_el1.read
-           bin_reader_el2.read
-           bin_reader_el3.read
-           buf
-           ~pos_ref)
+        Read.bin_read_triple
+          bin_reader_el1.read
+          bin_reader_el2.read
+          bin_reader_el3.read
+          buf
+          ~pos_ref)
   ; vtag_read = variant_wrong_type "triple"
   }
 ;;
@@ -348,14 +348,14 @@ let bin_writer_hashtbl bin_writer_el1 bin_writer_el2 =
   { size = (fun v -> Size.bin_size_hashtbl bin_writer_el1.size bin_writer_el2.size v)
   ; write =
       (fun buf ~pos v ->
-         Write.bin_write_hashtbl bin_writer_el1.write bin_writer_el2.write buf ~pos v)
+        Write.bin_write_hashtbl bin_writer_el1.write bin_writer_el2.write buf ~pos v)
   }
 ;;
 
 let bin_reader_hashtbl bin_reader_el1 bin_reader_el2 =
   { read =
       (fun buf ~pos_ref ->
-         Read.bin_read_hashtbl bin_reader_el1.read bin_reader_el2.read buf ~pos_ref)
+        Read.bin_read_hashtbl bin_reader_el1.read bin_reader_el2.read buf ~pos_ref)
   ; vtag_read = variant_wrong_type "hashtbl"
   }
 ;;

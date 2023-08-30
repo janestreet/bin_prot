@@ -147,19 +147,19 @@ let bin_size_int32 =
   then fun n -> bin_size_int (Int32.to_int n)
   else
     fun n ->
-      if n >= 0x00008000l || n < -0x00008000l then 5 else bin_size_int (Int32.to_int n)
+    if n >= 0x00008000l || n < -0x00008000l then 5 else bin_size_int (Int32.to_int n)
 ;;
 
 let bin_size_int64 =
   if arch_sixtyfour
   then
     fun n ->
-      if n >= 0x80000000L || n < -0x80000000L then 9 else bin_size_int (Int64.to_int n)
+    if n >= 0x80000000L || n < -0x80000000L then 9 else bin_size_int (Int64.to_int n)
   else
     fun n ->
-      if n >= 0x80000000L || n < -0x80000000L
-      then 9
-      else bin_size_int32 (Base.Int64.to_int32_trunc n) [@nontail]
+    if n >= 0x80000000L || n < -0x80000000L
+    then 9
+    else bin_size_int32 (Base.Int64.to_int32_trunc n) [@nontail]
 ;;
 
 let bin_size_nativeint =

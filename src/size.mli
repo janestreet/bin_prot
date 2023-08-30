@@ -24,7 +24,6 @@ val bin_size_nativeint : nativeint sizer
 val bin_size_nat0 : Nat0.t sizer
 val bin_size_ref : ('a, 'a ref) sizer1
 val bin_size_lazy_t : ('a, 'a lazy_t) sizer1
-
 val bin_size_lazy : ('a, 'a lazy_t) sizer1
 val bin_size_option : ('a, 'a option) sizer1
 val bin_size_pair : ('a, 'b, 'a * 'b) sizer2

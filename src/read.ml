@@ -47,10 +47,10 @@ let safe_nativeint_of_int64 =
   then fun _pos x -> Int64.to_nativeint x
   else
     fun [@inline always] pos x ->
-      if x >= Int64.of_nativeint Nativeint.min_int
-      && x <= Int64.of_nativeint Nativeint.max_int
-      then Int64.to_nativeint x
-      else raise_read_error ReadError.Int_overflow pos
+    if x >= Int64.of_nativeint Nativeint.min_int
+       && x <= Int64.of_nativeint Nativeint.max_int
+    then Int64.to_nativeint x
+    else raise_read_error ReadError.Int_overflow pos
 ;;
 
 external unsafe_get16 : buf -> int -> int = "%caml_bigstring_get16u"
@@ -210,15 +210,15 @@ let safe_bin_read_nat0_32 =
         Nat0.unsafe_of_int (n land mask_32bit))
   else
     fun buf ~pos_ref ~pos ->
-      let next = pos + 4 in
-      check_next buf next;
-      let n = unsafe_get32le buf pos in
-      if n >= 0l && n <= max_int_int32
-      then (
-        let n = Nat0.unsafe_of_int (Int32.to_int n) in
-        pos_ref := next;
-        n)
-      else raise_read_error ReadError.Nat0_overflow !pos_ref
+    let next = pos + 4 in
+    check_next buf next;
+    let n = unsafe_get32le buf pos in
+    if n >= 0l && n <= max_int_int32
+    then (
+      let n = Nat0.unsafe_of_int (Int32.to_int n) in
+      pos_ref := next;
+      n)
+    else raise_read_error ReadError.Nat0_overflow !pos_ref
 ;;
 
 let safe_bin_read_nat0_64 buf ~pos_ref ~pos =
