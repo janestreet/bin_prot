@@ -134,7 +134,7 @@ let check_all_with_local m extra_buf_size tp_name read write write_local args =
 module Random () = struct
   module Gen = Base_quickcheck.Generator
 
-  let random = Splittable_random.State.of_int 0
+  let random = Splittable_random.of_int 0
   let generate ?(size = 1) generator = Gen.generate generator ~size ~random
   let string length = generate (Gen.string_with_length ~length)
   let bigstring length = generate (Gen.bigstring_with_length ~length)
