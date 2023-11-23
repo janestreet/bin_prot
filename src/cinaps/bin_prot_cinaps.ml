@@ -21,68 +21,40 @@ end
 module Sig = struct
   let mk_base_tp ?deprecate (name : string) (typ : string) : unit =
     let deprecate = Option.value ~default:"" deprecate in
-    let name () = name
-    and typ () = typ in
-    printf
-      !{|
-val bin_writer_%{name} : %{typ} writer%s
-val bin_reader_%{name} : %{typ} reader%s
-val bin_shape_%{name} : Shape.t%s
-val bin_%{name} : %{typ} t%s
-|}
-      ()
-      ()
-      deprecate
-      ()
-      ()
-      deprecate
-      ()
-      deprecate
-      ()
-      ()
-      deprecate
+    print_string
+      [%string
+        {|
+val bin_writer_%{name} : %{typ} writer%{deprecate}
+val bin_reader_%{name} : %{typ} reader%{deprecate}
+val bin_shape_%{name} : Shape.t%{deprecate}
+val bin_%{name} : %{typ} t%{deprecate}
+|}]
   ;;
 
   let mk_base ?deprecate name : unit = mk_base_tp ?deprecate name name
 
   let mk_base1_tp name typ =
-    let name () = name
-    and typ () = typ in
-    printf
-      !{|
+    print_string
+      [%string
+        {|
 val bin_writer_%{name} : ('a, 'a %{typ}) S1.writer
 val bin_reader_%{name} : ('a, 'a %{typ}) S1.reader
 val bin_shape_%{name} : Shape.t -> Shape.t
 val bin_%{name} : ('a, 'a %{typ}) S1.t
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 
   let mk_base1 name = mk_base1_tp name name
 
   let mk_base2_tp name typ =
-    let name () = name
-    and typ () = typ in
-    printf
-      !{|
+    print_string
+      [%string
+        {|
 val bin_writer_%{name} : ('a, 'b, ('a, 'b) %{typ}) S2.writer
 val bin_reader_%{name} : ('a, 'b, ('a, 'b) %{typ}) S2.reader
 val bin_shape_%{name} : Shape.t -> Shape.t -> Shape.t
 val bin_%{name} : ('a, 'b, ('a, 'b) %{typ}) S2.t
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 
   let mk_base2 name = mk_base2_tp name name
@@ -90,10 +62,10 @@ end
 
 module Str = struct
   let mk_base (name : string) : unit =
-    let name () = name
-    and quoted_name () = Printf.sprintf "%S" name in
-    printf
-      !{|
+    let quoted_name = Printf.sprintf "%S" name in
+    print_string
+      [%string
+        {|
 let bin_writer_%{name} =
   { size = Size.bin_size_%{name}
   ; write = Write.bin_write_%{name}
@@ -108,26 +80,14 @@ let bin_%{name} =
   ; writer = bin_writer_%{name}
   ; reader = bin_reader_%{name}
   }
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 
   let mk_base1 name =
-    let name () = name
-    and quoted_name () = Printf.sprintf "%S" name in
-    printf
-      !{|
+    let quoted_name = Printf.sprintf "%S" name in
+    print_string
+      [%string
+        {|
 let bin_writer_%{name} bin_writer_el =
   { size = (fun v -> Size.bin_size_%{name} bin_writer_el.size v)
   ; write = (fun buf ~pos v ->
@@ -144,26 +104,14 @@ let bin_%{name} bin_el =
   ; writer = bin_writer_%{name} bin_el.writer
   ; reader = bin_reader_%{name} bin_el.reader
   }
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 
   let mk_base2 name =
-    let name () = name
-    and quoted_name () = Printf.sprintf "%S" name in
-    printf
-      !{|
+    let quoted_name = Printf.sprintf "%S" name in
+    print_string
+      [%string
+        {|
 let bin_writer_%{name} bin_writer_el1 bin_writer_el2 =
   { size = (fun v ->
       Size.bin_size_%{name} bin_writer_el1.size bin_writer_el2.size v)
@@ -183,26 +131,14 @@ let bin_%{name} bin_el1 bin_el2 =
   ; writer = bin_writer_%{name} bin_el1.writer bin_el2.writer
   ; reader = bin_reader_%{name} bin_el1.reader bin_el2.reader
   }
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 
   let mk_base3 name =
-    let name () = name
-    and quoted_name () = Printf.sprintf "%S" name in
-    printf
-      !{|
+    let quoted_name = Printf.sprintf "%S" name in
+    print_string
+      [%string
+        {|
 let bin_writer_%{name} bin_writer_el1 bin_writer_el2 bin_writer_el3 =
   { size = (fun v ->
       Size.bin_size_%{name}
@@ -229,18 +165,6 @@ let bin_%{name} bin_el1 bin_el2 bin_el3 =
   ; writer = bin_writer_%{name} bin_el1.writer bin_el2.writer bin_el3.writer
   ; reader = bin_reader_%{name} bin_el1.reader bin_el2.reader bin_el3.reader
   }
-|}
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
-      ()
+|}]
   ;;
 end
