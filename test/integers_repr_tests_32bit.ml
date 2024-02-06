@@ -1,8 +1,9 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
 let%expect_test ("32 bit integer tests" [@tags "32-bits-only", "no-js"]) =
+  print_newline ();
   Integers_repr.run_tests ();
-  [%expect
+  [%expect_exact
     {|
 int| .. .. .. .. c0 00 00 00 fd -> -1073741824
 int| .. .. .. .. c0 00 00 01 fd -> -1073741823

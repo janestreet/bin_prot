@@ -3,6 +3,7 @@
 let arch_sixtyfour = Sys.word_size = 64
 
 open Common
+include Size_intf.Definitions
 
 module Maximum = struct
   let bin_size_unit = 1
@@ -75,15 +76,6 @@ module Minimum = struct
   let bin_size_network64_int = Maximum.bin_size_network64_int
   let bin_size_network64_int64 = Maximum.bin_size_network64_int64
 end
-
-type 'a sizer = 'a -> int
-type ('a, 'b) sizer1 = 'a sizer -> 'b sizer
-type ('a, 'b, 'c) sizer2 = 'a sizer -> ('b, 'c) sizer1
-type ('a, 'b, 'c, 'd) sizer3 = 'a sizer -> ('b, 'c, 'd) sizer2
-type 'a sizer_local = ('a[@local]) -> int
-type ('a, 'b) sizer_local1 = 'a sizer_local -> 'b sizer_local
-type ('a, 'b, 'c) sizer_local2 = 'a sizer_local -> ('b, 'c) sizer_local1
-type ('a, 'b, 'c, 'd) sizer_local3 = 'a sizer_local -> ('b, 'c, 'd) sizer_local2
 
 let bin_size_unit () = 1
 let bin_size_bool _ = 1
@@ -198,7 +190,7 @@ let bin_size_len len =
   bin_size_nat0 plen
 ;;
 
-external float_array_length : (Float.Array.t[@local]) -> int = "%floatarray_length"
+external float_array_length : Float.Array.t -> int = "%floatarray_length"
 
 let bin_size_floatarray ar =
   let len = float_array_length ar in
@@ -241,20 +233,9 @@ let bin_size_hashtbl bin_size_key bin_size_val htbl =
   total_len
 ;;
 
-external array1_dim
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array1.t[@local])
-  -> int
-  = "%caml_ba_dim_1"
-
-external array2_dim1
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array2.t[@local])
-  -> int
-  = "%caml_ba_dim_1"
-
-external array2_dim2
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array2.t[@local])
-  -> int
-  = "%caml_ba_dim_2"
+external array1_dim : ('a, 'b, 'c) Stdlib.Bigarray.Array1.t -> int = "%caml_ba_dim_1"
+external array2_dim1 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_1"
+external array2_dim2 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_2"
 
 let bin_size_gen_vec vec multiplier =
   let len = array1_dim vec in

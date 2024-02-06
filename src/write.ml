@@ -4,21 +4,13 @@
    touching this code, be sure to run the benchmarks to check for regressions. *)
 
 open Common
+include Write_intf.Definitions
 
-type 'a writer = buf -> pos:pos -> 'a -> pos
-type ('a, 'b) writer1 = 'a writer -> 'b writer
-type ('a, 'b, 'c) writer2 = 'a writer -> ('b, 'c) writer1
-type ('a, 'b, 'c, 'd) writer3 = 'a writer -> ('b, 'c, 'd) writer2
-type 'a writer_local = buf -> pos:pos -> ('a[@local]) -> pos
-type ('a, 'b) writer_local1 = 'a writer_local -> 'b writer_local
-type ('a, 'b, 'c) writer_local2 = 'a writer_local -> ('b, 'c) writer_local1
-type ('a, 'b, 'c, 'd) writer_local3 = 'a writer_local -> ('b, 'c, 'd) writer_local2
-
-external unsafe_set : buf -> int -> (char[@local]) -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set8 : buf -> int -> (int[@local]) -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set16 : buf -> int -> (int[@local]) -> unit = "%caml_bigstring_set16u"
-external unsafe_set32 : buf -> int -> (int32[@local]) -> unit = "%caml_bigstring_set32u"
-external unsafe_set64 : buf -> int -> (int64[@local]) -> unit = "%caml_bigstring_set64u"
+external unsafe_set : buf -> int -> char -> unit = "%caml_ba_unsafe_set_1"
+external unsafe_set8 : buf -> int -> int -> unit = "%caml_ba_unsafe_set_1"
+external unsafe_set16 : buf -> int -> int -> unit = "%caml_bigstring_set16u"
+external unsafe_set32 : buf -> int -> int32 -> unit = "%caml_bigstring_set32u"
+external unsafe_set64 : buf -> int -> int64 -> unit = "%caml_bigstring_set64u"
 external bswap16 : (int[@local_opt]) -> (int[@local_opt]) = "%bswap16"
 external bswap32 : (int32[@local_opt]) -> (int32[@local_opt]) = "%bswap_int32"
 external bswap64 : (int64[@local_opt]) -> (int64[@local_opt]) = "%bswap_int64"
@@ -284,7 +276,7 @@ let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
   next
 ;;
 
-external float_array_length : (Float.Array.t[@local]) -> int = "%floatarray_length"
+external float_array_length : Float.Array.t -> int = "%floatarray_length"
 
 let bin_write_floatarray buf ~pos a =
   bin_write_float_array_gen
@@ -343,21 +335,9 @@ external buf_of_vec32 : (vec32[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_vec64 : (vec64[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_mat32 : (mat32[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_mat64 : (mat64[@local_opt]) -> (buf[@local_opt]) = "%identity"
-
-external array1_dim
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array1.t[@local])
-  -> int
-  = "%caml_ba_dim_1"
-
-external array2_dim1
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array2.t[@local])
-  -> int
-  = "%caml_ba_dim_1"
-
-external array2_dim2
-  :  (('a, 'b, 'c) Stdlib.Bigarray.Array2.t[@local])
-  -> int
-  = "%caml_ba_dim_2"
+external array1_dim : ('a, 'b, 'c) Stdlib.Bigarray.Array1.t -> int = "%caml_ba_dim_1"
+external array2_dim1 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_1"
+external array2_dim2 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_2"
 
 let bin_write_float32_vec buf ~pos v =
   let len = array1_dim v in

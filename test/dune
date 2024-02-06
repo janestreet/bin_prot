@@ -1,14 +1,13 @@
-(library (name bin_prot_test)
+(library
+ (name bin_prot_test)
  (libraries core bin_prot expect_test_patterns float_array base.md5)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))
 
-(alias (name runtest)
+(rule
+ (alias runtest)
  (deps blob_stability_tests.ml integers_repr_tests_32bit.ml
-  integers_repr_tests_64bit.ml integers_repr_tests_js.ml)
+   integers_repr_tests_64bit.ml integers_repr_tests_js.ml)
  (action
   (bash
-    "diff <(echo 'af86337ee248f8b73fba0ed5b8e22ee7  blob_stability_tests.ml'\
-   \necho '4547b57b1c8f0abf952ed17412c0b3bc  integers_repr_tests_32bit.ml'\
-   \necho '5af59528b1c10ea70448670561c07471  integers_repr_tests_64bit.ml'\
-   \necho '326e5b52a00bf62d9d08050a525e7fa1  integers_repr_tests_js.ml'\
-   \n) <(md5sum %{deps})")))
+    "diff <(echo '869e6b3143f14201f406eac9c05c4cdb  blob_stability_tests.ml'\necho '714ea0b2dcb175b3f87a9aff0890c091  integers_repr_tests_32bit.ml'\necho '2db396dfced6ae8d095f308acb4c80eb  integers_repr_tests_64bit.ml'\necho 'f54ad24b4e4e601d16bef7d8c79358d8  integers_repr_tests_js.ml'\n  ) <(md5sum %{deps})")))

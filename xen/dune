@@ -1,6 +1,18 @@
-(rule (targets cflags.sexp) (deps (:first_dep cflags.sh))
- (action (bash "./%{first_dep} > %{targets}")))
+(rule
+ (targets cflags.sexp)
+ (deps
+  (:first_dep cflags.sh))
+ (action
+  (bash "./%{first_dep} > %{targets}")))
 
-(library (name bin_prot_xen) (public_name bin_prot.xen) (optional)
- (virtual_deps mirage-xen-ocaml) (libraries) (c_flags (:include cflags.sexp))
+(library
+ (foreign_stubs
+  (language c)
+  (flags
+   (:include cflags.sexp)))
+ (name bin_prot_xen)
+ (public_name bin_prot.xen)
+ (optional)
+ (virtual_deps mirage-xen-ocaml)
+ (libraries)
  (preprocess no_preprocessing))

@@ -5,11 +5,7 @@
 
 open Bigarray
 open Common
-
-type 'a reader = buf -> pos_ref:pos_ref -> 'a
-type ('a, 'b) reader1 = 'a reader -> 'b reader
-type ('a, 'b, 'c) reader2 = 'a reader -> ('b, 'c) reader1
-type ('a, 'b, 'c, 'd) reader3 = 'a reader -> ('b, 'c, 'd) reader2
+include Read_intf.Definitions
 
 external unsafe_get : buf -> int -> char = "%caml_ba_unsafe_ref_1"
 external unsafe_get8 : buf -> int -> int = "%caml_ba_unsafe_ref_1"

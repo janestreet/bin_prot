@@ -1,42 +1,6 @@
 (* Tp_class: sizers, writers, and readers in records *)
 
-type 'a writer =
-  { size : 'a Size.sizer
-  ; write : 'a Write.writer
-  }
-
-type 'a reader =
-  { read : 'a Read.reader
-  ; vtag_read : (int -> 'a) Read.reader
-  }
-
-type 'a t =
-  { shape : Shape.t
-  ; writer : 'a writer
-  ; reader : 'a reader
-  }
-
-type 'a writer0 = 'a writer
-type 'a reader0 = 'a reader
-type 'a t0 = 'a t
-
-module S1 = struct
-  type ('a, 'b) writer = 'a writer0 -> 'b writer0
-  type ('a, 'b) reader = 'a reader0 -> 'b reader0
-  type ('a, 'b) t = 'a t0 -> 'b t0
-end
-
-module S2 = struct
-  type ('a, 'b, 'c) writer = 'a writer0 -> ('b, 'c) S1.writer
-  type ('a, 'b, 'c) reader = 'a reader0 -> ('b, 'c) S1.reader
-  type ('a, 'b, 'c) t = 'a t0 -> ('b, 'c) S1.t
-end
-
-module S3 = struct
-  type ('a, 'b, 'c, 'd) writer = 'a writer0 -> ('b, 'c, 'd) S2.writer
-  type ('a, 'b, 'c, 'd) reader = 'a reader0 -> ('b, 'c, 'd) S2.reader
-  type ('a, 'b, 'c, 'd) t = 'a t0 -> ('b, 'c, 'd) S2.t
-end
+include Type_class_intf.Definitions
 
 let variant_wrong_type name _buf ~pos_ref _x =
   Common.raise_variant_wrong_type name !pos_ref

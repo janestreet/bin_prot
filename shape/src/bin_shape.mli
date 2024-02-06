@@ -1,4 +1,4 @@
-(** [Shape.t] are constructed by the [bin_shape] syntax extension from Ocaml type
+(** [Shape.t] are constructed by the [bin_shape] syntax extension from OCaml type
     definitions & expressions.
 
     There is a direct mapping from ocaml type definition syntax to the corresponding
@@ -83,7 +83,7 @@ module Stable : sig
 end
 
 (** [Shape.Canonical.t] is the result of [eval]uating a shape to a canonical form, and
-    represents the shape of Ocaml types w.r.t. bin_io serialization.
+    represents the shape of OCaml types w.r.t. bin_io serialization.
 
     The idea is that de-serialization is safe if the canonical-shape for the type produced
     by de-serialization is equivalent to the canonical-shape of the serialized type.

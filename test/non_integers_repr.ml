@@ -619,14 +619,12 @@ let gen_tests t =
 
 let%expect_test "Non-integer bin_prot size tests" =
   gen_tests Tests.unit;
-  [%expect {|
-    00 -> ()
-  |}];
+  [%expect {| 00 -> () |}];
   gen_tests Tests.bool;
   [%expect {|
     01 -> true
     00 -> false
-  |}];
+    |}];
   gen_tests Tests.char;
   [%expect
     {|
@@ -635,12 +633,10 @@ let%expect_test "Non-integer bin_prot size tests" =
     7a -> z
     3b -> ";"
     ff -> "\255"
-  |}];
+    |}];
   gen_tests Tests.digest;
   [%expect
-    {|
-    ef cd ab 89 67 45 23 01 ef cd ab 89 67 45 23 01 -> 0123456789abcdef0123456789abcdef
-  |}];
+    {| ef cd ab 89 67 45 23 01 ef cd ab 89 67 45 23 01 -> 0123456789abcdef0123456789abcdef |}];
   gen_tests Tests.float;
   [%expect
     {|
@@ -656,58 +652,58 @@ let%expect_test "Non-integer bin_prot size tests" =
     3f f0 00 00 00 00 00 00 -> 1
     3e 7a d7 f2 9a bc af 48 -> 1E-07
     00 00 00 00 00 00 00 00 -> 0
-  |}];
+    |}];
   gen_tests Tests.float_nan;
   Expect_test_patterns.require_match
     [%here]
     {|
     7f f{8,0} 00 00 00 00 00 01 -> NAN (glob)
-  |};
+    |};
   gen_tests Tests.vec;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 -> ()
     3f f0 00 00 00 00 00 00 01 -> (1)
-  |}];
+    |}];
   gen_tests Tests.float32_vec;
   [%expect {|
     .. .. .. .. 00 -> ()
     3f 80 00 00 01 -> (1)
-  |}];
+    |}];
   gen_tests Tests.float64_vec;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 -> ()
     3f f0 00 00 00 00 00 00 01 -> (1)
-  |}];
+    |}];
   gen_tests Tests.mat;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 00 -> ()
     3f f0 00 00 00 00 00 00 01 01 -> ((1))
-  |}];
+    |}];
   gen_tests Tests.float32_mat;
   [%expect {|
     .. .. .. .. 00 00 -> ()
     3f 80 00 00 01 01 -> ((1))
-  |}];
+    |}];
   gen_tests Tests.float64_mat;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 00 -> ()
     3f f0 00 00 00 00 00 00 01 01 -> ((1))
-  |}];
+    |}];
   gen_tests Tests.bigstring;
   [%expect {|
     .. .. .. .. .. 00 -> ""
     6f 6c 6c 65 68 05 -> hello
-  |}];
+    |}];
   gen_tests Tests.floatarray;
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 -> ()
     00 00 00 00 00 00 00 00 01 -> (0)
-  |}];
+    |}];
   gen_tests Tests.ref;
   [%expect
     {|
@@ -716,7 +712,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. ff ff -> -1
     7f ff ff ff fd -> 2147483647
     80 00 00 00 fd -> -2147483648
-  |}];
+    |}];
   gen_tests Tests.lazy_t;
   [%expect
     {|
@@ -725,7 +721,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. ff ff -> -1
     7f ff ff ff fd -> 2147483647
     80 00 00 00 fd -> -2147483648
-  |}];
+    |}];
   gen_tests Tests.option;
   [%expect
     {|
@@ -735,7 +731,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. ff ff 01 -> (-1)
     7f ff ff ff fd 01 -> (2147483647)
     80 00 00 00 fd 01 -> (-2147483648)
-  |}];
+    |}];
   gen_tests Tests.pair;
   [%expect
     {|
@@ -744,7 +740,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. .. .. ff ff ff ff -> (-1 -1)
     7f ff ff ff fd 7f ff ff ff fd -> (2147483647 2147483647)
     80 00 00 00 fd 80 00 00 00 fd -> (-2147483648 -2147483648)
-  |}];
+    |}];
   gen_tests Tests.triple;
   [%expect
     {|
@@ -753,7 +749,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. .. .. .. .. .. ff ff ff ff ff ff -> (-1 -1 -1)
     7f ff ff ff fd 7f ff ff ff fd 7f ff ff ff fd -> (2147483647 2147483647 2147483647)
     80 00 00 00 fd 80 00 00 00 fd 80 00 00 00 fd -> (-2147483648 -2147483648 -2147483648)
-  |}];
+    |}];
   gen_tests Tests.list;
   [%expect
     {|
@@ -763,7 +759,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. .. .. .. ff ff 01 02 -> (1 -1)
     .. .. .. .. 7f ff ff ff fd 00 02 -> (0 2147483647)
     80 00 00 00 fd 7f ff ff ff fd 02 -> (2147483647 -2147483648)
-  |}];
+    |}];
   gen_tests Tests.array;
   [%expect
     {|
@@ -773,24 +769,27 @@ let%expect_test "Non-integer bin_prot size tests" =
     .. .. .. .. .. .. .. ff ff 01 02 -> (1 -1)
     .. .. .. .. 7f ff ff ff fd 00 02 -> (0 2147483647)
     80 00 00 00 fd 7f ff ff ff fd 02 -> (2147483647 -2147483648)
-  |}];
+    |}];
   gen_tests Tests.record1;
   [%expect
     {|
     .. .. .. .. 00 00 00 00 00 00 00 00 00 -> ((x 0)(y 0))
-    7f f0 00 00 00 00 00 00 7f ff ff ff fd -> ((x 2147483647)(y INF)) |}];
+    7f f0 00 00 00 00 00 00 7f ff ff ff fd -> ((x 2147483647)(y INF))
+    |}];
   gen_tests Tests.record2;
   [%expect
     {|
     .. .. .. .. .. .. .. .. .. .. .. .. 00 00 00 -> ((y((w 0)(x 0)))(z()))
-    00 7f ff ff ff fd 7f ff ff ff ff ff ff ff fc -> ((y((w 9223372036854775807)(x 2147483647)))(z())) |}];
+    00 7f ff ff ff fd 7f ff ff ff ff ff ff ff fc -> ((y((w 9223372036854775807)(x 2147483647)))(z()))
+    |}];
   gen_tests Tests.inline_record;
   [%expect
     {|
     .. .. .. .. .. .. .. .. .. .. .. .. 00 00 00 00 01 -> (Outer(y(Inner(w 0)(x 0)))(z()))
     00 7f ff ff ff fd 7f ff ff ff ff ff ff ff fc 00 01 -> (Outer(y(Inner(w 9223372036854775807)(x 2147483647)))(z()))
     .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 01 01 -> (Outer(y(Inner_other()))(z()))
-    .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 -> (Outer_other()) |}]
+    .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 00 00 -> (Outer_other())
+    |}]
 ;;
 
 (* Polymorphic hash is not the same when running in javascript.
@@ -804,5 +803,5 @@ let%expect_test ("Non-integer bin_prot size tests (no js)" [@tags "no-js"]) =
     .. .. .. .. .. .. .. .. .. .. 00 00 01 01 02 -> ((0 0)(1 1))
     .. .. 00 00 7f ff ff ff fd 7f ff ff ff fd 02 -> ((0 0)(2147483647 2147483647))
     80 00 00 00 fd 80 00 00 00 fd ff ff ff ff 02 -> ((-2147483648 -2147483648)(-1 -1))
-  |}]
+    |}]
 ;;

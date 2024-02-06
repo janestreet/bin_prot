@@ -1,8 +1,9 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
 let%expect_test ("64 bit integer tests" [@tags "64-bits-only"]) =
+  print_newline ();
   Integers_repr.run_tests ();
-  [%expect
+  [%expect_exact
     {|
 int| c0 00 00 00 00 00 00 00 fc -> -4611686018427387904
 int| c0 00 00 00 00 00 00 01 fc -> -4611686018427387903

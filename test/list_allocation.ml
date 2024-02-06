@@ -36,9 +36,11 @@ let%expect_test "" =
   run_test [%here] Int.Stable.V1.bin_t [ 1; 2; 3; 4; 5 ];
   [%expect {|
     size: 6
-    pos after writing: 6 |}];
+    pos after writing: 6
+    |}];
   run_test [%here] String.Stable.V1.bin_t [ "one"; "two"; "three"; "four" ];
   [%expect {|
     size: 20
-    pos after writing: 20 |}]
+    pos after writing: 20
+    |}]
 ;;
