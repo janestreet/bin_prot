@@ -22,17 +22,16 @@ val buf_len : buf -> int
 (** [assert_pos pos] @raise Invalid_argument if position [pos] is negative. *)
 val assert_pos : pos -> unit
 
-(** [check_pos buf pos] @raise Buffer_short if position [pos] exceeds
-    the length of buffer [buf]. *)
+(** [check_pos buf pos] @raise Buffer_short if position [pos] is past the end
+    of buffer [buf]. *)
 val check_pos : buf -> pos -> unit
 
-(** [check_next buf pos] @raise Buffer_short if the next position after
-    [pos] exceeds the length of buffer [buf]. *)
+(** [check_next buf pos] @raise Buffer_short if the next position after [pos] is past
+    the end of buffer [buf]. *)
 val check_next : buf -> pos -> unit
 
-(** [safe_get_pos buf pos_ref] @return the position referenced by
-    [pos_ref] within buffer [buf].  @raise Buffer_short if the position
-    exceeds the length of the buffer. *)
+(** [safe_get_pos buf pos_ref] @return the position referenced by [pos_ref] within buffer
+    [buf]. @raise Buffer_short if the position is past the end of the buffer [buf]. *)
 val safe_get_pos : buf -> pos_ref -> pos
 
 (** [blit_string_buf ?src_pos src ?dst_pos dst ~len] blits [len]
