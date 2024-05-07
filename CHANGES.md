@@ -1,3 +1,13 @@
+
+## Release v0.17.0
+
+- Add "local" versions of various functions and signatures: `bin_write_t__local`,
+`S_local`, etc. Modal types are not supported by the public OCaml compiler, so the
+local type annotations are erased at the moment.
+
+- Add `Bin_prot.Util.Of_minimal1`, which is a version of `Bin_prot.Util.Of_minimal`
+  with different arity.
+
 ## Release v0.16.0
 
 Insert the changelog here. When making the release, we will keep this
