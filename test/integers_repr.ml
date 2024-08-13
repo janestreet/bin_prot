@@ -1,5 +1,6 @@
-open Core
+open Base
 open Poly
+open Stdio
 open Import
 
 (* This module generates reference serialized output for various functions of
@@ -230,7 +231,7 @@ let tests =
   ]
 ;;
 
-let buf = Bigstring.create 32
+let buf = Base_bigstring.create 32
 let bin_protted_size_of t n = t.writer buf ~pos:0 (t.of_int64 n)
 
 let mean a b =
@@ -294,7 +295,7 @@ let find_interesting_points t =
   let b = t.to_int64 t.max in
   assert (a <= 0L && b >= 0L);
   let size0 = bin_protted_size_of t 0L in
-  let acc = Int64.Set.of_list [ 0L; a; b ] in
+  let acc = Set.of_list (module Int64) [ 0L; a; b ] in
   let acc =
     if a < 0L
     then
@@ -319,7 +320,7 @@ let power_of_twos =
       let x = Int64.shift_left 1L n in
       loop (n + 1) (Set.add (Set.add acc x) (Int64.neg x)))
   in
-  loop 0 Int64.Set.empty
+  loop 0 (Set.empty (module Int64))
 ;;
 
 let valid_power_of_twos t =
@@ -344,7 +345,7 @@ let add_windows_around_points t points =
       let b = if i >= Int64.( - ) max d then max else Int64.( + ) i d in
       loop rest (add_between a b acc)
   in
-  loop (Set.elements points) Int64.Set.empty
+  loop (Set.elements points) (Set.empty (module Int64))
 ;;
 
 let gen_tests (T t) =
@@ -355,10 +356,10 @@ let gen_tests (T t) =
   let min, max =
     Set.fold points ~init:(Int.max_value, 0) ~f:(fun (min, max) n ->
       let len = t.writer buf ~pos:0 (t.of_int64 n) in
-      let s = Bigstring.To_string.sub buf ~pos:0 ~len in
+      let s = Base_bigstring.To_string.sub buf ~pos:0 ~len in
       printf "%s| %s -> %Ld" t.name (to_hex s 9) n;
       let len_local = t.writer_local buf ~pos:0 (t.of_int64 n) in
-      let s_local = Bigstring.To_string.sub buf ~pos:0 ~len:len_local in
+      let s_local = Base_bigstring.To_string.sub buf ~pos:0 ~len:len_local in
       if String.( <> ) s s_local
       then printf ", write_local output (%s) differs from write output (%s)" s_local s;
       let pos_ref = ref 0 in

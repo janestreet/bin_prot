@@ -10,6 +10,15 @@ module Definitions = struct
   type ('a, 'b) reader1 = 'a reader -> 'b reader
   type ('a, 'b, 'c) reader2 = 'a reader -> ('b, 'c) reader1
   type ('a, 'b, 'c, 'd) reader3 = 'a reader -> ('b, 'c, 'd) reader2
+
+  (** Type of reader functions for polymorphic variant readers, after reading their tag.
+      Used for definitions such as [__bin_read_t__]. The [int] argument is a numerical
+      representation of the variant tag, such as [`a]. *)
+  type 'a vtag_reader = buf -> pos_ref:pos_ref -> int -> 'a
+
+  type ('a, 'b) vtag_reader1 = 'a reader -> 'b vtag_reader
+  type ('a, 'b, 'c) vtag_reader2 = 'a reader -> ('b, 'c) vtag_reader1
+  type ('a, 'b, 'c, 'd) vtag_reader3 = 'a reader -> ('b, 'c, 'd) vtag_reader2
 end
 
 module type Read = sig

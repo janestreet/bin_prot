@@ -6,7 +6,7 @@ module Definitions = struct
 
   type 'a reader =
     { read : 'a Read.reader
-    ; vtag_read : (int -> 'a) Read.reader
+    ; vtag_read : 'a Read.vtag_reader
     }
 
   type 'a t =

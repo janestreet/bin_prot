@@ -115,6 +115,6 @@ module Ignored : sig
 
   val bin_size_t : t Size.sizer
   val bin_read_t : t Read.reader
-  val __bin_read_t__ : (int -> t) Read.reader
+  val __bin_read_t__ : t Read.vtag_reader
   val bin_reader_t : t Type_class.reader
 end

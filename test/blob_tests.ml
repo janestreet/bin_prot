@@ -1,5 +1,6 @@
-open! Core
+open! Base
 open! Import
+open Stdio
 module Blob = Bin_prot.Blob
 module Opaque = Blob.Opaque
 module Type_class = Bin_prot.Type_class

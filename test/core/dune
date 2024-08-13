@@ -1,0 +1,5 @@
+(library
+ (name bin_prot_test_core)
+ (libraries bin_prot bin_prot_test core)
+ (preprocess
+  (pps ppx_jane)))

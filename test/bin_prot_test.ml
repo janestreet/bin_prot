@@ -1,9 +1,10 @@
-open! Core
+open! Base
 open Bigarray
 open Bin_prot
 open Common
 open Utils
 open Type_class
+module Blob_tests = Blob_tests
 
 module Bigstring = struct
   type t = buf
@@ -23,11 +24,11 @@ end
 let require_does_raise here expected_exn f =
   try
     ignore (f () : _);
-    Expect_test_helpers_base.print_cr here [%message "did not raise"]
+    Expect_test_helpers_base.print_cr ~here [%message "did not raise"]
   with
   | exn ->
     Expect_test_helpers_base.require
-      here
+      ~here
       (Poly.equal exn expected_exn)
       ~if_false_then_print_s:
         [%lazy_message
@@ -52,7 +53,6 @@ let check_read_bounds_checks buf read =
 let check_write_result name buf pos write arg exp_len =
   let res_pos = write buf ~pos arg in
   Expect_test_helpers_base.require_equal
-    [%here]
     (module Int)
     ~message:(name ^ " returned wrong write position")
     res_pos
@@ -62,13 +62,11 @@ let check_write_result name buf pos write arg exp_len =
 let check_read_result m name buf pos read exp_ret exp_len =
   let pos_ref = ref pos in
   Expect_test_helpers_base.require_equal
-    [%here]
     m
     ~message:(name ^ " returned wrong result")
     (read buf ~pos_ref)
     exp_ret;
   Expect_test_helpers_base.require_equal
-    [%here]
     (module Int)
     ~message:(name ^ " returned wrong read position")
     !pos_ref
@@ -88,11 +86,10 @@ let check_all_args m tp_name read write buf args =
       check_write_result write_name_arg buf pos write arg arg_len;
       check_read_result m read_name_arg buf pos read arg arg_len
     done;
-    Expect_test_helpers_base.require_does_not_raise [%here] (fun () ->
+    Expect_test_helpers_base.require_does_not_raise (fun () ->
       ignore (write buf ~pos:(buf_len - arg_len) arg : int));
-    Expect_test_helpers_base.require_does_not_raise [%here] (fun () ->
+    Expect_test_helpers_base.require_does_not_raise (fun () ->
       Expect_test_helpers_base.require_equal
-        [%here]
         m
         ~message:(read_name_arg ^ ": read near bound returned wrong result")
         (read buf ~pos_ref:(ref (buf_len - arg_len)))
@@ -150,7 +147,7 @@ let mk_nativeint_test ~n ~len = n, Printf.sprintf "%nx" n, len
 let mk_gen_float_vec tp n =
   let vec = Array1.create tp fortran_layout n in
   for i = 1 to n do
-    vec.{i} <- float i
+    vec.{i} <- Float.of_int i
   done;
   vec
 ;;
@@ -160,11 +157,11 @@ let mk_float64_vec = mk_gen_float_vec float64
 
 let mk_gen_float_mat tp m n =
   let mat = Array2.create tp fortran_layout m n in
-  let fn = float m in
+  let fn = Float.of_int m in
   for c = 1 to n do
-    let ofs = float (c - 1) *. fn in
+    let ofs = Float.of_int (c - 1) *. fn in
     for r = 1 to m do
-      mat.{r, c} <- ofs +. float r
+      mat.{r, c} <- ofs +. Float.of_int r
     done
   done;
   mat
@@ -212,7 +209,7 @@ let%expect_test ("string" [@tags "no-js"]) =
     ; Random.string 65535, "long 65535", 65535 + 3
     ; Random.string 65536, "long 65536", 65536 + 5
     ];
-  if Core.Sys.word_size_in_bits = 32
+  if Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\252\255\255\000" in
     require_does_raise
@@ -223,12 +220,12 @@ let%expect_test ("string" [@tags "no-js"]) =
     require_does_raise [%here] Buffer_short (fun () ->
       Read.bin_read_string bad_buf ~pos_ref:(ref 0)))
   else (
-    let bad_buf = Bigstring.of_string "\252\248\255\255\255\255\255\255\001" in
+    let bad_buf = Bigstring.of_string "\252\248\255\255\255\255\255\001\000" in
     require_does_raise
       [%here]
       (Read_error (String_too_long, 0))
       (fun () -> Read.bin_read_string bad_buf ~pos_ref:(ref 0));
-    let bad_buf = Bigstring.of_string "\252\247\255\255\255\255\255\255\001" in
+    let bad_buf = Bigstring.of_string "\252\247\255\255\255\255\255\001\000" in
     require_does_raise [%here] Buffer_short (fun () ->
       Read.bin_read_string bad_buf ~pos_ref:(ref 0)))
 ;;
@@ -270,20 +267,20 @@ let%expect_test ("int" [@tags "no-js"]) =
     ]
   in
   let all_int_tests =
-    if Core.Sys.word_size_in_bits = 32
+    if Sys.word_size_in_bits = 32
     then small_int_tests
     else
-      mk_int_test ~n:(int_of_string "-0x40000001") ~len:5
-      :: mk_int_test ~n:(int_of_string "-0x40000000") ~len:5
-      :: mk_int_test ~n:(int_of_string "0x7ffffffe") ~len:5
-      :: mk_int_test ~n:(int_of_string "0x7fffffff") ~len:5
-      :: mk_int_test ~n:(int_of_string "0x80000000") ~len:9
-      :: mk_int_test ~n:(int_of_string "0x80000001") ~len:9
+      mk_int_test ~n:(Int.of_string "-0x40000001") ~len:5
+      :: mk_int_test ~n:(Int.of_string "-0x40000000") ~len:5
+      :: mk_int_test ~n:(Int.of_string "0x7ffffffe") ~len:5
+      :: mk_int_test ~n:(Int.of_string "0x7fffffff") ~len:5
+      :: mk_int_test ~n:(Int.of_string "0x80000000") ~len:9
+      :: mk_int_test ~n:(Int.of_string "0x80000001") ~len:9
       :: mk_int_test ~n:Int.max_value ~len:9
-      :: mk_int_test ~n:(int_of_string "-0x000000007fffffff") ~len:5
-      :: mk_int_test ~n:(int_of_string "-0x0000000080000000") ~len:5
-      :: mk_int_test ~n:(int_of_string "-0x0000000080000001") ~len:9
-      :: mk_int_test ~n:(int_of_string "-0x0000000080000002") ~len:9
+      :: mk_int_test ~n:(Int.of_string "-0x000000007fffffff") ~len:5
+      :: mk_int_test ~n:(Int.of_string "-0x0000000080000000") ~len:5
+      :: mk_int_test ~n:(Int.of_string "-0x0000000080000001") ~len:9
+      :: mk_int_test ~n:(Int.of_string "-0x0000000080000002") ~len:9
       :: mk_int_test ~n:Int.min_value ~len:9
       :: small_int_tests
   in
@@ -300,7 +297,7 @@ let%expect_test ("int" [@tags "no-js"]) =
     [%here]
     (Read_error (Int_code, 0))
     (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0));
-  if Core.Sys.word_size_in_bits = 32
+  if Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
     require_does_raise
@@ -343,14 +340,14 @@ let%expect_test ("nat0" [@tags "no-js"]) =
     ]
   in
   let all_int_tests =
-    if Core.Sys.word_size_in_bits = 32
+    if Sys.word_size_in_bits = 32
     then small_int_tests
     else
-      mk_nat0_test ~n:(int_of_string "0x7fffffff") ~len:5
-      :: mk_nat0_test ~n:(int_of_string "0x80000000") ~len:5
-      :: mk_nat0_test ~n:(int_of_string "0xffffffff") ~len:5
-      :: mk_nat0_test ~n:(int_of_string "0x100000000") ~len:9
-      :: mk_nat0_test ~n:(int_of_string "0x100000001") ~len:9
+      mk_nat0_test ~n:(Int.of_string "0x7fffffff") ~len:5
+      :: mk_nat0_test ~n:(Int.of_string "0x80000000") ~len:5
+      :: mk_nat0_test ~n:(Int.of_string "0xffffffff") ~len:5
+      :: mk_nat0_test ~n:(Int.of_string "0x100000000") ~len:9
+      :: mk_nat0_test ~n:(Int.of_string "0x100000001") ~len:9
       :: mk_nat0_test ~n:Int.max_value ~len:9
       :: small_int_tests
   in
@@ -374,7 +371,7 @@ let%expect_test ("nat0" [@tags "no-js"]) =
     [%here]
     (Read_error (Nat0_code, 0))
     (fun () -> Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0));
-  if Core.Sys.word_size_in_bits = 32
+  if Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
     require_does_raise
@@ -534,7 +531,7 @@ let%expect_test "nativeint" =
     ]
   in
   let nativeint_tests =
-    if Core.Sys.word_size_in_bits = 32
+    if Sys.word_size_in_bits = 32
     then small_nativeint_tests
     else
       mk_nativeint_test ~n:(Nativeint.of_string "0x80000000") ~len:9
@@ -547,7 +544,7 @@ let%expect_test "nativeint" =
       :: mk_nativeint_test ~n:(Nativeint.of_string "-0x8000000000000000") ~len:9
       :: small_nativeint_tests
   in
-  let size = if Core.Sys.word_size_in_bits = 32 then 5 else 9 in
+  let size = if Sys.word_size_in_bits = 32 then 5 else 9 in
   check_all_with_local
     (module Nativeint)
     size
@@ -561,7 +558,7 @@ let%expect_test "nativeint" =
     [%here]
     (Read_error (Nativeint_code, 0))
     (fun () -> Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0));
-  if Core.Sys.word_size_in_bits = 32
+  if Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\255" in
     require_does_raise
@@ -653,7 +650,7 @@ let%expect_test ("array" [@tags "no-js"]) =
     (Write.bin_write_array Write.bin_write_int)
     (Write.bin_write_array__local Write.bin_write_int__local)
     [ [| 42; -1; 200; 33000 |], "[|42; -1; 200; 33000|]", 12; [||], "[||]", 1 ];
-  if Core.Sys.word_size_in_bits = 32
+  if Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\000\000\064\000" in
     require_does_raise
@@ -664,12 +661,12 @@ let%expect_test ("array" [@tags "no-js"]) =
     require_does_raise [%here] Buffer_short (fun () ->
       bin_read_int_array bad_buf ~pos_ref:(ref 0)))
   else (
-    let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
+    let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\064\000\000" in
     require_does_raise
       [%here]
       (Read_error (Array_too_long, 0))
       (fun () -> bin_read_int_array bad_buf ~pos_ref:(ref 0));
-    let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
+    let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\063\000\000" in
     require_does_raise [%here] Buffer_short (fun () ->
       bin_read_int_array bad_buf ~pos_ref:(ref 0)))
 ;;
@@ -686,11 +683,14 @@ let%expect_test "hashtbl" =
         Stdlib.Hashtbl.fold
           (fun key data acc -> Map.add_multi acc ~key ~data)
           t
-          Int.Map.empty
+          (Map.empty (module Int))
       ;;
 
-      let equal = Comparable.lift (Int.Map.equal (List.equal Float.equal)) ~f:to_map
-      let sexp_of_t t = Int.Map.sexp_of_t (List.sexp_of_t Float.sexp_of_t) (to_map t)
+      let equal = Comparable.lift (Map.equal (List.equal Float.equal)) ~f:to_map
+
+      let sexp_of_t t =
+        Map.sexp_of_m__t (module Int) (List.sexp_of_t Float.sexp_of_t) (to_map t)
+      ;;
     end)
     28
     "hashtbl"
@@ -897,7 +897,7 @@ let%expect_test "variant_tag" =
     Read.bin_read_variant_int
     Write.bin_write_variant_int
     Write.bin_write_variant_int__local
-    [ (Obj.magic `Foo : int), "`Foo", 4; (Obj.magic `Bar : int), "`Bar", 4 ];
+    [ (Stdlib.Obj.magic `Foo : int), "`Foo", 4; (Stdlib.Obj.magic `Bar : int), "`Bar", 4 ];
   let bad_buf = Bigstring.of_string "\000\000\000\000" in
   require_does_raise
     [%here]

@@ -1,13 +1,15 @@
 (library
  (name bin_prot_test)
- (libraries core bin_prot expect_test_patterns float_array base.md5)
+ (libraries base base_bigstring bin_prot
+   expect_test_helpers_core.expect_test_helpers_base expect_test_patterns
+   float_array base.md5 sexplib splittable_random stdio)
  (preprocess
   (pps ppx_jane)))
 
 (rule
  (alias runtest)
- (deps blob_stability_tests.ml integers_repr_tests_32bit.ml
-   integers_repr_tests_64bit.ml integers_repr_tests_js.ml)
+ (deps core/blob_stability_tests.ml integers_repr_tests_64bit.ml
+   integers_repr_tests_js.ml integers_repr_tests_wasm.ml)
  (action
   (bash
-    "diff <(echo '869e6b3143f14201f406eac9c05c4cdb  blob_stability_tests.ml'\necho '714ea0b2dcb175b3f87a9aff0890c091  integers_repr_tests_32bit.ml'\necho '2db396dfced6ae8d095f308acb4c80eb  integers_repr_tests_64bit.ml'\necho 'f54ad24b4e4e601d16bef7d8c79358d8  integers_repr_tests_js.ml'\n  ) <(md5sum %{deps})")))
+    "diff <(\necho '869e6b3143f14201f406eac9c05c4cdb  core/blob_stability_tests.ml'\necho '2db396dfced6ae8d095f308acb4c80eb  integers_repr_tests_64bit.ml'\necho '9f7b6332177a4ae9547d37d17008d7ef  integers_repr_tests_js.ml'\necho '22f653bfba79ce30c22fe378c596df54  integers_repr_tests_wasm.ml'\n  ) <(md5sum %{deps})")))

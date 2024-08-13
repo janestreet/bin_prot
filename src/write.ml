@@ -102,7 +102,7 @@ let all_bin_write_int32 buf pos n =
   unsafe_set buf pos code_INT32;
   unsafe_set32le buf (pos + 1) n;
   next
-  [@@inline]
+[@@inline]
 ;;
 
 let all_bin_write_int64 buf pos n =
@@ -111,7 +111,7 @@ let all_bin_write_int64 buf pos n =
   unsafe_set buf pos code_INT64;
   unsafe_set64le buf (pos + 1) n;
   next
-  [@@inline]
+[@@inline]
 ;;
 
 let bin_write_char buf ~pos c =
@@ -181,7 +181,7 @@ let bin_write_float buf ~pos x =
   check_next buf next;
   unsafe_set64le buf pos (Base.Int64.bits_of_float x);
   next
-  [@@inline]
+[@@inline]
 ;;
 
 let bin_write_int32 =
@@ -208,7 +208,7 @@ let bin_write_int64 buf ~pos n =
     assert_pos pos;
     all_bin_write_int32 buf pos (Base.Int64.to_int32_trunc n) [@nontail])
   else bin_write_int buf ~pos (Int64.to_int n)
-  [@@inline]
+[@@inline]
 ;;
 
 let bin_write_nativeint buf ~pos n =
@@ -223,7 +223,7 @@ let bin_write_nativeint buf ~pos n =
     assert_pos pos;
     all_bin_write_int32 buf pos (Base.Nativeint.to_int32_trunc n) [@nontail])
   else bin_write_int buf ~pos (Nativeint.to_int n)
-  [@@inline]
+[@@inline]
 ;;
 
 let bin_write_ref bin_write_el buf ~pos r = bin_write_el buf ~pos !r

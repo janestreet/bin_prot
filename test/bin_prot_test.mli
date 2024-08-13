@@ -1,1 +1,1 @@
-(*_ This file is intentionally left blank. *)
+module Blob_tests = Blob_tests

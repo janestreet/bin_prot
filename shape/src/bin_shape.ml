@@ -711,9 +711,9 @@ module Evaluation (Canonical : Canonical) = struct
     then
       Defining.look_env (gid, tid)
       >>= (function
-            | Some recurse -> return recurse
-            | None ->
-              Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
+             | Some recurse -> return recurse
+             | None ->
+               Defining.extend_new_tid (gid, tid) (eval_definition group formals body))
       >>= function
       | Recursion_level r -> return (Canonical.Exp1.recurse r args)
       | Definition def -> return (Canonical.Exp1.apply def args)

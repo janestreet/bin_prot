@@ -1,6 +1,6 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-let%expect_test ("javascript integer tests" [@tags "js-only"]) =
+let%expect_test ("javascript integer tests" [@tags "js-only", "no-wasm"]) =
   print_newline ();
   Integers_repr.run_tests ();
   [%expect_exact

@@ -96,29 +96,29 @@ let maybe_annotate_shape maybe_uuid shape =
 ;;
 
 module Make_binable_gen (S : sig
-  include Make_binable_without_uuid_spec
+    include Make_binable_without_uuid_spec
 
-  val maybe_caller_identity : Shape.Uuid.t option
-end) =
+    val maybe_caller_identity : Shape.Uuid.t option
+  end) =
 struct
   include Of_minimal (struct
-    module B = S.Binable
+      module B = S.Binable
 
-    type t = S.t
+      type t = S.t
 
-    let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
-    let bin_size_t t = B.bin_size_t (S.to_binable t)
-    let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
-    let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
-    let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
-  end)
+      let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
+      let bin_size_t t = B.bin_size_t (S.to_binable t)
+      let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
+      let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
+      let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
+    end)
 end
 
 module Make_binable1_gen (S : sig
-  include Make_binable1_without_uuid_spec
+    include Make_binable1_without_uuid_spec
 
-  val maybe_caller_identity : Shape.Uuid.t option
-end) =
+    val maybe_caller_identity : Shape.Uuid.t option
+  end) =
 struct
   module B = S.Binable
 
@@ -163,10 +163,10 @@ struct
 end
 
 module Make_binable2_gen (S : sig
-  include Make_binable2_without_uuid_spec
+    include Make_binable2_without_uuid_spec
 
-  val maybe_caller_identity : Shape.Uuid.t option
-end) =
+    val maybe_caller_identity : Shape.Uuid.t option
+  end) =
 struct
   module B = S.Binable
 
@@ -217,10 +217,10 @@ struct
 end
 
 module Make_binable3_gen (S : sig
-  include Make_binable3_without_uuid_spec
+    include Make_binable3_without_uuid_spec
 
-  val maybe_caller_identity : Shape.Uuid.t option
-end) =
+    val maybe_caller_identity : Shape.Uuid.t option
+  end) =
 struct
   module B = S.Binable
 
@@ -273,59 +273,59 @@ struct
 end
 
 module Make_binable_with_uuid (S : Make_binable_with_uuid_spec) = Make_binable_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = Some S.caller_identity
-end)
+    let maybe_caller_identity = Some S.caller_identity
+  end)
 
 module Make_binable1_with_uuid (S : Make_binable1_with_uuid_spec) =
 Make_binable1_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = Some S.caller_identity
-end)
+    let maybe_caller_identity = Some S.caller_identity
+  end)
 
 module Make_binable2_with_uuid (S : Make_binable2_with_uuid_spec) =
 Make_binable2_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = Some S.caller_identity
-end)
+    let maybe_caller_identity = Some S.caller_identity
+  end)
 
 module Make_binable3_with_uuid (S : Make_binable3_with_uuid_spec) =
 Make_binable3_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = Some S.caller_identity
-end)
+    let maybe_caller_identity = Some S.caller_identity
+  end)
 
 module Make_binable_without_uuid (S : Make_binable_without_uuid_spec) =
 Make_binable_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = None
-end)
+    let maybe_caller_identity = None
+  end)
 
 module Make_binable1_without_uuid (S : Make_binable1_without_uuid_spec) =
 Make_binable1_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = None
-end)
+    let maybe_caller_identity = None
+  end)
 
 module Make_binable2_without_uuid (S : Make_binable2_without_uuid_spec) =
 Make_binable2_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = None
-end)
+    let maybe_caller_identity = None
+  end)
 
 module Make_binable3_without_uuid (S : Make_binable3_without_uuid_spec) =
 Make_binable3_gen (struct
-  include S
+    include S
 
-  let maybe_caller_identity = None
-end)
+    let maybe_caller_identity = None
+  end)
 
 let with_module_name f ~module_name function_name =
   match module_name with

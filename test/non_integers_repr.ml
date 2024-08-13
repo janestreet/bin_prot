@@ -1,7 +1,8 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-open Core
+open Base
 open Poly
+open Stdio
 open Bigarray
 open Import
 
@@ -32,7 +33,7 @@ module Vec = struct
   let mk_gen_float tp n =
     let vec = Array1.create tp fortran_layout n in
     for i = 1 to n do
-      vec.{i} <- float i
+      vec.{i} <- Float.of_int i
     done;
     vec
   ;;
@@ -47,11 +48,11 @@ end
 module Mat = struct
   let mk_gen_float tp m n =
     let mat = Array2.create tp fortran_layout m n in
-    let fn = float m in
+    let fn = Float.of_int m in
     for c = 1 to n do
-      let ofs = float (c - 1) *. fn in
+      let ofs = Float.of_int (c - 1) *. fn in
       for r = 1 to m do
-        mat.{r, c} <- ofs +. float r
+        mat.{r, c} <- ofs +. Float.of_int r
       done
     done;
     mat
@@ -134,7 +135,7 @@ module Tests = struct
         ; Float.minus_one
         ; Float.neg_infinity
         ; Float.one
-        ; Float.robust_comparison_tolerance
+        ; 1E-7
         ; Float.zero
         ]
     ; equal = (fun a b -> (Float.is_nan a && Float.is_nan b) || Float.equal a b)
@@ -223,10 +224,11 @@ module Tests = struct
     { writer = Write.bin_write_bigstring
     ; writer_local = Some Write.bin_write_bigstring__local
     ; reader = Read.bin_read_bigstring
-    ; values = [ Bigstring.of_string ""; Bigstring.of_string "hello" ]
+    ; values = [ Base_bigstring.of_string ""; Base_bigstring.of_string "hello" ]
     ; equal =
-        (fun s1 s2 -> String.equal (Bigstring.to_string s1) (Bigstring.to_string s2))
-    ; sexp_of = [%sexp_of: Bigstring.t]
+        (fun s1 s2 ->
+          String.equal (Base_bigstring.to_string s1) (Base_bigstring.to_string s2))
+    ; sexp_of = [%sexp_of: Base_bigstring.t]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_bigstring
     }
@@ -297,7 +299,7 @@ module Tests = struct
         ; Int32.max_value, Int32.max_value
         ; Int32.min_value, Int32.min_value
         ]
-    ; equal = Tuple2.equal ~eq1:Int32.equal ~eq2:Int32.equal
+    ; equal = [%equal: Int32.t * Int32.t]
     ; sexp_of = [%sexp_of: int32 * int32]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_pair
@@ -325,7 +327,7 @@ module Tests = struct
         ; Int32.max_value, Int32.max_value, Int32.max_value
         ; Int32.min_value, Int32.min_value, Int32.min_value
         ]
-    ; equal = Tuple3.equal ~eq1:Int32.equal ~eq2:Int32.equal ~eq3:Int32.equal
+    ; equal = [%equal: Int32.t * Int32.t * Int32.t]
     ; sexp_of = [%sexp_of: int32 * int32 * int32]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_triple
@@ -401,7 +403,7 @@ module Tests = struct
 
   module R1 = struct
     type t =
-      { x : Int32.t
+      { x : int32
       ; y : float
       }
     [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
@@ -436,8 +438,8 @@ module Tests = struct
 
   module R2 = struct
     type inner =
-      { w : Int64.t
-      ; x : Int32.t
+      { w : int64
+      ; x : int32
       }
     [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
 
@@ -495,8 +497,8 @@ module Tests = struct
   module Inline_record = struct
     type inner =
       | Inner of
-          { w : Int64.t
-          ; x : Int32.t
+          { w : int64
+          ; x : int32
           }
       | Inner_other of unit
     [@@deriving bin_io ~localize, sexp_of, variants]
@@ -563,18 +565,18 @@ module Tests = struct
   ;;
 end
 
-let buf = Bigstring.create 1024
+let buf = Base_bigstring.create 1024
 
 let gen_tests t =
   let bin_protted_values =
     List.map t.values ~f:(fun v ->
       let len = t.writer buf ~pos:0 v in
-      let str = Bigstring.To_string.sub buf ~pos:0 ~len in
+      let str = Base_bigstring.To_string.sub buf ~pos:0 ~len in
       (match t.writer_local with
        | None -> ()
        | Some writer_local ->
          let len = writer_local buf ~pos:0 v in
-         let str_local = Bigstring.To_string.sub buf ~pos:0 ~len in
+         let str_local = Base_bigstring.To_string.sub buf ~pos:0 ~len in
          if String.( <> ) str str_local
          then
            printf ", write_local output (%s) differs from write output (%s)" str_local str);
@@ -589,24 +591,24 @@ let gen_tests t =
       bin_protted_values
       ~init:(Int.max_value, 0)
       ~f:(fun (min, max) v s ->
-      let len = String.length s in
-      printf !"%s -> %{Sexp}" (to_hex s hex_size) (t.sexp_of v);
-      Bigstring.From_string.blito ~src:s ~dst:buf ();
-      let pos_ref = ref 0 in
-      let v' = t.reader buf ~pos_ref in
-      let len' = !pos_ref in
-      let hi_bound = Option.value t.hi_bound ~default:Int.max_value in
-      if len < t.lo_bound || len > hi_bound
-      then printf ", bin_size outside of range %d..%d: %d" t.lo_bound hi_bound len;
-      if (not (t.equal v v')) || len <> len'
-      then
-        printf
-          !", read test failed: read %d byte%s as %{Sexp}"
-          len'
-          (if len' = 1 then "" else "s")
-          (t.sexp_of v');
-      Out_channel.output_char stdout '\n';
-      Int.min min len, Int.max max len)
+        let len = String.length s in
+        printf !"%s -> %{Sexp}" (to_hex s hex_size) (t.sexp_of v);
+        Base_bigstring.From_string.blito ~src:s ~dst:buf ();
+        let pos_ref = ref 0 in
+        let v' = t.reader buf ~pos_ref in
+        let len' = !pos_ref in
+        let hi_bound = Option.value t.hi_bound ~default:Int.max_value in
+        if len < t.lo_bound || len > hi_bound
+        then printf ", bin_size outside of range %d..%d: %d" t.lo_bound hi_bound len;
+        if (not (t.equal v v')) || len <> len'
+        then
+          printf
+            !", read test failed: read %d byte%s as %{Sexp}"
+            len'
+            (if len' = 1 then "" else "s")
+            (t.sexp_of v');
+        Out_channel.output_char stdout '\n';
+        Int.min min len, Int.max max len)
   in
   match t.hi_bound with
   | None ->
@@ -621,7 +623,8 @@ let%expect_test "Non-integer bin_prot size tests" =
   gen_tests Tests.unit;
   [%expect {| 00 -> () |}];
   gen_tests Tests.bool;
-  [%expect {|
+  [%expect
+    {|
     01 -> true
     00 -> false
     |}];
@@ -666,7 +669,8 @@ let%expect_test "Non-integer bin_prot size tests" =
     3f f0 00 00 00 00 00 00 01 -> (1)
     |}];
   gen_tests Tests.float32_vec;
-  [%expect {|
+  [%expect
+    {|
     .. .. .. .. 00 -> ()
     3f 80 00 00 01 -> (1)
     |}];
@@ -683,7 +687,8 @@ let%expect_test "Non-integer bin_prot size tests" =
     3f f0 00 00 00 00 00 00 01 01 -> ((1))
     |}];
   gen_tests Tests.float32_mat;
-  [%expect {|
+  [%expect
+    {|
     .. .. .. .. 00 00 -> ()
     3f 80 00 00 01 01 -> ((1))
     |}];
@@ -694,7 +699,8 @@ let%expect_test "Non-integer bin_prot size tests" =
     3f f0 00 00 00 00 00 00 01 01 -> ((1))
     |}];
   gen_tests Tests.bigstring;
-  [%expect {|
+  [%expect
+    {|
     .. .. .. .. .. 00 -> ""
     6f 6c 6c 65 68 05 -> hello
     |}];
