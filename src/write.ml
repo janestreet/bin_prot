@@ -6,11 +6,11 @@
 open Common
 include Write_intf.Definitions
 
-external unsafe_set : buf -> int -> char -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set8 : buf -> int -> int -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set16 : buf -> int -> int -> unit = "%caml_bigstring_set16u"
-external unsafe_set32 : buf -> int -> int32 -> unit = "%caml_bigstring_set32u"
-external unsafe_set64 : buf -> int -> int64 -> unit = "%caml_bigstring_set64u"
+external unsafe_set : buf -> int -> local_ char -> unit = "%caml_ba_unsafe_set_1"
+external unsafe_set8 : buf -> int -> local_ int -> unit = "%caml_ba_unsafe_set_1"
+external unsafe_set16 : buf -> int -> local_ int -> unit = "%caml_bigstring_set16u"
+external unsafe_set32 : buf -> int -> local_ int32 -> unit = "%caml_bigstring_set32u"
+external unsafe_set64 : buf -> int -> local_ int64 -> unit = "%caml_bigstring_set64u"
 external bswap16 : (int[@local_opt]) -> (int[@local_opt]) = "%bswap16"
 external bswap32 : (int32[@local_opt]) -> (int32[@local_opt]) = "%bswap_int32"
 external bswap64 : (int64[@local_opt]) -> (int64[@local_opt]) = "%bswap_int64"
@@ -276,7 +276,7 @@ let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
   next
 ;;
 
-external float_array_length : Float.Array.t -> int = "%floatarray_length"
+external float_array_length : local_ Float.Array.t -> int = "%floatarray_length"
 
 let bin_write_floatarray buf ~pos a =
   bin_write_float_array_gen
@@ -335,9 +335,21 @@ external buf_of_vec32 : (vec32[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_vec64 : (vec64[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_mat32 : (mat32[@local_opt]) -> (buf[@local_opt]) = "%identity"
 external buf_of_mat64 : (mat64[@local_opt]) -> (buf[@local_opt]) = "%identity"
-external array1_dim : ('a, 'b, 'c) Stdlib.Bigarray.Array1.t -> int = "%caml_ba_dim_1"
-external array2_dim1 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_1"
-external array2_dim2 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_2"
+
+external array1_dim
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
+  -> int
+  = "%caml_ba_dim_1"
+
+external array2_dim1
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  -> int
+  = "%caml_ba_dim_1"
+
+external array2_dim2
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  -> int
+  = "%caml_ba_dim_2"
 
 let bin_write_float32_vec buf ~pos v =
   let len = array1_dim v in

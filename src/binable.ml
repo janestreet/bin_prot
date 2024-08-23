@@ -5,7 +5,7 @@
 (* the subset of S containing only functions, so that one can recursively define modules
    implementing this interface *)
 module type S_any_only_functions = sig
-  type t
+  type t : any
 
   val bin_size_t : t Size.sizer
   val bin_write_t : t Write.writer
@@ -28,7 +28,7 @@ module type S_any_local_only_functions = sig
 end
 
 module type S_any = sig
-  type t
+  type t : any
 
   include S_any_only_functions with type t := t
 
@@ -39,7 +39,7 @@ module type S_any = sig
 end
 
 module type S_any_local = sig
-  type t
+  type t : any
 
   include S_any_local_only_functions with type t := t
 

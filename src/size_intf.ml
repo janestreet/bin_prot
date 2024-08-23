@@ -1,9 +1,9 @@
 module Definitions = struct
-  type 'a sizer = 'a -> int
+  type ('a : any) sizer = 'a -> int
   type ('a, 'b) sizer1 = 'a sizer -> 'b sizer
   type ('a, 'b, 'c) sizer2 = 'a sizer -> ('b, 'c) sizer1
   type ('a, 'b, 'c, 'd) sizer3 = 'a sizer -> ('b, 'c, 'd) sizer2
-  type 'a sizer_local = 'a -> int
+  type ('a : any) sizer_local = local_ 'a -> int
   type ('a, 'b) sizer_local1 = 'a sizer_local -> 'b sizer_local
   type ('a, 'b, 'c) sizer_local2 = 'a sizer_local -> ('b, 'c) sizer_local1
   type ('a, 'b, 'c, 'd) sizer_local3 = 'a sizer_local -> ('b, 'c, 'd) sizer_local2

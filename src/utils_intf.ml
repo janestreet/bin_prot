@@ -73,7 +73,7 @@ module type Make_iterable_binable_spec = sig
 
   val module_name : string option
   val length : t -> int
-  val iter : t -> f:(el -> unit) -> unit
+  val iter : t -> f:local_ (el -> unit) -> unit
   val init : len:int -> next:(unit -> el) -> t
   val bin_size_el : el Size.sizer
   val bin_write_el : el Write.writer
@@ -88,7 +88,7 @@ module type Make_iterable_binable1_spec = sig
   val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : 'a t -> int
-  val iter : 'a t -> f:('a el -> unit) -> unit
+  val iter : 'a t -> f:local_ ('a el -> unit) -> unit
   val init : len:int -> next:(unit -> 'a el) -> 'a t
   val bin_size_el : ('a, 'a el) Size.sizer1
   val bin_write_el : ('a, 'a el) Write.writer1
@@ -103,7 +103,7 @@ module type Make_iterable_binable2_spec = sig
   val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : ('a, 'b) t -> int
-  val iter : ('a, 'b) t -> f:(('a, 'b) el -> unit) -> unit
+  val iter : ('a, 'b) t -> f:local_ (('a, 'b) el -> unit) -> unit
   val init : len:int -> next:(unit -> ('a, 'b) el) -> ('a, 'b) t
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
   val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
@@ -118,7 +118,7 @@ module type Make_iterable_binable3_spec = sig
   val caller_identity : Shape.Uuid.t
   val module_name : string option
   val length : ('a, 'b, 'c) t -> int
-  val iter : ('a, 'b, 'c) t -> f:(('a, 'b, 'c) el -> unit) -> unit
+  val iter : ('a, 'b, 'c) t -> f:local_ (('a, 'b, 'c) el -> unit) -> unit
   val init : len:int -> next:(unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
   val bin_size_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3
   val bin_write_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3

@@ -190,7 +190,7 @@ let bin_size_len len =
   bin_size_nat0 plen
 ;;
 
-external float_array_length : Float.Array.t -> int = "%floatarray_length"
+external float_array_length : local_ Float.Array.t -> int = "%floatarray_length"
 
 let bin_size_floatarray ar =
   let len = float_array_length ar in
@@ -233,9 +233,20 @@ let bin_size_hashtbl bin_size_key bin_size_val htbl =
   total_len
 ;;
 
-external array1_dim : ('a, 'b, 'c) Stdlib.Bigarray.Array1.t -> int = "%caml_ba_dim_1"
-external array2_dim1 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_1"
-external array2_dim2 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_2"
+external array1_dim
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
+  -> int
+  = "%caml_ba_dim_1"
+
+external array2_dim1
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  -> int
+  = "%caml_ba_dim_1"
+
+external array2_dim2
+  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  -> int
+  = "%caml_ba_dim_2"
 
 let bin_size_gen_vec vec multiplier =
   let len = array1_dim vec in

@@ -1,15 +1,15 @@
 module Definitions = struct
-  type 'a writer =
+  type ('a : any) writer =
     { size : 'a Size.sizer
     ; write : 'a Write.writer
     }
 
-  type 'a reader =
+  type ('a : any) reader =
     { read : 'a Read.reader
     ; vtag_read : 'a Read.vtag_reader
     }
 
-  type 'a t =
+  type ('a : any) t =
     { shape : Shape.t
     ; writer : 'a writer
     ; reader : 'a reader

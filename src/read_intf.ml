@@ -5,7 +5,7 @@ module Definitions = struct
       buffer and a reference to a read position, and return the unmarshalled
       value.  The next buffer position after reading in the value will be
       stored in the position reference. *)
-  type 'a reader = buf -> pos_ref:pos_ref -> 'a
+  type ('a : any) reader = buf -> pos_ref:pos_ref -> 'a
 
   type ('a, 'b) reader1 = 'a reader -> 'b reader
   type ('a, 'b, 'c) reader2 = 'a reader -> ('b, 'c) reader1
@@ -14,7 +14,7 @@ module Definitions = struct
   (** Type of reader functions for polymorphic variant readers, after reading their tag.
       Used for definitions such as [__bin_read_t__]. The [int] argument is a numerical
       representation of the variant tag, such as [`a]. *)
-  type 'a vtag_reader = buf -> pos_ref:pos_ref -> int -> 'a
+  type ('a : any) vtag_reader = buf -> pos_ref:pos_ref -> int -> 'a
 
   type ('a, 'b) vtag_reader1 = 'a reader -> 'b vtag_reader
   type ('a, 'b, 'c) vtag_reader2 = 'a reader -> ('b, 'c) vtag_reader1

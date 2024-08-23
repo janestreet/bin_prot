@@ -4,12 +4,12 @@ module Definitions = struct
   (** Type of writer functions for the binary protocol. They take a buffer,
       a write position and a value, and return the next position after
       writing out the value. *)
-  type 'a writer = buf -> pos:pos -> 'a -> pos
+  type ('a : any) writer = buf -> pos:pos -> 'a -> pos
 
   type ('a, 'b) writer1 = 'a writer -> 'b writer
   type ('a, 'b, 'c) writer2 = 'a writer -> ('b, 'c) writer1
   type ('a, 'b, 'c, 'd) writer3 = 'a writer -> ('b, 'c, 'd) writer2
-  type 'a writer_local = buf -> pos:pos -> 'a -> pos
+  type ('a : any) writer_local = buf -> pos:pos -> local_ 'a -> pos
   type ('a, 'b) writer_local1 = 'a writer_local -> 'b writer_local
   type ('a, 'b, 'c) writer_local2 = 'a writer_local -> ('b, 'c) writer_local1
   type ('a, 'b, 'c, 'd) writer_local3 = 'a writer_local -> ('b, 'c, 'd) writer_local2
