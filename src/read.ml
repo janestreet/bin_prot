@@ -255,7 +255,7 @@ let bin_read_bytes buf ~pos_ref =
   if len > Sys.max_string_length then raise_read_error ReadError.String_too_long start_pos;
   let pos = !pos_ref in
   let next = pos + len in
-  check_next buf next;
+  check_next_check_overflow buf pos next;
   pos_ref := next;
   let str = Bytes.create len in
   unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
