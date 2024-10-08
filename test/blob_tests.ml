@@ -58,100 +58,98 @@ let run_stability_test (bin_a : 'a Type_class.t) equal a : unit =
      && String.( = ) bin_dump_blob bin_dump_opaque_string)
 ;;
 
-let%test_module _ =
-  (module struct
-    open Blob
-    open Poly
+module%test _ = struct
+  open Blob
+  open Poly
 
-    module Mystery = struct
-      type t =
-        { name : string
-        ; age : int
-        ; favorite_colors : string list
-        }
-      [@@deriving bin_io]
+  module Mystery = struct
+    type t =
+      { name : string
+      ; age : int
+      ; favorite_colors : string list
+      }
+    [@@deriving bin_io]
 
-      let value = { name = "Drew"; age = 25; favorite_colors = [ "Blue"; "Yellow" ] }
-    end
+    let value = { name = "Drew"; age = 25; favorite_colors = [ "Blue"; "Yellow" ] }
+  end
 
-    module T = struct
-      type 'a t =
-        { header : string
-        ; mystery : 'a
-        ; footer : string
-        }
-      [@@deriving bin_io]
+  module T = struct
+    type 'a t =
+      { header : string
+      ; mystery : 'a
+      ; footer : string
+      }
+    [@@deriving bin_io]
 
-      let value mystery = { header = "header"; mystery; footer = "footer" }
-    end
+    let value mystery = { header = "header"; mystery; footer = "footer" }
+  end
 
-    (* Some Rumsfeldian tests follow... *)
-    module Known = struct
-      type nonrec t = Mystery.t t T.t [@@deriving bin_io]
+  (* Some Rumsfeldian tests follow... *)
+  module Known = struct
+    type nonrec t = Mystery.t t T.t [@@deriving bin_io]
 
-      let value = T.value Mystery.value
-    end
+    let value = T.value Mystery.value
+  end
 
-    module Unknown = struct
-      type t = Opaque.Bigstring.t T.t [@@deriving bin_io]
+  module Unknown = struct
+    type t = Opaque.Bigstring.t T.t [@@deriving bin_io]
 
-      let value = T.value (Opaque.Bigstring.to_opaque Mystery.value Mystery.bin_writer_t)
-    end
+    let value = T.value (Opaque.Bigstring.to_opaque Mystery.value Mystery.bin_writer_t)
+  end
 
-    let convert bin_writer bin_reader value =
-      let buffer = Bin_prot.Utils.bin_dump bin_writer value in
-      bin_reader.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0)
-    ;;
+  let convert bin_writer bin_reader value =
+    let buffer = Bin_prot.Utils.bin_dump bin_writer value in
+    bin_reader.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0)
+  ;;
 
-    let roundtrip { Bin_prot.Type_class.reader; writer; shape = _ } value =
-      assert (convert writer reader value = value)
-    ;;
+  let roundtrip { Bin_prot.Type_class.reader; writer; shape = _ } value =
+    assert (convert writer reader value = value)
+  ;;
 
-    module Dropped = struct
-      type t = Ignored.t T.t [@@deriving bin_read]
+  module Dropped = struct
+    type t = Ignored.t T.t [@@deriving bin_read]
 
-      let bin_size_t = T.bin_size_t Ignored.bin_size_t
-    end
+    let bin_size_t = T.bin_size_t Ignored.bin_size_t
+  end
 
-    let bigstring_to_string bigstring =
-      let len = Bigarray.Array1.dim bigstring in
-      String.init len ~f:(fun i -> bigstring.{i})
-    ;;
+  let bigstring_to_string bigstring =
+    let len = Bigarray.Array1.dim bigstring in
+    String.init len ~f:(fun i -> bigstring.{i})
+  ;;
 
-    let%test_unit "roundtrip known" = roundtrip Known.bin_t Known.value
-    let%test_unit "roundtrip unknown" = roundtrip Unknown.bin_t Unknown.value
+  let%test_unit "roundtrip known" = roundtrip Known.bin_t Known.value
+  let%test_unit "roundtrip unknown" = roundtrip Unknown.bin_t Unknown.value
 
-    let%test_unit "opaque and wrapped serialize the same way" =
-      let known_buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
-      let unknown_buffer = Bin_prot.Utils.bin_dump Unknown.bin_writer_t Unknown.value in
-      let known_s = bigstring_to_string known_buffer in
-      let unknown_s = bigstring_to_string unknown_buffer in
-      if known_s <> unknown_s then failwith (Printf.sprintf "%s <> %s" known_s unknown_s)
-    ;;
+  let%test_unit "opaque and wrapped serialize the same way" =
+    let known_buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
+    let unknown_buffer = Bin_prot.Utils.bin_dump Unknown.bin_writer_t Unknown.value in
+    let known_s = bigstring_to_string known_buffer in
+    let unknown_s = bigstring_to_string unknown_buffer in
+    if known_s <> unknown_s then failwith (Printf.sprintf "%s <> %s" known_s unknown_s)
+  ;;
 
-    let%test_unit "serialized wrapped deserializes to the expected opaque" =
-      let unknown_from_known =
-        convert Known.bin_writer_t Unknown.bin_reader_t Known.value
-      in
-      assert (Unknown.value = unknown_from_known)
-    ;;
+  let%test_unit "serialized wrapped deserializes to the expected opaque" =
+    let unknown_from_known =
+      convert Known.bin_writer_t Unknown.bin_reader_t Known.value
+    in
+    assert (Unknown.value = unknown_from_known)
+  ;;
 
-    let%test_unit "serialized opaque deserializes to the expected wrapped" =
-      let known_from_unknown =
-        convert Unknown.bin_writer_t Known.bin_reader_t Unknown.value
-      in
-      assert (Known.value = known_from_unknown)
-    ;;
+  let%test_unit "serialized opaque deserializes to the expected wrapped" =
+    let known_from_unknown =
+      convert Unknown.bin_writer_t Known.bin_reader_t Unknown.value
+    in
+    assert (Known.value = known_from_unknown)
+  ;;
 
-    let%test_unit "Dropped" =
-      let buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
-      let value = Dropped.bin_reader_t.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0) in
-      let ignored = value.mystery in
-      (* The value deserialized with [Dropped] agrees with the value serialized by
+  let%test_unit "Dropped" =
+    let buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
+    let value = Dropped.bin_reader_t.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0) in
+    let ignored = value.mystery in
+    (* The value deserialized with [Dropped] agrees with the value serialized by
          [Known], except for the ignored bit. *)
-      assert ({ Known.value with mystery = ignored } = value);
-      (* [Dropped] remembered the size of the ignored data. *)
-      assert (Dropped.bin_size_t value = Known.bin_size_t Known.value)
-    ;;
-  end)
-;;
+    assert ({ Known.value with mystery = ignored } = value);
+    (* [Dropped] remembered the size of the ignored data. *)
+    assert (Dropped.bin_size_t value = Known.bin_size_t Known.value)
+  ;;
+end
