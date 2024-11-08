@@ -26,9 +26,17 @@ val assert_pos : pos -> unit
     of buffer [buf]. *)
 val check_pos : buf -> pos -> unit
 
-(** [check_next buf pos] @raise Buffer_short if the next position after [pos] is past
-    the end of buffer [buf]. *)
+(** [check_next buf pos] @raise Buffer_short if the position [pos] exceeds the length of
+    buffer [buf]. Used to ensure that the half-open range of indexes ending at [pos]
+    is valid. *)
 val check_next : buf -> pos -> unit
+
+(** [check_next_check_overflow buf pos next] @raise Buffer_short if the position [next]
+    exceeds the length of buffer [buf].
+    Uses the old position [pos] to check that the position advances forward,
+    and if overflow is detected ([next < pos]), [Buffer_short] is raised as well.
+*)
+val check_next_check_overflow : buf -> pos -> pos -> unit
 
 (** [safe_get_pos buf pos_ref] @return the position referenced by [pos_ref] within buffer
     [buf]. @raise Buffer_short if the position is past the end of the buffer [buf]. *)

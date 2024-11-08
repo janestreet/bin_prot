@@ -213,78 +213,85 @@ let%expect_test "string" =
     ]
 ;;
 
-let%test_module _ =
-  (module struct
-    let mk_len_prefix n =
-      let buf = Bigstring.create 20 in
-      let len = Write.bin_write_int buf ~pos:0 n in
-      Bigstring.sub buf ~pos:0 ~len
-    ;;
+module%test _ = struct
+  let mk_len_prefix n =
+    let buf = Bigstring.create 20 in
+    let len = Write.bin_write_int buf ~pos:0 n in
+    Bigstring.sub buf ~pos:0 ~len
+  ;;
 
-    open Expect_test_helpers_base
+  open Expect_test_helpers_base
 
-    let check_large_string_len len =
-      let buf = mk_len_prefix len in
-      print_s [%sexp (buf : Bigstring.t)];
-      match Read.bin_read_string buf ~pos_ref:(ref 0) with
-      | exception Buffer_short -> print_s [%sexp "<good>"]
-      | exception Read_error (String_too_long, 0) -> print_s [%sexp "<too-long>"]
-      | exception exn -> print_s [%sexp (exn : exn)]
-      | s -> print_s [%sexp "unexpected valid parse?", (s : string)]
-    ;;
+  let check_large_string_len len =
+    let buf = mk_len_prefix len in
+    print_s [%sexp (buf : Bigstring.t)];
+    match Read.bin_read_string buf ~pos_ref:(ref 0) with
+    | exception Buffer_short -> print_s [%sexp "<good>"]
+    | exception Read_error (String_too_long, 0) -> print_s [%sexp "<too-long>"]
+    | exception exn -> print_s [%sexp (exn : exn)]
+    | s -> print_s [%sexp "unexpected valid parse?", (s : string)]
+  ;;
 
-    let%expect_test ("max string len 32-bit" [@tags "32-bits-only"]) =
-      check_large_string_len ((16 * 1024 * 1024) - 4);
-      [%expect
-        {|
-        "\253\252\255\255\000"
-        <too-long>
-        |}];
-      check_large_string_len ((16 * 1024 * 1024) - 5);
-      [%expect
-        {|
-        "\253\251\255\255\000"
-        <good>
-        |}]
-    ;;
+  let%expect_test ("max string len 32-bit" [@tags "32-bits-only"]) =
+    check_large_string_len ((16 * 1024 * 1024) - 4);
+    [%expect
+      {|
+      "\253\252\255\255\000"
+      <too-long>
+      |}];
+    check_large_string_len ((16 * 1024 * 1024) - 5);
+    [%expect
+      {|
+      "\253\251\255\255\000"
+      <good>
+      |}]
+  ;;
 
-    let%expect_test ("max string in JS" [@tags "js-only"]) =
-      check_large_string_len ((2 * 1024 * 1024 * 1024) - 4);
-      [%expect
-        {|
-        "\253\252\255\255\127"
-        <too-long>
-        |}];
-      check_large_string_len ((2 * 1024 * 1024 * 1024) - 5);
-      [%expect
-        {|
-        "\253\251\255\255\127"
-        (Invalid_argument "index out of bounds")
-        |}];
-      check_large_string_len ((2 * 1024 * 1024 * 1024) - 6);
-      [%expect
-        {|
-        "\253\250\255\255\127"
-        <good>
-        |}]
-    ;;
+  let%expect_test ("max string in JS" [@tags "js-only", "no-wasm"]) =
+    check_large_string_len ((2 * 1024 * 1024 * 1024) - 4);
+    [%expect
+      {|
+      "\253\252\255\255\127"
+      <too-long>
+      |}];
+    check_large_string_len ((2 * 1024 * 1024 * 1024) - 5);
+    [%expect
+      {|
+      "\253\251\255\255\127"
+      <good>
+      |}]
+  ;;
 
-    let%expect_test ("max string len 64-bit" [@tags "64-bits-only"]) =
-      check_large_string_len (Base.Int.pow 2 57 - 8);
-      [%expect
-        {|
-        "\252\248\255\255\255\255\255\255\001"
-        <too-long>
-        |}];
-      check_large_string_len (Base.Int.pow 2 49 - 9);
-      [%expect
-        {|
-        "\252\247\255\255\255\255\255\001\000"
-        <good>
-        |}]
-    ;;
-  end)
-;;
+  let%expect_test ("max string in WASM" [@tags "wasm-only"]) =
+    check_large_string_len (Int.max_value_30_bits - 3);
+    [%expect
+      {|
+      "\253\252\255\255?"
+      <too-long>
+      |}];
+    check_large_string_len (Int.max_value_30_bits - 4);
+    [%expect
+      {|
+      "\253\251\255\255?"
+      <good>
+      |}]
+  ;;
+
+  let%expect_test ("max string len 64-bit" [@tags "64-bits-only"]) =
+    check_large_string_len (Base.Int.pow 2 57 - 8);
+    [%expect
+      {|
+      "\252\248\255\255\255\255\255\255\001"
+      <too-long>
+      |}];
+    check_large_string_len (Base.Int.pow 2 49 - 9);
+    [%expect
+      {|
+      "\252\247\255\255\255\255\255\001\000"
+      <good>
+      |}]
+  ;;
+end
 
 let%expect_test "char" =
   check_all_with_local

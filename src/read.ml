@@ -255,7 +255,7 @@ let bin_read_bytes buf ~pos_ref =
   if len > Sys.max_string_length then raise_read_error ReadError.String_too_long start_pos;
   let pos = !pos_ref in
   let next = pos + len in
-  check_next buf next;
+  check_next_check_overflow buf pos next;
   pos_ref := next;
   let str = Bytes.create len in
   unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
@@ -398,22 +398,29 @@ let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
   a, b, c
 ;;
 
-let bin_read_n_rev_list bin_read_el buf ~pos_ref len =
-  let rec loop n acc =
-    if n = 0 then acc else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)
-  in
-  loop len []
+let[@tail_mod_cons] rec bin_read_n_list bin_read_el buf ~pos_ref len =
+  if len = 0
+  then []
+  else (
+    let el = bin_read_el buf ~pos_ref in
+    el :: bin_read_n_list bin_read_el buf ~pos_ref (len - 1))
 ;;
 
 let bin_read_list_with_max_len ~max_len bin_read_el buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > max_len then raise_read_error (List_too_long { len; max_len }) !pos_ref;
-  let rev_lst = bin_read_n_rev_list bin_read_el buf ~pos_ref len in
-  List.rev rev_lst
+  bin_read_n_list bin_read_el buf ~pos_ref len
 ;;
 
 let bin_read_list bin_read_el buf ~pos_ref =
   bin_read_list_with_max_len ~max_len:max_int bin_read_el buf ~pos_ref
+;;
+
+let bin_read_n_rev_list bin_read_el buf ~pos_ref len =
+  let rec loop n acc =
+    if n = 0 then acc else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)
+  in
+  loop len []
 ;;
 
 let dummy_float_buf = create_buf 8

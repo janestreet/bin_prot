@@ -98,6 +98,10 @@ let safe_get_pos buf pos_ref =
 
 let check_next (buf : buf) next = if next > Array1.dim buf then raise Buffer_short
 
+let check_next_check_overflow (buf : buf) pos next =
+  if next < pos || next > Array1.dim buf then raise Buffer_short
+;;
+
 let get_opt_pos ~loc ~var = function
   | Some pos ->
     if pos < 0 then invalid_arg (sprintf "Bin_prot.Common.%s: %s < 0" loc var);
