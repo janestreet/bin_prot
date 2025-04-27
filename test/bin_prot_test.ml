@@ -5,6 +5,8 @@ open Common
 open Utils
 open Type_class
 module Blob_tests = Blob_tests
+module Integers_repr = Integers_repr
+module Non_integers_repr = Non_integers_repr
 
 module Bigstring = struct
   type t = buf
@@ -172,6 +174,7 @@ let mk_gen_float_mat tp m n =
 let mk_float32_mat = mk_gen_float_mat float32
 let mk_float64_mat = mk_gen_float_mat float64
 
+[%%template
 let%expect_test "unit" =
   check_all_with_local
     (module Unit)
@@ -179,7 +182,7 @@ let%expect_test "unit" =
     "unit"
     Read.bin_read_unit
     Write.bin_write_unit
-    Write.bin_write_unit__local
+    (Write.bin_write_unit [@mode local])
     [ (), "()", 1 ]
 ;;
 
@@ -190,7 +193,7 @@ let%expect_test "bool" =
     "bool"
     Read.bin_read_bool
     Write.bin_write_bool
-    Write.bin_write_bool__local
+    (Write.bin_write_bool [@mode local])
     [ true, "true", 1; false, "false", 1 ]
 ;;
 
@@ -202,7 +205,7 @@ let%expect_test "string" =
     "string"
     Read.bin_read_string
     Write.bin_write_string
-    Write.bin_write_string__local
+    (Write.bin_write_string [@mode local])
     [ "", "\"\"", 1
     ; Random.string 1, "random 1", 1 + 1
     ; Random.string 10, "random 10", 10 + 1
@@ -300,7 +303,7 @@ let%expect_test "char" =
     "char"
     Read.bin_read_char
     Write.bin_write_char
-    Write.bin_write_char__local
+    (Write.bin_write_char [@mode local])
     [ 'x', "x", 1; 'y', "y", 1 ]
 ;;
 
@@ -353,7 +356,7 @@ let%expect_test ("int" [@tags "no-js"]) =
     "int"
     Read.bin_read_int
     Write.bin_write_int
-    Write.bin_write_int__local
+    (Write.bin_write_int [@mode local])
     all_int_tests;
   let bad_buf = Bigstring.of_string "\132" in
   require_does_raise
@@ -427,7 +430,7 @@ let%expect_test ("nat0" [@tags "no-js"]) =
     "nat0"
     Read.bin_read_nat0
     Write.bin_write_nat0
-    Write.bin_write_nat0__local
+    (Write.bin_write_nat0 [@mode local])
     all_int_tests;
   let bad_buf = Bigstring.of_string "\128" in
   require_does_raise
@@ -470,7 +473,7 @@ let%expect_test "float" =
     "float"
     Read.bin_read_float
     Write.bin_write_float
-    Write.bin_write_float__local
+    (Write.bin_write_float [@mode local])
     float_tests
 ;;
 
@@ -507,7 +510,7 @@ let%expect_test "int32" =
     "int32"
     Read.bin_read_int32
     Write.bin_write_int32
-    Write.bin_write_int32__local
+    (Write.bin_write_int32 [@mode local])
     int32_tests;
   let bad_buf = Bigstring.of_string "\132" in
   require_does_raise
@@ -557,7 +560,7 @@ let%expect_test "int64" =
     "int64"
     Read.bin_read_int64
     Write.bin_write_int64
-    Write.bin_write_int64__local
+    (Write.bin_write_int64 [@mode local])
     int64_tests;
   let bad_buf = Bigstring.of_string "\132" in
   require_does_raise
@@ -614,7 +617,7 @@ let%expect_test "nativeint" =
     "nativeint"
     Read.bin_read_nativeint
     Write.bin_write_nativeint
-    Write.bin_write_nativeint__local
+    (Write.bin_write_nativeint [@mode local])
     nativeint_tests;
   let bad_buf = Bigstring.of_string "\251" in
   require_does_raise
@@ -639,7 +642,7 @@ let%expect_test "ref" =
     "ref"
     (Read.bin_read_ref Read.bin_read_int)
     (Write.bin_write_ref Write.bin_write_int)
-    (Write.bin_write_ref__local Write.bin_write_int__local)
+    ((Write.bin_write_ref [@mode local]) (Write.bin_write_int [@mode local]))
     [ ref 42, "ref 42", 1 ]
 ;;
 
@@ -652,7 +655,7 @@ let%expect_test "option" =
     "option"
     (Read.bin_read_option Read.bin_read_int)
     (Write.bin_write_option Write.bin_write_int)
-    (Write.bin_write_option__local Write.bin_write_int__local)
+    ((Write.bin_write_option [@mode local]) (Write.bin_write_int [@mode local]))
     [ Some 42, "Some 42", 2; None, "None", 1 ]
 ;;
 
@@ -665,7 +668,9 @@ let%expect_test "pair" =
     "pair"
     (Read.bin_read_pair Read.bin_read_float Read.bin_read_int)
     (Write.bin_write_pair Write.bin_write_float Write.bin_write_int)
-    (Write.bin_write_pair__local Write.bin_write_float__local Write.bin_write_int__local)
+    ((Write.bin_write_pair [@mode local])
+       (Write.bin_write_float [@mode local])
+       (Write.bin_write_int [@mode local]))
     [ (3.141, 42), "(3.141, 42)", 9 ]
 ;;
 
@@ -681,10 +686,10 @@ let%expect_test "triple" =
        Write.bin_write_float
        Write.bin_write_int
        Write.bin_write_string)
-    (Write.bin_write_triple__local
-       Write.bin_write_float__local
-       Write.bin_write_int__local
-       Write.bin_write_string__local)
+    ((Write.bin_write_triple [@mode local])
+       (Write.bin_write_float [@mode local])
+       (Write.bin_write_int [@mode local])
+       (Write.bin_write_string [@mode local]))
     [ (3.141, 42, "test"), "(3.141, 42, \"test\")", 14 ]
 ;;
 
@@ -697,7 +702,7 @@ let%expect_test "list" =
     "list"
     (Read.bin_read_list Read.bin_read_int)
     (Write.bin_write_list Write.bin_write_int)
-    (Write.bin_write_list__local Write.bin_write_int__local)
+    ((Write.bin_write_list [@mode local]) (Write.bin_write_int [@mode local]))
     [ [ 42; -1; 200; 33000 ], "[42; -1; 200; 33000]", 12; [], "[]", 1 ]
 ;;
 
@@ -711,7 +716,7 @@ let%expect_test ("array" [@tags "no-js"]) =
     "array"
     bin_read_int_array
     (Write.bin_write_array Write.bin_write_int)
-    (Write.bin_write_array__local Write.bin_write_int__local)
+    ((Write.bin_write_array [@mode local]) (Write.bin_write_int [@mode local]))
     [ [| 42; -1; 200; 33000 |], "[|42; -1; 200; 33000|]", 12; [||], "[||]", 1 ];
   if Sys.word_size_in_bits = 32
   then (
@@ -734,35 +739,10 @@ let%expect_test ("array" [@tags "no-js"]) =
       bin_read_int_array bad_buf ~pos_ref:(ref 0)))
 ;;
 
-let%expect_test "hashtbl" =
-  let bindings = List.rev [ 42, 3.; 17, 2.; 42, 4. ] in
-  let htbl = Stdlib.Hashtbl.create (List.length bindings) in
-  List.iter ~f:(fun (k, v) -> Stdlib.Hashtbl.add htbl k v) bindings;
-  check_all
-    (module struct
-      type t = (int, float) Stdlib.Hashtbl.t
-
-      let to_map t =
-        Stdlib.Hashtbl.fold
-          (fun key data acc -> Map.add_multi acc ~key ~data)
-          t
-          (Map.empty (module Int))
-      ;;
-
-      let equal = Comparable.lift (Map.equal (List.equal Float.equal)) ~f:to_map
-
-      let sexp_of_t t =
-        Map.sexp_of_m__t (module Int) (List.sexp_of_t Float.sexp_of_t) (to_map t)
-      ;;
-    end)
-    28
-    "hashtbl"
-    (Read.bin_read_hashtbl Read.bin_read_int Read.bin_read_float)
-    (Write.bin_write_hashtbl Write.bin_write_int Write.bin_write_float)
-    [ htbl, "[(42, 3.); (17, 2.); (42, 4.)]", 28; Stdlib.Hashtbl.create 0, "[]", 1 ]
-;;
-
-module Array1_extras (M : Expect_test_helpers_base.With_equal) = struct
+module Array1_extras (M : sig
+    type t [@@deriving equal, sexp_of]
+  end) =
+struct
   let to_list : type a b c. (a, b, c) Array1.t -> a list =
     fun t ->
     let get i =
@@ -792,7 +772,7 @@ let%expect_test "float32_vec" =
     "float32_vec"
     Read.bin_read_float32_vec
     Write.bin_write_float32_vec
-    Write.bin_write_float32_vec__local
+    (Write.bin_write_float32_vec [@mode local])
     [ vec, "[| ... |]", size; mk_float32_vec 0, "[||]", 1 ]
 ;;
 
@@ -811,7 +791,7 @@ let%expect_test "float64_vec" =
     "float64_vec"
     Read.bin_read_float64_vec
     Write.bin_write_float64_vec
-    Write.bin_write_float64_vec__local
+    (Write.bin_write_float64_vec [@mode local])
     [ vec, "[| ... |]", size; mk_float64_vec 0, "[||]", 1 ]
 ;;
 
@@ -830,11 +810,14 @@ let%expect_test "vec" =
     "vec"
     Read.bin_read_vec
     Write.bin_write_vec
-    Write.bin_write_vec__local
+    (Write.bin_write_vec [@mode local])
     [ vec, "[| ... |]", size; mk_float64_vec 0, "[||]", 1 ]
 ;;
 
-module Array2_extras (M : Expect_test_helpers_base.With_equal) = struct
+module Array2_extras (M : sig
+    type t [@@deriving equal, sexp_of]
+  end) =
+struct
   let to_list : type a b c. (a, b, c) Array2.t -> a list list =
     fun t ->
     let get i1 i2 =
@@ -866,7 +849,7 @@ let%expect_test "float32_mat" =
     "float32_mat"
     Read.bin_read_float32_mat
     Write.bin_write_float32_mat
-    Write.bin_write_float32_mat__local
+    (Write.bin_write_float32_mat [@mode local])
     [ mat, "[| ... |]", size; mk_float32_mat 0 0, "[||]", 2 ]
 ;;
 
@@ -886,7 +869,7 @@ let%expect_test "float64_mat" =
     "float64_mat"
     Read.bin_read_float64_mat
     Write.bin_write_float64_mat
-    Write.bin_write_float64_mat__local
+    (Write.bin_write_float64_mat [@mode local])
     [ mat, "[| ... |]", size; mk_float64_mat 0 0, "[||]", 2 ]
 ;;
 
@@ -906,7 +889,7 @@ let%expect_test "mat" =
     "mat"
     Read.bin_read_mat
     Write.bin_write_mat
-    Write.bin_write_mat__local
+    (Write.bin_write_mat [@mode local])
     [ mat, "[| ... |]", size; mk_float64_mat 0 0, "[||]", 2 ]
 ;;
 
@@ -926,7 +909,7 @@ let%expect_test "bigstring" =
     "bigstring"
     Read.bin_read_bigstring
     Write.bin_write_bigstring
-    Write.bin_write_bigstring__local
+    (Write.bin_write_bigstring [@mode local])
     [ bstr, "[| ... |]", size; Random.bigstring 0, "[||]", 1 ]
 ;;
 
@@ -948,7 +931,7 @@ let%expect_test "bigstring (big)" =
     "bigstring"
     Read.bin_read_bigstring
     Write.bin_write_bigstring
-    Write.bin_write_bigstring__local
+    (Write.bin_write_bigstring [@mode local])
     [ bstr, "[| ... |]", size; Random.bigstring 0, "[||]", 1 ]
 ;;
 
@@ -959,13 +942,31 @@ let%expect_test "variant_tag" =
     "variant_tag"
     Read.bin_read_variant_int
     Write.bin_write_variant_int
-    Write.bin_write_variant_int__local
+    (Write.bin_write_variant_int [@mode local])
     [ (Stdlib.Obj.magic `Foo : int), "`Foo", 4; (Stdlib.Obj.magic `Bar : int), "`Bar", 4 ];
   let bad_buf = Bigstring.of_string "\000\000\000\000" in
   require_does_raise
     [%here]
     (Read_error (Variant_tag, 0))
     (fun () -> Read.bin_read_variant_int bad_buf ~pos_ref:(ref 0))
+;;
+
+let%expect_test "int32_bits" =
+  check_all_with_local
+    (module Int32)
+    4
+    "int32_bits"
+    Read.bin_read_int32_bits
+    Write.bin_write_int32_bits
+    (Write.bin_write_int32_bits [@mode local])
+    [ Int32.min_value, "min_value", 4
+    ; Int32.( + ) Int32.min_value Int32.one, "min_value + 1", 4
+    ; Int32.minus_one, "-1", 4
+    ; Int32.zero, "0", 4
+    ; Int32.one, "1", 4
+    ; Int32.( - ) Int32.max_value Int32.one, "max_value - 1", 4
+    ; Int32.max_value, "max_value", 4
+    ]
 ;;
 
 let%expect_test "int64_bits" =
@@ -975,7 +976,7 @@ let%expect_test "int64_bits" =
     "int64_bits"
     Read.bin_read_int64_bits
     Write.bin_write_int64_bits
-    Write.bin_write_int64_bits__local
+    (Write.bin_write_int64_bits [@mode local])
     [ Int64.min_value, "min_value", 8
     ; Int64.( + ) Int64.min_value Int64.one, "min_value + 1", 8
     ; Int64.minus_one, "-1", 8
@@ -993,7 +994,7 @@ let%expect_test "int_64bit" =
     "int_64bit"
     Read.bin_read_int_64bit
     Write.bin_write_int_64bit
-    Write.bin_write_int_64bit__local
+    (Write.bin_write_int_64bit [@mode local])
     [ Int.min_value, "min_value", 8
     ; Int.min_value + 1, "min_value + 1", 8
     ; -1, "-1", 8
@@ -1025,7 +1026,7 @@ let%expect_test "network16_int" =
     "network16_int"
     Read.bin_read_network16_int
     Write.bin_write_network16_int
-    Write.bin_write_network16_int__local
+    (Write.bin_write_network16_int [@mode local])
     [ (* No negative numbers - ambiguous on 64bit platforms *) 0, "0", 2; 1, "1", 2 ]
 ;;
 
@@ -1036,7 +1037,7 @@ let%expect_test "network32_int" =
     "network32_int"
     Read.bin_read_network32_int
     Write.bin_write_network32_int
-    Write.bin_write_network32_int__local
+    (Write.bin_write_network32_int [@mode local])
     [ (* No negative numbers - ambiguous on 64bit platforms *) 0, "0", 4; 1, "1", 4 ]
 ;;
 
@@ -1047,7 +1048,7 @@ let%expect_test "network32_int32" =
     "network32_int32"
     Read.bin_read_network32_int32
     Write.bin_write_network32_int32
-    Write.bin_write_network32_int32__local
+    (Write.bin_write_network32_int32 [@mode local])
     [ -1l, "-1", 4; 0l, "0", 4; 1l, "1", 4 ]
 ;;
 
@@ -1058,7 +1059,7 @@ let%expect_test "network64_int" =
     "network64_int"
     Read.bin_read_network64_int
     Write.bin_write_network64_int
-    Write.bin_write_network64_int__local
+    (Write.bin_write_network64_int [@mode local])
     [ -1, "-1", 8; 0, "0", 8; 1, "1", 8 ]
 ;;
 
@@ -1069,6 +1070,6 @@ let%expect_test "network64_int64" =
     "network64_int64"
     Read.bin_read_network64_int64
     Write.bin_write_network64_int64
-    Write.bin_write_network64_int64__local
+    (Write.bin_write_network64_int64 [@mode local])
     [ -1L, "-1", 8; 0L, "0", 8; 1L, "1", 8 ]
-;;
+;;]

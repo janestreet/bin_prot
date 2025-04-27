@@ -15,11 +15,13 @@ depends: [
   "ppx_compare"
   "ppx_custom_printf"
   "ppx_fields_conv"
+  "ppx_globalize"
   "ppx_optcomp"
   "ppx_sexp_conv"
   "ppx_stable_witness"
+  "ppx_template"
   "ppx_variants_conv"
-  "dune"               {>= "3.11.0"}
+  "dune"               {>= "3.17.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "A binary protocol generator"

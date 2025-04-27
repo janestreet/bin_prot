@@ -91,6 +91,12 @@ module%bench [@name "write numbers"] _ = struct
     done
   ;;
 
+  let%bench "bin_write_int32_bits" =
+    for bit = 0 to 31 do
+      ign @@ bin_write_int32_bits buf ~pos:0 (Int32.shift_left 1l bit)
+    done
+  ;;
+
   let%bench "bin_write_int64_bits" =
     for bit = 0 to 63 do
       ign @@ bin_write_int64_bits buf ~pos:0 (Int64.shift_left 1L bit)
@@ -316,6 +322,19 @@ module%bench [@name "write+read numbers"] _ = struct
         ~pos_ref:
           (pos_ref := 0;
            pos_ref)
+      |> ign_int
+    done
+  ;;
+
+  let%bench "bin_read_int32_bits" =
+    for bit = 0 to 31 do
+      ign @@ bin_write_int32_bits buf ~pos:0 (Int32.shift_left 1l bit);
+      bin_read_int32_bits
+        buf
+        ~pos_ref:
+          (pos_ref := 0;
+           pos_ref)
+      |> Int32.to_int
       |> ign_int
     done
   ;;

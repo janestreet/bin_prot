@@ -1,50 +1,51 @@
+@@ portable
+
 (** [Shape.t] are constructed by the [bin_shape] syntax extension from OCaml type
     definitions & expressions.
 
     There is a direct mapping from ocaml type definition syntax to the corresponding
-    [Shape.group] and from ocaml type expression syntax to the corresponding [Shape.t].
-*)
-type t [@@deriving sexp_of]
+    [Shape.group] and from ocaml type expression syntax to the corresponding [Shape.t]. *)
+type t : value mod contended portable [@@deriving sexp_of]
 
-(** [Tid.t] & [Vid.t] are identifiers for type-constructors & type-vars.
-    i.e. Given [type 'a t = ... ] *)
+(** [Tid.t] & [Vid.t] are identifiers for type-constructors & type-vars. i.e. Given
+    [type 'a t = ... ] *)
 
 module Tid : sig
   (* [t] *)
-  type t
+  type t : value mod contended portable
 
   val of_string : string -> t
 end
 
 module Vid : sig
   (* ['a] *)
-  type t
+  type t : value mod contended portable
 
   val of_string : string -> t
 end
 
 (** [Location.t] is required when constructing shapes for which evaluation might fail. *)
 module Location : sig
-  type t
+  type t : value mod contended portable
 
   val of_string : string -> t
 end
 
 (** [Uuid.t] is used by [basetype] and [annotate]. *)
 module Uuid : sig
-  type t
+  type t : value mod contended portable
 
-  (** [of_string s] returns a [Uuid.t] wrapping [s].
-      There are currently no requirements of the format of [s] although it is common to
-      use string in `uuid' format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-      There is also no attempt to detect & reject duplicates *)
+  (** [of_string s] returns a [Uuid.t] wrapping [s]. There are currently no requirements
+      of the format of [s] although it is common to use string in `uuid' format:
+      XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX There is also no attempt to detect & reject
+      duplicates *)
   val of_string : string -> t
 
   val to_string : t -> string
 end
 
 (** group of mutually recursive type definitions *)
-type group
+type group : value mod contended portable
 
 (** This function is generative; repeated calls create distinct groups *)
 val group : Location.t -> (Tid.t * Vid.t list * t) list -> group
@@ -67,13 +68,13 @@ val top_app : group -> Tid.t -> t list -> t
 
 val var : Location.t -> Vid.t -> t
 
-(** Built-in types and types with custom serialization: i.e. int,list,...  To avoid
+(** Built-in types and types with custom serialization: i.e. int,list,... To avoid
     accidental protocol compatibility, pass a UUID as the [string] argument *)
 val basetype : Uuid.t -> t list -> t
 
-(** [a = annotate s t] creates a shape [a] distinguished, but dependent on shape [t].
-    Very much as [record [(s,t)]] does.
-    But with [annotate] the ocaml record type does not exist. *)
+(** [a = annotate s t] creates a shape [a] distinguished, but dependent on shape [t]. Very
+    much as [record [(s,t)]] does. But with [annotate] the ocaml record type does not
+    exist. *)
 val annotate : Uuid.t -> t -> t
 
 module Stable : sig
@@ -97,15 +98,17 @@ end
     hence equivalence at the Shape.t level.
 
     [Canonical.t] may also be constructed with various functions:
-    [annotate, basetype, tuple, record, variant, poly_variant, fix, recurse, ..]
-    which might be used when setting up unit tests or expected shapes. *)
+    [annotate, basetype, tuple, record, variant, poly_variant, fix, recurse, ..] which
+    might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t [@@deriving compare, sexp]
+  type t [@@deriving compare, globalize, sexp]
 
   val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t
+  val to_md5_local : local_ t -> local_ Md5_lib.t
   val of_md5 : Md5_lib.t -> t
+  val of_md5_local : local_ Md5_lib.t -> local_ t
 end
 
 module Expert : sig
@@ -186,12 +189,12 @@ val eval : t -> Canonical.t
 (** [eval_to_digest t] returns a hash-value direct from the [Shape.t], potentially
     avoiding the intermediate [Canonical.t] from being constructed. This is important as
     the size of a canonical-shape might be exponential in terms of the size of the shape
-    expression.  The following holds:
+    expression. The following holds:
     [ Digest.(eval_to_digest exp = Canonical.to_digest (eval exp)) ] *)
 val eval_to_digest : t -> Digest.t
 
-(** [eval_to_digest_string t] ==  [Digest.to_hex (eval_to_digest t)]
-    Convenience function useful for writing unit tests. *)
+(** [eval_to_digest_string t] == [Digest.to_hex (eval_to_digest t)] Convenience function
+    useful for writing unit tests. *)
 val eval_to_digest_string : t -> string
 
 module For_typerep : sig

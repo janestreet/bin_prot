@@ -23,6 +23,7 @@ module Maximum = struct
   let bin_size_int_16bit = 2
   let bin_size_int_32bit = 4
   let bin_size_int_64bit = 8
+  let bin_size_int32_bits = 4
   let bin_size_int64_bits = 8
   let bin_size_network16_int = 2
   let bin_size_network32_int = 4
@@ -52,7 +53,6 @@ module Minimum = struct
   let bin_size_len = bin_size_nat0
   let bin_size_list = bin_size_len
   let bin_size_array = bin_size_len
-  let bin_size_hashtbl = bin_size_len
   let bin_size_string = bin_size_len
   let bin_size_bytes = bin_size_len
   let bin_size_vec = bin_size_len
@@ -69,6 +69,7 @@ module Minimum = struct
   let bin_size_int_16bit = Maximum.bin_size_int_16bit
   let bin_size_int_32bit = Maximum.bin_size_int_32bit
   let bin_size_int_64bit = Maximum.bin_size_int_64bit
+  let bin_size_int32_bits = Maximum.bin_size_int32_bits
   let bin_size_int64_bits = Maximum.bin_size_int64_bits
   let bin_size_network16_int = Maximum.bin_size_network16_int
   let bin_size_network32_int = Maximum.bin_size_network32_int
@@ -164,6 +165,9 @@ let bin_size_ref bin_size_el r = bin_size_el !r
 let bin_size_lazy_t bin_size_el lv = bin_size_el (Base.Lazy.force lv)
 let bin_size_lazy = bin_size_lazy_t
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 let bin_size_option bin_size_el = function
   | None -> 1
   | Some v -> 1 + bin_size_el v
@@ -183,14 +187,18 @@ let bin_size_list =
       loop ~bin_size_el ~size_acc:(size_acc + bin_size_el hd) ~len_acc:(len_acc + 1) tl
   in
   fun bin_size_el lst -> loop ~bin_size_el ~size_acc:0 ~len_acc:0 lst
-;;
+;;]
 
 let bin_size_len len =
   let plen = Nat0.unsafe_of_int len in
   bin_size_nat0 plen
 ;;
 
-external float_array_length : local_ Float.Array.t -> int = "%floatarray_length"
+external float_array_length
+  :  local_ Float.Array.t
+  -> int
+  @@ portable
+  = "%floatarray_length"
 
 let bin_size_floatarray ar =
   let len = float_array_length ar in
@@ -221,31 +229,22 @@ let bin_size_array (type a) bin_size_el ar =
     bin_size_array_loop bin_size_el ar ~total_len ~n)
 ;;
 
-let bin_size_hashtbl bin_size_key bin_size_val htbl =
-  let cnt_ref = ref 0 in
-  let coll_htbl k v total_len =
-    incr cnt_ref;
-    total_len + bin_size_key k + bin_size_val v
-  in
-  let len = Hashtbl.length htbl in
-  let total_len = Hashtbl.fold coll_htbl htbl (bin_size_len len) in
-  if !cnt_ref <> len then raise_concurrent_modification "bin_size_hashtbl";
-  total_len
-;;
-
 external array1_dim
   :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
   -> int
+  @@ portable
   = "%caml_ba_dim_1"
 
 external array2_dim1
   :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
   -> int
+  @@ portable
   = "%caml_ba_dim_1"
 
 external array2_dim2
   :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
   -> int
+  @@ portable
   = "%caml_ba_dim_2"
 
 let bin_size_gen_vec vec multiplier =
@@ -273,6 +272,7 @@ let bin_size_int_8bit _ = 1
 let bin_size_int_16bit _ = 2
 let bin_size_int_32bit _ = 4
 let bin_size_int_64bit _ = 8
+let bin_size_int32_bits _ = 4
 let bin_size_int64_bits _ = 8
 let bin_size_network16_int _ = 2
 let bin_size_network32_int _ = 4
@@ -282,60 +282,40 @@ let bin_size_network64_int64 _ = 8
 
 (* Local versions *)
 
-let bin_size_unit__local = bin_size_unit
-let bin_size_bool__local = bin_size_bool
-let bin_size_string__local = bin_size_string
-let bin_size_bytes__local = bin_size_bytes
-let bin_size_char__local = bin_size_char
-let bin_size_int__local = bin_size_int
-let bin_size_float__local = bin_size_float
-let bin_size_int32__local = bin_size_int32
-let bin_size_int64__local = bin_size_int64
-let bin_size_nativeint__local = bin_size_nativeint
-let bin_size_nat0__local = bin_size_nat0
-let bin_size_ref__local = bin_size_ref
-let bin_size_lazy_t__local = bin_size_lazy_t
-let bin_size_lazy__local = bin_size_lazy
-
-let bin_size_option__local bin_size_el = function
-  | None -> 1
-  | Some v -> 1 + bin_size_el v
-;;
-
-let bin_size_pair__local bin_size_a bin_size_b (a, b) = bin_size_a a + bin_size_b b
-
-let bin_size_triple__local bin_size_a bin_size_b bin_size_c (a, b, c) =
-  bin_size_a a + bin_size_b b + bin_size_c c
-;;
-
-let bin_size_list__local =
-  let rec loop ~bin_size_el ~size_acc ~len_acc lst =
-    match lst with
-    | [] -> size_acc + bin_size_nat0 (Nat0.unsafe_of_int len_acc)
-    | hd :: tl ->
-      loop ~bin_size_el ~size_acc:(size_acc + bin_size_el hd) ~len_acc:(len_acc + 1) tl
-  in
-  fun bin_size_el lst -> loop ~bin_size_el ~size_acc:0 ~len_acc:0 lst
-;;
-
-let bin_size_array__local = bin_size_array
-let bin_size_float32_vec__local = bin_size_float32_vec
-let bin_size_float64_vec__local = bin_size_float64_vec
-let bin_size_vec__local = bin_size_vec
-let bin_size_float32_mat__local = bin_size_float32_mat
-let bin_size_float64_mat__local = bin_size_float64_mat
-let bin_size_mat__local = bin_size_mat
-let bin_size_bigstring__local = bin_size_bigstring
-let bin_size_floatarray__local = bin_size_floatarray
-let bin_size_variant_int__local = bin_size_variant_int
-let bin_size_int_8bit__local = bin_size_int_8bit
-let bin_size_int_16bit__local = bin_size_int_16bit
-let bin_size_int_32bit__local = bin_size_int_32bit
-let bin_size_int_64bit__local = bin_size_int_64bit
-let bin_size_int64_bits__local = bin_size_int64_bits
-let bin_size_network16_int__local = bin_size_network16_int
-let bin_size_network32_int__local = bin_size_network32_int
-let bin_size_network32_int32__local = bin_size_network32_int32
-let bin_size_network64_int__local = bin_size_network64_int
-let bin_size_network64_int64__local = bin_size_network64_int64
-let bin_size_md5__local = bin_size_md5
+[%%template
+let[@mode local] bin_size_unit = bin_size_unit
+let[@mode local] bin_size_bool = bin_size_bool
+let[@mode local] bin_size_string = bin_size_string
+let[@mode local] bin_size_bytes = bin_size_bytes
+let[@mode local] bin_size_char = bin_size_char
+let[@mode local] bin_size_int = bin_size_int
+let[@mode local] bin_size_float = bin_size_float
+let[@mode local] bin_size_int32 = bin_size_int32
+let[@mode local] bin_size_int64 = bin_size_int64
+let[@mode local] bin_size_nativeint = bin_size_nativeint
+let[@mode local] bin_size_nat0 = bin_size_nat0
+let[@mode local] bin_size_ref = bin_size_ref
+let[@mode local] bin_size_lazy_t = bin_size_lazy_t
+let[@mode local] bin_size_lazy = bin_size_lazy
+let[@mode local] bin_size_array = bin_size_array
+let[@mode local] bin_size_float32_vec = bin_size_float32_vec
+let[@mode local] bin_size_float64_vec = bin_size_float64_vec
+let[@mode local] bin_size_vec = bin_size_vec
+let[@mode local] bin_size_float32_mat = bin_size_float32_mat
+let[@mode local] bin_size_float64_mat = bin_size_float64_mat
+let[@mode local] bin_size_mat = bin_size_mat
+let[@mode local] bin_size_bigstring = bin_size_bigstring
+let[@mode local] bin_size_floatarray = bin_size_floatarray
+let[@mode local] bin_size_variant_int = bin_size_variant_int
+let[@mode local] bin_size_int_8bit = bin_size_int_8bit
+let[@mode local] bin_size_int_16bit = bin_size_int_16bit
+let[@mode local] bin_size_int_32bit = bin_size_int_32bit
+let[@mode local] bin_size_int_64bit = bin_size_int_64bit
+let[@mode local] bin_size_int32_bits = bin_size_int32_bits
+let[@mode local] bin_size_int64_bits = bin_size_int64_bits
+let[@mode local] bin_size_network16_int = bin_size_network16_int
+let[@mode local] bin_size_network32_int = bin_size_network32_int
+let[@mode local] bin_size_network32_int32 = bin_size_network32_int32
+let[@mode local] bin_size_network64_int = bin_size_network64_int
+let[@mode local] bin_size_network64_int64 = bin_size_network64_int64
+let[@mode local] bin_size_md5 = bin_size_md5]

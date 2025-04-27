@@ -16,6 +16,11 @@ module Code = struct
   ;;
 
   let char c = printf "'\\x%x'" (to_int c)
+
+  let pipe_char c =
+    printf "| ";
+    char c
+  ;;
 end
 
 module Sig = struct

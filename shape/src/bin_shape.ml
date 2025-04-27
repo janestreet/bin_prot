@@ -1,13 +1,17 @@
 open! Base
 
-module Location : sig
-  include Identifiable.S
+module Location : sig @@ portable
+  type t : value mod contended portable
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
-module Uuid : sig
-  include Identifiable.S
+module Uuid : sig @@ portable
+  type t : value mod contended portable
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
@@ -23,7 +27,7 @@ let equal_option equal a b =
   | Some x, Some y -> equal x y
 ;;
 
-module Sorted_table : sig
+module Sorted_table : sig @@ portable
   type 'a t [@@deriving compare, sexp]
 
   val create : Location.t -> eq:('a -> 'a -> bool) -> (string * 'a) list -> 'a t
@@ -62,11 +66,13 @@ end = struct
   let map t ~f = { sorted = List.map t.sorted ~f:(fun (k, v) -> k, f v) }
 end
 
-module Digest : sig
-  type t = Md5_lib.t [@@deriving compare, sexp]
+module Digest : sig @@ portable
+  type t = Md5_lib.t [@@deriving compare, globalize, sexp]
 
   val to_md5 : t -> Md5_lib.t
+  val to_md5_local : local_ t -> local_ Md5_lib.t
   val of_md5 : Md5_lib.t -> t
+  val of_md5_local : local_ Md5_lib.t -> local_ t
   val to_hex : t -> string
   val constructor : string -> t list -> t
   val list : t list -> t
@@ -79,7 +85,9 @@ end = struct
   include Md5_lib
 
   let to_md5 t = t
+  let to_md5_local t = t
   let of_md5 t = t
+  let of_md5_local t = t
   let sexp_of_t t = t |> to_hex |> sexp_of_string
   let t_of_sexp s = s |> string_of_sexp |> of_hex_exn
   let uuid u = string (Uuid.to_string u)
@@ -132,9 +140,7 @@ module Canonical_exp_constructor = struct
   let to_string t = Sexp.to_string (sexp_of_t (fun _ -> Atom "...") t)
 end
 
-module Create_digest : sig
-  (* Digest various expression forms *)
-
+module Create_digest : sig @@ portable (* Digest various expression forms *)
   val digest_layer : Digest.t Canonical_exp_constructor.t -> Digest.t
 end = struct
   let digest_layer = function
@@ -178,7 +184,7 @@ module type Canonical = sig
 
   val to_digest : t -> Digest.t
 
-  module Exp1 : sig
+  module Exp1 : sig @@ portable
     type _ t
 
     val var : int -> _ t
@@ -191,11 +197,11 @@ module type Canonical = sig
       -> (Visibility.opaque t option Sorted_table.t, string) Result.t
   end
 
-  module Def : sig
+  module Def : sig @@ portable
     type t = Visibility.visible Exp1.t
   end
 
-  module Create : sig
+  module Create : sig @@ portable
     val annotate : Uuid.t -> _ Exp1.t -> _ Exp1.t
     val basetype : Uuid.t -> _ Exp1.t list -> _ Exp1.t
     val tuple : _ Exp1.t list -> _ Exp1.t
@@ -207,7 +213,9 @@ module type Canonical = sig
   end
 end
 
-module Canonical_digest : Canonical = struct
+module Canonical_digest : sig @@ portable
+  include Canonical
+end = struct
   type t = Canonical of Digest.t
 
   let to_digest (Canonical x) = x
@@ -367,33 +375,32 @@ module Canonical_full = struct
   let to_string_hum t = Sexp.to_string_hum (sexp_of_t t)
 end
 
-module Tid : sig
-  include Identifiable.S
+module Tid : sig @@ portable
+  type t : value mod contended portable
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
-module Vid : sig
-  include Identifiable.S
+module Vid : sig @@ portable
+  type t : value mod contended portable
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
-module Gid : sig
+module Gid : sig @@ portable
   (* unique group-id, used as key for Tenv below *)
-  type t [@@deriving compare, equal, sexp]
+  type t : value mod contended portable [@@deriving compare, equal, sexp]
 
   val create : unit -> t
 end = struct
   type t = int [@@deriving compare, equal, sexp]
 
-  let r = ref 0
-
-  let create () =
-    let u = !r in
-    r := 1 + u;
-    u
-  ;;
+  let r = Atomic.make 0
+  let create () = Atomic.fetch_and_add r 1
 end
 
 module Expression = struct
@@ -403,29 +410,41 @@ module Expression = struct
     ]
   [@@deriving compare, equal, sexp]
 
-  module Group : sig
-    type 'a t [@@deriving compare, equal, sexp]
+  module Group : sig @@ portable
+    type ('a : value mod contended portable) t : value mod contended portable
+    [@@deriving compare, equal, sexp]
 
     val create : Location.t -> (Tid.t * Vid.t list * 'a) list -> 'a t
     val id : 'a t -> Gid.t
     val lookup : 'a t -> Tid.t -> Vid.t list * 'a
   end = struct
-    type 'a t =
-      { gid : Gid.t
-      ; loc : Location.t
-      ; members : (Tid.t * (Vid.t list * 'a)) list
-      }
-    [@@deriving compare, equal, sexp]
+    module Inner = struct
+      type 'a t =
+        { gid : Gid.t
+        ; loc : Location.t
+        ; members : (Tid.t * (Vid.t list * 'a)) list
+        }
+      [@@unsafe_allow_any_mode_crossing] [@@deriving compare, equal, sexp]
+    end
+
+    type ('a : value mod contended portable) t : value mod contended portable =
+      { inner : 'a Inner.t }
+    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+    let compare compare_a t1 t2 = Inner.compare compare_a t1.inner t2.inner
+    let equal equal_a t1 t2 = Inner.equal equal_a t1.inner t2.inner
+    let sexp_of_t sexp_of_a { inner } = Inner.sexp_of_t sexp_of_a inner
+    let t_of_sexp a_of_sexp sexp = { inner = Inner.t_of_sexp a_of_sexp sexp }
 
     let create loc trips =
       let gid = Gid.create () in
       let members = List.map trips ~f:(fun (x, vs, t) -> x, (vs, t)) in
-      { gid; loc; members }
+      { inner = { gid; loc; members } }
     ;;
 
-    let id g = g.gid
+    let id { inner = g } = g.gid
 
-    let lookup g tid =
+    let lookup { inner = g } tid =
       match List.Assoc.find g.members ~equal:Tid.( = ) tid with
       | Some scheme -> scheme
       | None ->
@@ -439,7 +458,7 @@ module Expression = struct
 
   module Stable = struct
     module V1 = struct
-      type t =
+      type t : value mod contended portable =
         | Annotate of Uuid.t * t
         | Base of Uuid.t * t list
         | Record of (string * t) list
@@ -449,7 +468,7 @@ module Expression = struct
         | Var of (Location.t * Vid.t)
         | Rec_app of Tid.t * t list
         | Top_app of t Group.t * Tid.t * t list
-      [@@deriving equal, sexp, variants]
+      [@@unsafe_allow_any_mode_crossing] [@@deriving equal, sexp, variants]
     end
   end
 
@@ -518,7 +537,7 @@ include Expression
 module Evaluation (Canonical : Canonical) = struct
   (* [Venv.t]
      Environment for resolving type-vars *)
-  module Venv : sig
+  module Venv : sig @@ portable
     type t
 
     val lookup : t -> Vid.t -> Visibility.visible Canonical.Exp1.t option
@@ -526,8 +545,9 @@ module Evaluation (Canonical : Canonical) = struct
   end = struct
     type t = Visibility.visible Canonical.Exp1.t Map.M(Vid).t
 
-    let create =
+    let create list =
       List.fold
+        list
         ~init:(Map.empty (module Vid))
         ~f:(fun t (k, v) -> Map.set ~key:k ~data:v t)
     ;;
@@ -543,12 +563,12 @@ module Evaluation (Canonical : Canonical) = struct
 
   (* [Tenv.t]
      Environment for resolving type-definitions *)
-  module Tenv : sig
+  module Tenv : sig @@ portable
     type key = Gid.t * Tid.t
     type t
 
     val find : t -> key -> [ `Recursion_level of int ] option
-    val empty : t
+    val empty : unit -> t
     val extend : t -> key -> [ `Recursion_level of int ] -> t
   end = struct
     module Key = struct
@@ -557,20 +577,21 @@ module Evaluation (Canonical : Canonical) = struct
       end
 
       include T
-      include Comparator.Make (T)
+
+      include%template Comparator.Make [@modality portable] (T)
     end
 
     type key = Key.t
     type t = [ `Recursion_level of int ] Map.M(Key).t
 
     let find t k = Map.find t k
-    let empty = Map.empty (module Key)
+    let empty () = Map.empty (module Key)
     let extend t k v = Map.set ~key:k ~data:v t
   end
 
   (* [Defining.t]
      Monad for managing un-rolling depth, and maintaing a [Tenv.t] *)
-  module Defining : sig
+  module Defining : sig @@ portable
     type 'a t
 
     val return : 'a -> 'a t
@@ -600,7 +621,7 @@ module Evaluation (Canonical : Canonical) = struct
          def_t ~depth:(depth + 1) tenv)
     ;;
 
-    let exec t = t ~depth:0 Tenv.empty
+    let exec t = t ~depth:0 (Tenv.empty ())
   end
 
   type 'a defining = 'a Defining.t

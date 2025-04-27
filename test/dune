@@ -12,4 +12,4 @@
    integers_repr_tests_js.ml integers_repr_tests_wasm.ml)
  (action
   (bash
-    "diff <(\necho '869e6b3143f14201f406eac9c05c4cdb  core/blob_stability_tests.ml'\necho '2db396dfced6ae8d095f308acb4c80eb  integers_repr_tests_64bit.ml'\necho '9f7b6332177a4ae9547d37d17008d7ef  integers_repr_tests_js.ml'\necho '22f653bfba79ce30c22fe378c596df54  integers_repr_tests_wasm.ml'\n  ) <(md5sum %{deps})")))
+    "diff <(\necho '869e6b3143f14201f406eac9c05c4cdb  core/blob_stability_tests.ml'\necho 'a9ed028fa16f307982c196f647d05afa  integers_repr_tests_64bit.ml'\necho 'a17ffcd3bf1e15dbca0ee54ec5b95c58  integers_repr_tests_js.ml'\necho 'e747bd85320575c771fc62a0d3085d29  integers_repr_tests_wasm.ml'\n  ) <(md5sum %{deps})")))

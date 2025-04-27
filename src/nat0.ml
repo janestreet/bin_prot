@@ -7,4 +7,4 @@ let of_int n =
   n
 ;;
 
-external unsafe_of_int : int -> t = "%identity"
+external unsafe_of_int : int -> t @@ portable = "%identity"

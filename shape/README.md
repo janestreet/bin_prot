@@ -33,10 +33,9 @@ have the same opinion of the types which will be communicated.
   perhaps unexpectedly, giving a clear indication that the protocol
   version must be incremented.
 
-* We extend `async_rpc` to check dynamically that the protocol
-  expected by client and server are shape-compatible.  Shape
-  incompatibility prevents communication, and fails in a well-defined
-  manner.
+* This is not implemented right now, but we could extend `async_rpc` to check dynamically
+  that the protocol expected by client and server are shape-compatible. Shape
+  incompatibility prevents communication, and fails in a well-defined manner.
 
 Motivation for shape incompatibility
 ====================================
@@ -425,11 +424,13 @@ writers.
 
 Async_rpc
 ====================================
+This section describes a potential use-case of shapes in `async_rpc`. This is not how
+`async_rpc` works today; RPC servers and clients can communicate with serialization
+compatible types that have different shapes without issue.
 
-We extend `Async_rpc` to support dynamically checking that protocols
-as expected by client and server are shape-compatible.  Shape
-incompatibility prevents communication, and fails in a well-defined
-manner.
+We can extend `Async_rpc` to support dynamically checking that protocols as expected by
+client and server are shape-compatible. Shape incompatibility prevents communication, and
+fails in a well-defined manner.
 
 Shape checking is achieved via a new protocol in the `async_rpc`
 framework.  To avoid confusion with the existing use of the term

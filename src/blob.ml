@@ -40,7 +40,8 @@ type 'a id = 'a
 
 include T
 
-include Utils.Make_binable1_without_uuid [@alert "-legacy"] (struct
+include%template
+  Utils.Make_binable1_without_uuid [@modality portable] [@alert "-legacy"] (struct
     module Binable = T
 
     type 'a t = 'a T.t
@@ -88,7 +89,8 @@ module Opaque = struct
     end
 
     include T
-    include Utils.Of_minimal (T)
+
+    include%template Utils.Of_minimal [@modality portable] (T)
 
     let to_opaque blob bin_writer = Utils.bin_dump bin_writer blob
     let of_opaque_exn (t : t) bin_reader = bin_reader.Type_class.read t ~pos_ref:(ref 0)
@@ -134,7 +136,8 @@ module Opaque = struct
     end
 
     include T
-    include Utils.Of_minimal (T)
+
+    include%template Utils.Of_minimal [@modality portable] (T)
 
     let length t = String.length t
 

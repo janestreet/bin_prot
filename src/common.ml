@@ -116,6 +116,7 @@ external unsafe_blit_buf
   -> dst:buf
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_buf_stub"
 
 let blit_buf ?src_pos ~src ?dst_pos ~dst len =
@@ -144,6 +145,7 @@ external unsafe_blit_string_buf
   -> buf
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_string_buf_stub"
 [@@noalloc]
 
@@ -154,6 +156,7 @@ external unsafe_blit_bytes_buf
   -> buf
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_bytes_buf_stub"
 [@@noalloc]
 
@@ -199,9 +202,10 @@ external unsafe_blit_buf_string
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_buf_bytes_stub"
 [@@noalloc]
 
@@ -209,9 +213,10 @@ external unsafe_blit_buf_bytes
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_buf_bytes_stub"
 [@@noalloc]
 
@@ -263,6 +268,7 @@ external unsafe_blit_float_array_buf
   -> buf
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_float_array_buf_stub"
 [@@noalloc]
 
@@ -273,6 +279,7 @@ external unsafe_blit_buf_float_array
   -> float array
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_buf_float_array_stub"
 [@@noalloc]
 
@@ -283,6 +290,7 @@ external unsafe_blit_floatarray_buf
   -> buf
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_float_array_buf_stub"
 [@@noalloc]
 
@@ -293,6 +301,7 @@ external unsafe_blit_buf_floatarray
   -> floatarray
   -> len:int
   -> unit
+  @@ portable
   = "bin_prot_blit_buf_float_array_stub"
 [@@noalloc]
 

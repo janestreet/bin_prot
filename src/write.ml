@@ -6,14 +6,49 @@
 open Common
 include Write_intf.Definitions
 
-external unsafe_set : buf -> int -> local_ char -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set8 : buf -> int -> local_ int -> unit = "%caml_ba_unsafe_set_1"
-external unsafe_set16 : buf -> int -> local_ int -> unit = "%caml_bigstring_set16u"
-external unsafe_set32 : buf -> int -> local_ int32 -> unit = "%caml_bigstring_set32u"
-external unsafe_set64 : buf -> int -> local_ int64 -> unit = "%caml_bigstring_set64u"
-external bswap16 : (int[@local_opt]) -> (int[@local_opt]) = "%bswap16"
-external bswap32 : (int32[@local_opt]) -> (int32[@local_opt]) = "%bswap_int32"
-external bswap64 : (int64[@local_opt]) -> (int64[@local_opt]) = "%bswap_int64"
+external unsafe_set
+  :  buf
+  -> int
+  -> local_ char
+  -> unit
+  @@ portable
+  = "%caml_ba_unsafe_set_1"
+
+external unsafe_set8
+  :  buf
+  -> int
+  -> local_ int
+  -> unit
+  @@ portable
+  = "%caml_ba_unsafe_set_1"
+
+external unsafe_set16
+  :  buf
+  -> int
+  -> local_ int
+  -> unit
+  @@ portable
+  = "%caml_bigstring_set16u"
+
+external unsafe_set32
+  :  buf
+  -> int
+  -> local_ int32
+  -> unit
+  @@ portable
+  = "%caml_bigstring_set32u"
+
+external unsafe_set64
+  :  buf
+  -> int
+  -> local_ int64
+  -> unit
+  @@ portable
+  = "%caml_bigstring_set64u"
+
+external bswap16 : (int[@local_opt]) -> (int[@local_opt]) @@ portable = "%bswap16"
+external bswap32 : (int32[@local_opt]) -> (int32[@local_opt]) @@ portable = "%bswap_int32"
+external bswap64 : (int64[@local_opt]) -> (int64[@local_opt]) @@ portable = "%bswap_int64"
 
 (*$ open Bin_prot_cinaps $*)
 
@@ -233,6 +268,9 @@ let bin_write_lazy bin_write_el buf ~pos lv =
   bin_write_el buf ~pos v
 ;;
 
+[%%template
+[@@@mode.default m = (global, local)]
+
 let bin_write_option bin_write_el buf ~pos = function
   | None -> bin_write_bool buf ~pos false
   | Some v ->
@@ -260,10 +298,10 @@ let bin_write_list =
       loop ~bin_write_el ~buf ~els_pos:new_els_pos tl
   in
   fun bin_write_el buf ~pos lst ->
-    let len = Nat0.unsafe_of_int (List.length lst) in
+    let len = Nat0.unsafe_of_int (Base.List.length lst) in
     let els_pos = bin_write_nat0 buf ~pos len in
     loop ~bin_write_el ~buf ~els_pos lst
-;;
+;;]
 
 let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
   let len = length a in
@@ -276,7 +314,11 @@ let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
   next
 ;;
 
-external float_array_length : local_ Float.Array.t -> int = "%floatarray_length"
+external float_array_length
+  :  local_ Float.Array.t
+  -> int
+  @@ portable
+  = "%floatarray_length"
 
 let bin_write_floatarray buf ~pos a =
   bin_write_float_array_gen
@@ -316,93 +358,68 @@ let bin_write_array (type a) bin_write_el buf ~pos ar =
     bin_write_array_loop bin_write_el buf ~els_pos ~n ar)
 ;;
 
-let bin_write_hashtbl bin_write_key bin_write_val buf ~pos htbl =
-  let len = Hashtbl.length htbl in
-  let plen = Nat0.unsafe_of_int len in
-  let els_pos = bin_write_nat0 buf ~pos plen in
-  let cnt_ref = ref 0 in
-  let coll_htbl k v els_pos =
-    incr cnt_ref;
-    let new_els_pos = bin_write_key buf ~pos:els_pos k in
-    bin_write_val buf ~pos:new_els_pos v
-  in
-  let res_pos = Hashtbl.fold coll_htbl htbl els_pos in
-  if !cnt_ref <> len then raise_concurrent_modification "bin_write_hashtbl";
-  res_pos
-;;
+external buf_of_array1
+  :  (_ Stdlib.Bigarray.Array1.t[@local_opt])
+  -> (buf[@local_opt])
+  @@ portable
+  = "%identity"
 
-external buf_of_vec32 : (vec32[@local_opt]) -> (buf[@local_opt]) = "%identity"
-external buf_of_vec64 : (vec64[@local_opt]) -> (buf[@local_opt]) = "%identity"
-external buf_of_mat32 : (mat32[@local_opt]) -> (buf[@local_opt]) = "%identity"
-external buf_of_mat64 : (mat64[@local_opt]) -> (buf[@local_opt]) = "%identity"
+external buf_of_array2
+  :  (_ Stdlib.Bigarray.Array2.t[@local_opt])
+  -> (buf[@local_opt])
+  @@ portable
+  = "%identity"
 
-external array1_dim
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
-  -> int
-  = "%caml_ba_dim_1"
+module Bigarray = struct
+  include Bigarray
+  include Local_bigarray
+end
 
-external array2_dim1
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
-  -> int
-  = "%caml_ba_dim_1"
-
-external array2_dim2
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
-  -> int
-  = "%caml_ba_dim_2"
-
-let bin_write_float32_vec buf ~pos v =
-  let len = array1_dim v in
+let bin_write_bigarray1
+  (type k)
+  ~(kind : (_, k) Stdlib.Bigarray.kind)
+  buf
+  ~pos
+  (local_ (v : (_, k, _) Stdlib.Bigarray.Array1.t))
+  =
+  let len = Bigarray.Array1.dim v in
   let plen = Nat0.unsafe_of_int len in
   let pos = bin_write_nat0 buf ~pos plen in
-  let size = len * 4 in
+  let size = len * Stdlib.Bigarray.kind_size_in_bytes kind in
   let next = pos + size in
   check_next buf next;
-  unsafe_blit_buf ~src:(buf_of_vec32 v) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
+  unsafe_blit_buf ~src:(buf_of_array1 v) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
   next
 ;;
 
-let bin_write_float64_vec buf ~pos v =
-  let len = array1_dim v in
-  let plen = Nat0.unsafe_of_int len in
-  let pos = bin_write_nat0 buf ~pos plen in
-  let size = len * 8 in
-  let next = pos + size in
-  check_next buf next;
-  unsafe_blit_buf ~src:(buf_of_vec64 v) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
-  next
-;;
-
+let bin_write_float32_vec = bin_write_bigarray1 ~kind:Bigarray.Float32
+let bin_write_float64_vec = bin_write_bigarray1 ~kind:Bigarray.Float64
 let bin_write_vec = bin_write_float64_vec
 
-let bin_write_float32_mat buf ~pos m =
-  let len1 = array2_dim1 m in
-  let len2 = array2_dim2 m in
+let bin_write_bigarray2
+  (type k)
+  ~(kind : (_, k) Stdlib.Bigarray.kind)
+  buf
+  ~pos
+  (local_ (m : (_, k, _) Stdlib.Bigarray.Array2.t))
+  =
+  let len1 = Bigarray.Array2.dim1 m in
+  let len2 = Bigarray.Array2.dim2 m in
   let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len1) in
   let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len2) in
-  let size = len1 * len2 * 4 in
+  let size = len1 * len2 * Stdlib.Bigarray.kind_size_in_bytes kind in
   let next = pos + size in
   check_next buf next;
-  unsafe_blit_buf ~src:(buf_of_mat32 m) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
+  unsafe_blit_buf ~src:(buf_of_array2 m) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
   next
 ;;
 
-let bin_write_float64_mat buf ~pos m =
-  let len1 = array2_dim1 m in
-  let len2 = array2_dim2 m in
-  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len1) in
-  let pos = bin_write_nat0 buf ~pos (Nat0.unsafe_of_int len2) in
-  let size = len1 * len2 * 8 in
-  let next = pos + size in
-  check_next buf next;
-  unsafe_blit_buf ~src:(buf_of_mat64 m) ~src_pos:0 ~dst:buf ~dst_pos:pos ~len:size;
-  next
-;;
-
+let bin_write_float32_mat = bin_write_bigarray2 ~kind:Bigarray.Float32
+let bin_write_float64_mat = bin_write_bigarray2 ~kind:Bigarray.Float64
 let bin_write_mat = bin_write_float64_mat
 
 let bin_write_bigstring buf ~pos s =
-  let len = array1_dim s in
+  let len = Bigarray.Array1.dim s in
   let plen = Nat0.unsafe_of_int len in
   let pos = bin_write_nat0 buf ~pos plen in
   let next = pos + len in
@@ -447,6 +464,14 @@ let bin_write_int_64bit buf ~pos n =
   let next = pos + 8 in
   check_next buf next;
   unsafe_set64le buf pos (Int64.of_int n);
+  next
+;;
+
+let bin_write_int32_bits buf ~pos n =
+  assert_pos pos;
+  let next = pos + 4 in
+  check_next buf next;
+  unsafe_set32le buf pos n;
   next
 ;;
 
@@ -502,12 +527,14 @@ external unsafe_string_get32
   :  (string[@local_opt])
   -> int
   -> (int32[@local_opt])
+  @@ portable
   = "%caml_string_get32u"
 
 external unsafe_string_get64
   :  (string[@local_opt])
   -> int
   -> (int64[@local_opt])
+  @@ portable
   = "%caml_string_get64u"
 
 let bin_write_md5 buf ~pos x =
@@ -536,70 +563,41 @@ let bin_write_md5 buf ~pos x =
 
 (* Local versions *)
 
-let bin_write_unit__local = bin_write_unit
-let bin_write_bool__local = bin_write_bool
-let bin_write_string__local = bin_write_string
-let bin_write_bytes__local = bin_write_bytes
-let bin_write_char__local = bin_write_char
-let bin_write_int__local = bin_write_int
-let bin_write_nat0__local = bin_write_nat0
-let bin_write_float__local = bin_write_float
-let bin_write_int32__local = bin_write_int32
-let bin_write_int64__local = bin_write_int64
-let bin_write_nativeint__local = bin_write_nativeint
-let bin_write_ref__local = bin_write_ref
-let bin_write_lazy__local = bin_write_lazy
-
-let bin_write_option__local bin_write_el buf ~pos = function
-  | None -> bin_write_bool buf ~pos false
-  | Some v ->
-    let next = bin_write_bool buf ~pos true in
-    bin_write_el buf ~pos:next v
-;;
-
-let bin_write_pair__local bin_write_a bin_write_b buf ~pos (a, b) =
-  let next = bin_write_a buf ~pos a in
-  bin_write_b buf ~pos:next b
-;;
-
-let bin_write_triple__local bin_write_a bin_write_b bin_write_c buf ~pos (a, b, c) =
-  let next1 = bin_write_a buf ~pos a in
-  let next2 = bin_write_b buf ~pos:next1 b in
-  bin_write_c buf ~pos:next2 c
-;;
-
-let bin_write_list__local =
-  let rec loop ~bin_write_el ~buf ~els_pos lst =
-    match lst with
-    | [] -> els_pos
-    | hd :: tl ->
-      let new_els_pos = bin_write_el buf ~pos:els_pos hd in
-      loop ~bin_write_el ~buf ~els_pos:new_els_pos tl
-  in
-  fun bin_write_el buf ~pos lst ->
-    let len = Nat0.unsafe_of_int (Base.List.length lst) in
-    let els_pos = bin_write_nat0 buf ~pos len in
-    loop ~bin_write_el ~buf ~els_pos lst
-;;
-
-let bin_write_array__local = bin_write_array
-let bin_write_float32_vec__local = bin_write_float32_vec
-let bin_write_float64_vec__local = bin_write_float64_vec
-let bin_write_vec__local = bin_write_vec
-let bin_write_float32_mat__local = bin_write_float32_mat
-let bin_write_float64_mat__local = bin_write_float64_mat
-let bin_write_mat__local = bin_write_mat
-let bin_write_bigstring__local = bin_write_bigstring
-let bin_write_floatarray__local = bin_write_floatarray
-let bin_write_md5__local = bin_write_md5
-let bin_write_variant_int__local = bin_write_variant_int
-let bin_write_int_8bit__local = bin_write_int_8bit
-let bin_write_int_16bit__local = bin_write_int_16bit
-let bin_write_int_32bit__local = bin_write_int_32bit
-let bin_write_int_64bit__local = bin_write_int_64bit
-let bin_write_int64_bits__local = bin_write_int64_bits
-let bin_write_network16_int__local = bin_write_network16_int
-let bin_write_network32_int__local = bin_write_network32_int
-let bin_write_network32_int32__local = bin_write_network32_int32
-let bin_write_network64_int__local = bin_write_network64_int
-let bin_write_network64_int64__local = bin_write_network64_int64
+[%%template
+let[@mode local] bin_write_unit = bin_write_unit
+let[@mode local] bin_write_bool = bin_write_bool
+let[@mode local] bin_write_string = bin_write_string
+let[@mode local] bin_write_bytes = bin_write_bytes
+let[@mode local] bin_write_char = bin_write_char
+let[@mode local] bin_write_int = bin_write_int
+let[@mode local] bin_write_nat0 = bin_write_nat0
+let[@mode local] bin_write_float = bin_write_float
+let[@mode local] bin_write_int32 = bin_write_int32
+let[@mode local] bin_write_int64 = bin_write_int64
+let[@mode local] bin_write_nativeint = bin_write_nativeint
+let[@mode local] bin_write_ref = bin_write_ref
+let[@mode local] bin_write_lazy = bin_write_lazy
+let[@mode local] bin_write_array = bin_write_array
+let[@mode local] bin_write_bigarray1 = bin_write_bigarray1
+let[@mode local] bin_write_bigarray2 = bin_write_bigarray2
+let[@mode local] bin_write_float32_vec = bin_write_float32_vec
+let[@mode local] bin_write_float64_vec = bin_write_float64_vec
+let[@mode local] bin_write_vec = bin_write_vec
+let[@mode local] bin_write_float32_mat = bin_write_float32_mat
+let[@mode local] bin_write_float64_mat = bin_write_float64_mat
+let[@mode local] bin_write_mat = bin_write_mat
+let[@mode local] bin_write_bigstring = bin_write_bigstring
+let[@mode local] bin_write_floatarray = bin_write_floatarray
+let[@mode local] bin_write_md5 = bin_write_md5
+let[@mode local] bin_write_variant_int = bin_write_variant_int
+let[@mode local] bin_write_int_8bit = bin_write_int_8bit
+let[@mode local] bin_write_int_16bit = bin_write_int_16bit
+let[@mode local] bin_write_int_32bit = bin_write_int_32bit
+let[@mode local] bin_write_int_64bit = bin_write_int_64bit
+let[@mode local] bin_write_int32_bits = bin_write_int32_bits
+let[@mode local] bin_write_int64_bits = bin_write_int64_bits
+let[@mode local] bin_write_network16_int = bin_write_network16_int
+let[@mode local] bin_write_network32_int = bin_write_network32_int
+let[@mode local] bin_write_network32_int32 = bin_write_network32_int32
+let[@mode local] bin_write_network64_int = bin_write_network64_int
+let[@mode local] bin_write_network64_int64 = bin_write_network64_int64]

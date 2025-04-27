@@ -2,9 +2,9 @@ open! Core
 open! Import
 
 let require_no_allocation here f =
-  let ( result
-      , ({ major_words_allocated; minor_words_allocated } :
-          Gc.For_testing.Allocation_report.t) )
+  let #( result
+       , ({ major_words_allocated; minor_words_allocated } :
+           Gc.For_testing.Allocation_report.t) )
     =
     Gc.For_testing.measure_allocation f
   in

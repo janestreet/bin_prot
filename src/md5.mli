@@ -1,3 +1,5 @@
+@@ portable
+
 type t = Md5_lib.t
 
 include Binable.Minimal.S with type t := t

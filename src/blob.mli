@@ -1,3 +1,5 @@
+@@ portable
+
 (** ['a Blob.t] is type-equivalent to ['a], but has different bin-prot serializers that
     prefix the representation with the size of ['a].
 
@@ -10,17 +12,22 @@
         { time : Time.t
         ; source : string
         ; details : 'a
-        } [@@deriving bin_io]
+        }
+      [@@deriving bin_io]
     ]}
 
     Applications that need to understand all the details of an event could use:
 
-    {[ type concrete_event = Details.t Blob.t event [@@deriving bin_io] ]}
+    {[
+      type concrete_event = Details.t Blob.t event [@@deriving bin_io]
+    ]}
 
     An application that filters events to downsteam consumers based on just [source] or
     [time] (but doesn't need to parse [details]) may use:
 
-    {[ type opaque_event = Blob.Opaque.Bigstring.t event [@@deriving bin_io] ]}
+    {[
+      type opaque_event = Blob.Opaque.Bigstring.t event [@@deriving bin_io]
+    ]}
 
     This has two advantages:
     - (de)serializing messages is faster because potentially costly (de)serialization of
@@ -30,11 +37,12 @@
 
     An application that's happy to throw away [details] may use:
 
-    {[ type ignored_event = Blob.Ignored.t event [@@deriving bin_read] ]}
+    {[
+      type ignored_event = Blob.Ignored.t event [@@deriving bin_read]
+    ]}
 
     Whereas [opaque_event]s roundtrip, [ignored_event]s actually drop the bytes
-    representing [details] when deserializing, and therefore do not roundtrip.
-*)
+    representing [details] when deserializing, and therefore do not roundtrip. *)
 
 type 'a id = 'a
 
@@ -49,15 +57,14 @@ include Binable.S1 with type 'a t := 'a id
     bin-prot (de-)serializers simply read/write the data, prefixed with its size.
 
     When reading bin-prot data, sometimes you won't care about deserializing a particular
-    piece: perhaps you want to operate on a bin-prot stream, transforming some bits of
-    the stream and passing the others through untouched. In these cases you can
-    deserialize using the bin-prot converters for a type involving [Opaque.t]. This is
-    analogous to reading a sexp file / operating on a sexp stream and using
-    (de-)serialization functions for a type involving [Sexp.t].
+    piece: perhaps you want to operate on a bin-prot stream, transforming some bits of the
+    stream and passing the others through untouched. In these cases you can deserialize
+    using the bin-prot converters for a type involving [Opaque.t]. This is analogous to
+    reading a sexp file / operating on a sexp stream and using (de-)serialization
+    functions for a type involving [Sexp.t].
 
     The internal representation of [Opaque.Bigstring.t] is a Bigstring, while
-    [Opaque.String.t] is a string.
-*)
+    [Opaque.String.t] is a string. *)
 module Opaque : sig
   module Bigstring : sig
     type t [@@deriving compare, sexp_of]
@@ -89,8 +96,7 @@ module Opaque : sig
         can read past the end of the blob, which can result in:
         - confusing/non-deterministic error messages (referring to the contents of [buf]
           rather than the contents of the blob)
-        - degraded performance (having to read through the buffer just to fail at the end)
-    *)
+        - degraded performance (having to read through the buffer just to fail at the end) *)
     val length : t -> int
 
     val to_opaque : buf:Common.buf -> 'a -> 'a Type_class.writer -> t
@@ -108,8 +114,7 @@ end
     if you wish to extract a subset of information from a bin-prot file, which contains
     the serialized representation of some type T (or a bunch of Ts in a row, or something
     similar), you can define a type which is similar to T but has various components
-    replaced with [Ignored.t].
-*)
+    replaced with [Ignored.t]. *)
 module Ignored : sig
   type t
 

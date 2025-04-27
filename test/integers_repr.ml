@@ -36,11 +36,13 @@ let test_window_len = 16L
 module Read = Bin_prot.Read
 module Write = Bin_prot.Write
 
-type 'a to_test =
+type%template 'a to_test =
   { name : string
   ; writer : 'a Write.writer
-  ; writer_local : 'a Write.writer_local
+  ; writer_local : ('a Write.writer[@mode local])
   ; reader : 'a Read.reader
+  ; reader_local : ('a Read.reader[@mode local])
+  ; globalize : local_ 'a -> 'a
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a
   ; min : 'a
@@ -59,12 +61,14 @@ let min_int_32bit, max_int_32bit, min_int_64bit, max_int_64bit =
 
 module Nat0 = Bin_prot.Nat0
 
-let tests =
+let%template tests =
   [ T
       { name = "int"
       ; writer = Write.bin_write_int
-      ; writer_local = Write.bin_write_int__local
+      ; writer_local = Write.bin_write_int [@mode local]
       ; reader = Read.bin_read_int
+      ; reader_local = Read.bin_read_int [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = Int.min_value
@@ -75,8 +79,10 @@ let tests =
   ; T
       { name = "int32"
       ; writer = Write.bin_write_int32
-      ; writer_local = Write.bin_write_int32__local
+      ; writer_local = Write.bin_write_int32 [@mode local]
       ; reader = Read.bin_read_int32
+      ; reader_local = Read.bin_read_int32 [@mode local]
+      ; globalize = globalize_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
       ; min = Int32.min_value
@@ -87,8 +93,10 @@ let tests =
   ; T
       { name = "int64"
       ; writer = Write.bin_write_int64
-      ; writer_local = Write.bin_write_int64__local
+      ; writer_local = Write.bin_write_int64 [@mode local]
       ; reader = Read.bin_read_int64
+      ; reader_local = Read.bin_read_int64 [@mode local]
+      ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
       ; min = Int64.min_value
@@ -99,8 +107,10 @@ let tests =
   ; T
       { name = "nat0"
       ; writer = Write.bin_write_nat0
-      ; writer_local = Write.bin_write_nat0__local
+      ; writer_local = Write.bin_write_nat0 [@mode local]
       ; reader = Read.bin_read_nat0
+      ; reader_local = Read.bin_read_nat0 [@mode local]
+      ; globalize = (fun x -> x)
       ; to_int64 = (fun x -> Int64.of_int (x : Nat0.t :> int))
       ; of_int64 = (fun x -> Nat0.of_int (Int64.to_int_exn x))
       ; min = Nat0.of_int 0
@@ -111,8 +121,10 @@ let tests =
   ; T
       { name = "variant_int"
       ; writer = Write.bin_write_variant_int
-      ; writer_local = Write.bin_write_variant_int__local
+      ; writer_local = Write.bin_write_variant_int [@mode local]
       ; reader = Read.bin_read_variant_int
+      ; reader_local = Read.bin_read_variant_int [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = -1 lsl 30
@@ -123,8 +135,10 @@ let tests =
   ; T
       { name = "int_16bit"
       ; writer = Write.bin_write_int_16bit
-      ; writer_local = Write.bin_write_int_16bit__local
+      ; writer_local = Write.bin_write_int_16bit [@mode local]
       ; reader = Read.bin_read_int_16bit
+      ; reader_local = Read.bin_read_int_16bit [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = 0
@@ -135,8 +149,10 @@ let tests =
   ; T
       { name = "int_32bit"
       ; writer = Write.bin_write_int_32bit
-      ; writer_local = Write.bin_write_int_32bit__local
+      ; writer_local = Write.bin_write_int_32bit [@mode local]
       ; reader = Read.bin_read_int_32bit
+      ; reader_local = Read.bin_read_int_32bit [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = min_int_32bit
@@ -147,8 +163,10 @@ let tests =
   ; T
       { name = "int_64bit"
       ; writer = Write.bin_write_int_64bit
-      ; writer_local = Write.bin_write_int_64bit__local
+      ; writer_local = Write.bin_write_int_64bit [@mode local]
       ; reader = Read.bin_read_int_64bit
+      ; reader_local = Read.bin_read_int_64bit [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = min_int_64bit
@@ -157,10 +175,26 @@ let tests =
       ; lo_bound = Minimum.bin_size_int_64bit
       }
   ; T
+      { name = "int32_bits"
+      ; writer = Write.bin_write_int32_bits
+      ; writer_local = Write.bin_write_int32_bits [@mode local]
+      ; reader = Read.bin_read_int32_bits
+      ; reader_local = Read.bin_read_int32_bits [@mode local]
+      ; globalize = globalize_int32
+      ; to_int64 = Int32.to_int64
+      ; of_int64 = Int32.of_int64_exn
+      ; min = Int32.min_value
+      ; max = Int32.max_value
+      ; hi_bound = Maximum.bin_size_int32_bits
+      ; lo_bound = Minimum.bin_size_int32_bits
+      }
+  ; T
       { name = "int64_bits"
       ; writer = Write.bin_write_int64_bits
-      ; writer_local = Write.bin_write_int64_bits__local
+      ; writer_local = Write.bin_write_int64_bits [@mode local]
       ; reader = Read.bin_read_int64_bits
+      ; reader_local = Read.bin_read_int64_bits [@mode local]
+      ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
       ; min = Int64.min_value
@@ -171,8 +205,10 @@ let tests =
   ; T
       { name = "network16_int"
       ; writer = Write.bin_write_network16_int
-      ; writer_local = Write.bin_write_network16_int__local
+      ; writer_local = Write.bin_write_network16_int [@mode local]
       ; reader = Read.bin_read_network16_int
+      ; reader_local = Read.bin_read_network16_int [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = 0
@@ -183,8 +219,10 @@ let tests =
   ; T
       { name = "network32_int"
       ; writer = Write.bin_write_network32_int
-      ; writer_local = Write.bin_write_network32_int__local
+      ; writer_local = Write.bin_write_network32_int [@mode local]
       ; reader = Read.bin_read_network32_int
+      ; reader_local = Read.bin_read_network32_int [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = min_int_32bit
@@ -195,8 +233,10 @@ let tests =
   ; T
       { name = "network64_int"
       ; writer = Write.bin_write_network64_int
-      ; writer_local = Write.bin_write_network64_int__local
+      ; writer_local = Write.bin_write_network64_int [@mode local]
       ; reader = Read.bin_read_network64_int
+      ; reader_local = Read.bin_read_network64_int [@mode local]
+      ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
       ; min = min_int_64bit
@@ -207,8 +247,10 @@ let tests =
   ; T
       { name = "network32_int32"
       ; writer = Write.bin_write_network32_int32
-      ; writer_local = Write.bin_write_network32_int32__local
+      ; writer_local = Write.bin_write_network32_int32 [@mode local]
       ; reader = Read.bin_read_network32_int32
+      ; reader_local = Read.bin_read_network32_int32 [@mode local]
+      ; globalize = globalize_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
       ; min = Int32.min_value
@@ -219,8 +261,10 @@ let tests =
   ; T
       { name = "network64_int64"
       ; writer = Write.bin_write_network64_int64
-      ; writer_local = Write.bin_write_network64_int64__local
+      ; writer_local = Write.bin_write_network64_int64 [@mode local]
       ; reader = Read.bin_read_network64_int64
+      ; reader_local = Read.bin_read_network64_int64 [@mode local]
+      ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
       ; min = Int64.min_value
@@ -348,11 +392,13 @@ let add_windows_around_points t points =
   loop (Set.elements points) (Set.empty (module Int64))
 ;;
 
+let interesting_points t =
+  Set.union (find_interesting_points t) (valid_power_of_twos t)
+  |> add_windows_around_points t
+;;
+
 let gen_tests (T t) =
-  let points =
-    Set.union (find_interesting_points t) (valid_power_of_twos t)
-    |> add_windows_around_points t
-  in
+  let points = interesting_points t in
   let min, max =
     Set.fold points ~init:(Int.max_value, 0) ~f:(fun (min, max) n ->
       let len = t.writer buf ~pos:0 (t.of_int64 n) in
@@ -365,6 +411,12 @@ let gen_tests (T t) =
       let pos_ref = ref 0 in
       let n' = t.reader buf ~pos_ref |> t.to_int64 in
       let len' = !pos_ref in
+      let n'_local =
+        let pos_ref = ref 0 in
+        t.reader_local buf ~pos_ref |> t.globalize |> t.to_int64
+      in
+      if n' <> n'_local
+      then printf ", read_local output (%Ld) differs from read output (%Ld)" n'_local n';
       if len < t.lo_bound || len > t.hi_bound
       then printf ", bin_size outside of range %d..%d: %d" t.lo_bound t.hi_bound len;
       if n <> n' || len <> len'
