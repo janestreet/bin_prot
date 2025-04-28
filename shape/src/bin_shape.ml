@@ -1,13 +1,17 @@
 open! Base
 
 module Location : sig
-  include Identifiable.S
+  type t
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
 module Uuid : sig
-  include Identifiable.S
+  type t
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
@@ -63,10 +67,12 @@ end = struct
 end
 
 module Digest : sig
-  type t = Md5_lib.t [@@deriving compare, sexp]
+  type t = Md5_lib.t [@@deriving compare, globalize, sexp]
 
   val to_md5 : t -> Md5_lib.t
+  val to_md5_local : t -> Md5_lib.t
   val of_md5 : Md5_lib.t -> t
+  val of_md5_local : Md5_lib.t -> t
   val to_hex : t -> string
   val constructor : string -> t list -> t
   val list : t list -> t
@@ -79,7 +85,9 @@ end = struct
   include Md5_lib
 
   let to_md5 t = t
+  let to_md5_local t = t
   let of_md5 t = t
+  let of_md5_local t = t
   let sexp_of_t t = t |> to_hex |> sexp_of_string
   let t_of_sexp s = s |> string_of_sexp |> of_hex_exn
   let uuid u = string (Uuid.to_string u)
@@ -134,7 +142,6 @@ end
 
 module Create_digest : sig
   (* Digest various expression forms *)
-
   val digest_layer : Digest.t Canonical_exp_constructor.t -> Digest.t
 end = struct
   let digest_layer = function
@@ -207,7 +214,9 @@ module type Canonical = sig
   end
 end
 
-module Canonical_digest : Canonical = struct
+module Canonical_digest : sig
+  include Canonical
+end = struct
   type t = Canonical of Digest.t
 
   let to_digest (Canonical x) = x
@@ -368,13 +377,17 @@ module Canonical_full = struct
 end
 
 module Tid : sig
-  include Identifiable.S
+  type t
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
 module Vid : sig
-  include Identifiable.S
+  type t
+
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
@@ -387,13 +400,8 @@ module Gid : sig
 end = struct
   type t = int [@@deriving compare, equal, sexp]
 
-  let r = ref 0
-
-  let create () =
-    let u = !r in
-    r := 1 + u;
-    u
-  ;;
+  let r = Atomic.make 0
+  let create () = Atomic.fetch_and_add r 1
 end
 
 module Expression = struct
@@ -410,22 +418,31 @@ module Expression = struct
     val id : 'a t -> Gid.t
     val lookup : 'a t -> Tid.t -> Vid.t list * 'a
   end = struct
-    type 'a t =
-      { gid : Gid.t
-      ; loc : Location.t
-      ; members : (Tid.t * (Vid.t list * 'a)) list
-      }
-    [@@deriving compare, equal, sexp]
+    module Inner = struct
+      type 'a t =
+        { gid : Gid.t
+        ; loc : Location.t
+        ; members : (Tid.t * (Vid.t list * 'a)) list
+        }
+      [@@unsafe_allow_any_mode_crossing] [@@deriving compare, equal, sexp]
+    end
+
+    type 'a t = { inner : 'a Inner.t } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
+
+    let compare compare_a t1 t2 = Inner.compare compare_a t1.inner t2.inner
+    let equal equal_a t1 t2 = Inner.equal equal_a t1.inner t2.inner
+    let sexp_of_t sexp_of_a { inner } = Inner.sexp_of_t sexp_of_a inner
+    let t_of_sexp a_of_sexp sexp = { inner = Inner.t_of_sexp a_of_sexp sexp }
 
     let create loc trips =
       let gid = Gid.create () in
       let members = List.map trips ~f:(fun (x, vs, t) -> x, (vs, t)) in
-      { gid; loc; members }
+      { inner = { gid; loc; members } }
     ;;
 
-    let id g = g.gid
+    let id { inner = g } = g.gid
 
-    let lookup g tid =
+    let lookup { inner = g } tid =
       match List.Assoc.find g.members ~equal:Tid.( = ) tid with
       | Some scheme -> scheme
       | None ->
@@ -449,7 +466,7 @@ module Expression = struct
         | Var of (Location.t * Vid.t)
         | Rec_app of Tid.t * t list
         | Top_app of t Group.t * Tid.t * t list
-      [@@deriving equal, sexp, variants]
+      [@@unsafe_allow_any_mode_crossing] [@@deriving equal, sexp, variants]
     end
   end
 
@@ -526,8 +543,9 @@ module Evaluation (Canonical : Canonical) = struct
   end = struct
     type t = Visibility.visible Canonical.Exp1.t Map.M(Vid).t
 
-    let create =
+    let create list =
       List.fold
+        list
         ~init:(Map.empty (module Vid))
         ~f:(fun t (k, v) -> Map.set ~key:k ~data:v t)
     ;;
@@ -548,7 +566,7 @@ module Evaluation (Canonical : Canonical) = struct
     type t
 
     val find : t -> key -> [ `Recursion_level of int ] option
-    val empty : t
+    val empty : unit -> t
     val extend : t -> key -> [ `Recursion_level of int ] -> t
   end = struct
     module Key = struct
@@ -557,14 +575,15 @@ module Evaluation (Canonical : Canonical) = struct
       end
 
       include T
-      include Comparator.Make (T)
+
+      include%template Comparator.Make [@modality portable] (T)
     end
 
     type key = Key.t
     type t = [ `Recursion_level of int ] Map.M(Key).t
 
     let find t k = Map.find t k
-    let empty = Map.empty (module Key)
+    let empty () = Map.empty (module Key)
     let extend t k v = Map.set ~key:k ~data:v t
   end
 
@@ -600,7 +619,7 @@ module Evaluation (Canonical : Canonical) = struct
          def_t ~depth:(depth + 1) tenv)
     ;;
 
-    let exec t = t ~depth:0 Tenv.empty
+    let exec t = t ~depth:0 (Tenv.empty ())
   end
 
   type 'a defining = 'a Defining.t

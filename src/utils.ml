@@ -1,9 +1,10 @@
 (* Utils: utility functions for user convenience *)
 
+open! Base
 open Common
 open Size
 open Type_class
-include Utils_intf
+include Utils_intf.Definitions
 
 let size_header_length = 8
 let bin_write_size_header = Write.bin_write_int_64bit
@@ -62,7 +63,17 @@ let bin_read_stream ?max_size ~read reader =
 
 (* Conversion of binable types *)
 
-module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t = struct
+let maybe_annotate_shape maybe_uuid shape =
+  match maybe_uuid with
+  | None -> shape
+  | Some uuid -> Shape.annotate uuid shape
+;;
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+module%template.portable Of_minimal (S : Binable.Minimal.S [@mode m]) :
+  Binable.S [@mode m] with type t := S.t = struct
   include S
 
   let bin_writer_t = { size = bin_size_t; write = bin_write_t }
@@ -70,7 +81,8 @@ module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t = struc
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
-module Of_minimal1 (S : Binable.Minimal.S1) : Binable.S1 with type 'a t := 'a S.t = struct
+module%template.portable Of_minimal1 (S : Binable.Minimal.S1 [@mode m]) :
+  Binable.S1 [@mode m] with type 'a t := 'a S.t = struct
   include S
 
   let bin_writer_t bin_writer_a =
@@ -89,33 +101,39 @@ module Of_minimal1 (S : Binable.Minimal.S1) : Binable.S1 with type 'a t := 'a S.
   ;;
 end
 
-let maybe_annotate_shape maybe_uuid shape =
-  match maybe_uuid with
-  | None -> shape
-  | Some uuid -> Shape.annotate uuid shape
-;;
-
-module Make_binable_gen (S : sig
-    include Make_binable_without_uuid_spec
+module%template.portable
+  [@modality p] Make_binable_gen (S : sig
+    include Make_binable_without_uuid_spec [@mode m]
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
 struct
-  include Of_minimal (struct
+  include Of_minimal [@mode m] [@modality p] (struct
       module B = S.Binable
 
       type t = S.t
 
       let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
-      let bin_size_t t = B.bin_size_t (S.to_binable t)
-      let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
+
+      include struct
+        [@@@mode.default m = (global, m)]
+
+        let bin_size_t t =
+          (B.bin_size_t [@mode m]) ((S.to_binable [@mode m]) t) [@nontail]
+        ;;
+
+        let bin_write_t buf ~pos t =
+          (B.bin_write_t [@mode m]) buf ~pos ((S.to_binable [@mode m]) t) [@nontail]
+        ;;
+      end
+
       let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
       let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
     end)
 end
 
-module Make_binable1_gen (S : sig
-    include Make_binable1_without_uuid_spec
+module%template.portable Make_binable1_gen (S : sig
+    include Make_binable1_without_uuid_spec [@mode m]
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -126,11 +144,21 @@ struct
     maybe_annotate_shape S.maybe_caller_identity (B.bin_shape_t bin_shape_el)
   ;;
 
-  let bin_size_t bin_size_el t = B.bin_size_t bin_size_el (S.to_binable t)
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_el buf ~pos t =
-    B.bin_write_t bin_write_el buf ~pos (S.to_binable t)
-  ;;
+    let bin_size_t bin_size_el t =
+      (B.bin_size_t [@mode m]) bin_size_el ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+
+    let bin_write_t bin_write_el buf ~pos t =
+      (B.bin_write_t [@mode m])
+        bin_write_el
+        buf
+        ~pos
+        ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+  end
 
   let bin_read_t bin_read_el buf ~pos_ref =
     S.of_binable (B.bin_read_t bin_read_el buf ~pos_ref)
@@ -162,8 +190,8 @@ struct
   ;;
 end
 
-module Make_binable2_gen (S : sig
-    include Make_binable2_without_uuid_spec
+module%template.portable Make_binable2_gen (S : sig
+    include Make_binable2_without_uuid_spec [@mode m]
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -176,13 +204,25 @@ struct
       (B.bin_shape_t bin_shape_el1 bin_shape_el2)
   ;;
 
-  let bin_size_t bin_size_el1 bin_size_el2 t =
-    B.bin_size_t bin_size_el1 bin_size_el2 (S.to_binable t)
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
-    B.bin_write_t bin_write_el1 bin_write_el2 buf ~pos (S.to_binable t)
-  ;;
+    let bin_size_t bin_size_el1 bin_size_el2 t =
+      (B.bin_size_t [@mode m])
+        bin_size_el1
+        bin_size_el2
+        ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+
+    let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
+      (B.bin_write_t [@mode m])
+        bin_write_el1
+        bin_write_el2
+        buf
+        ~pos
+        ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+  end
 
   let bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref =
     S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref)
@@ -216,8 +256,8 @@ struct
   ;;
 end
 
-module Make_binable3_gen (S : sig
-    include Make_binable3_without_uuid_spec
+module%template.portable Make_binable3_gen (S : sig
+    include Make_binable3_without_uuid_spec [@mode m]
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -230,13 +270,27 @@ struct
       (B.bin_shape_t bin_shape_el1 bin_shape_el2 bin_shape_el3)
   ;;
 
-  let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
-    B.bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 (S.to_binable t)
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
-    B.bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos (S.to_binable t)
-  ;;
+    let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
+      (B.bin_size_t [@mode m])
+        bin_size_el1
+        bin_size_el2
+        bin_size_el3
+        ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+
+    let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
+      (B.bin_write_t [@mode m])
+        bin_write_el1
+        bin_write_el2
+        bin_write_el3
+        buf
+        ~pos
+        ((S.to_binable [@mode m]) t) [@nontail]
+    ;;
+  end
 
   let bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref =
     S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref)
@@ -272,79 +326,107 @@ struct
   ;;
 end
 
-module Make_binable_with_uuid (S : Make_binable_with_uuid_spec) = Make_binable_gen (struct
+module%template.portable
+  [@modality p] Make_binable_with_uuid
+    (S : Make_binable_with_uuid_spec
+  [@mode m]) =
+Make_binable_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module Make_binable1_with_uuid (S : Make_binable1_with_uuid_spec) =
-Make_binable1_gen (struct
+module%template.portable
+  [@modality p] Make_binable1_with_uuid
+    (S : Make_binable1_with_uuid_spec
+  [@mode m]) =
+Make_binable1_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module Make_binable2_with_uuid (S : Make_binable2_with_uuid_spec) =
-Make_binable2_gen (struct
+module%template.portable
+  [@modality p] Make_binable2_with_uuid
+    (S : Make_binable2_with_uuid_spec
+  [@mode m]) =
+Make_binable2_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module Make_binable3_with_uuid (S : Make_binable3_with_uuid_spec) =
-Make_binable3_gen (struct
+module%template.portable
+  [@modality p] Make_binable3_with_uuid
+    (S : Make_binable3_with_uuid_spec
+  [@mode m]) =
+Make_binable3_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module Make_binable_without_uuid (S : Make_binable_without_uuid_spec) =
-Make_binable_gen (struct
+module%template.portable
+  [@modality p] Make_binable_without_uuid
+    (S : Make_binable_without_uuid_spec
+  [@mode m]) =
+Make_binable_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-module Make_binable1_without_uuid (S : Make_binable1_without_uuid_spec) =
-Make_binable1_gen (struct
+module%template.portable
+  [@modality p] Make_binable1_without_uuid
+    (S : Make_binable1_without_uuid_spec
+  [@mode m]) =
+Make_binable1_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-module Make_binable2_without_uuid (S : Make_binable2_without_uuid_spec) =
-Make_binable2_gen (struct
+module%template.portable
+  [@modality p] Make_binable2_without_uuid
+    (S : Make_binable2_without_uuid_spec
+  [@mode m]) =
+Make_binable2_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-module Make_binable3_without_uuid (S : Make_binable3_without_uuid_spec) =
-Make_binable3_gen (struct
+module%template.portable
+  [@modality p] Make_binable3_without_uuid
+    (S : Make_binable3_without_uuid_spec
+  [@mode m]) =
+Make_binable3_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = None
-  end)
+  end)]
 
 let with_module_name f ~module_name function_name =
   match module_name with
   | None -> f function_name
-  | Some module_name -> Printf.ksprintf f "%s.%s" module_name function_name
+  | Some module_name -> f (String.concat ~sep:"." [ module_name; function_name ])
 ;;
 
 let raise_concurrent_modification = with_module_name raise_concurrent_modification
 
 let raise_read_too_much =
-  with_module_name
-    (Printf.ksprintf failwith "%s: tried to read more elements than available")
+  with_module_name (fun str ->
+    failwith (str ^ ": tried to read more elements than available"))
 ;;
 
 let raise_read_not_enough =
-  with_module_name (Printf.ksprintf failwith "%s: didn't read all elements")
+  with_module_name (fun str -> failwith (str ^ ": didn't read all elements"))
 ;;
 
-module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
+module%template.portable
+  [@modality p] [@conflate_modality_as_mode p] Make_iterable_binable
+    (S : Make_iterable_binable_spec) =
+struct
   open S
 
   let bin_shape_t =
@@ -362,7 +444,7 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       size_ref := !size_ref + bin_size_el el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     let len = length t in
     if !cnt_ref = len
     then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
@@ -376,7 +458,7 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       pos_ref := bin_write_el buf ~pos:!pos_ref el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     if !cnt_ref = len
     then !pos_ref
     else raise_concurrent_modification ~module_name "bin_write_t"
@@ -387,7 +469,7 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
-      incr idx;
+      Int.incr idx;
       bin_read_el buf ~pos_ref
     in
     let result = init ~len ~next in
@@ -401,7 +483,7 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
-module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
+module%template.portable Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
   open S
 
   let bin_shape_t t =
@@ -419,7 +501,7 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       size_ref := !size_ref + bin_size_el bin_size_a el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     let len = length t in
     if !cnt_ref = len
     then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
@@ -433,7 +515,7 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       pos_ref := bin_write_el bin_write_a buf ~pos:!pos_ref el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     if !cnt_ref = len
     then !pos_ref
     else raise_concurrent_modification ~module_name "bin_write_t"
@@ -444,7 +526,7 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
-      incr idx;
+      Int.incr idx;
       bin_read_el bin_read_a buf ~pos_ref
     in
     let result = init ~len ~next in
@@ -474,7 +556,7 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
   ;;
 end
 
-module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
+module%template.portable Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
   open S
 
   let bin_shape_t t1 t2 =
@@ -492,7 +574,7 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       size_ref := !size_ref + bin_size_el bin_size_a bin_size_b el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     let len = length t in
     if !cnt_ref = len
     then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
@@ -506,7 +588,7 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       pos_ref := bin_write_el bin_write_a bin_write_b buf ~pos:!pos_ref el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     if !cnt_ref = len
     then !pos_ref
     else raise_concurrent_modification ~module_name "bin_write_t"
@@ -517,7 +599,7 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
-      incr idx;
+      Int.incr idx;
       bin_read_el bin_read_a bin_read_b buf ~pos_ref
     in
     let result = init ~len ~next in
@@ -553,7 +635,7 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
   ;;
 end
 
-module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
+module%template.portable Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
   open S
 
   let bin_shape_t t1 t2 t3 =
@@ -571,7 +653,7 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       size_ref := !size_ref + bin_size_el bin_size_a bin_size_b bin_size_c el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     let len = length t in
     if !cnt_ref = len
     then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
@@ -585,7 +667,7 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
     let cnt_ref = ref 0 in
     iter t ~f:(fun el ->
       pos_ref := bin_write_el bin_write_a bin_write_b bin_write_c buf ~pos:!pos_ref el;
-      incr cnt_ref);
+      Int.incr cnt_ref);
     if !cnt_ref = len
     then !pos_ref
     else raise_concurrent_modification ~module_name "bin_write_t"
@@ -596,7 +678,7 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
-      incr idx;
+      Int.incr idx;
       bin_read_el bin_read_a bin_read_b bin_read_c buf ~pos_ref
     in
     let result = init ~len ~next in

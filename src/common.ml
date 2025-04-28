@@ -199,7 +199,7 @@ external unsafe_blit_buf_string
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
@@ -209,7 +209,7 @@ external unsafe_blit_buf_bytes
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> bytes
+  -> (bytes[@local_opt])
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"

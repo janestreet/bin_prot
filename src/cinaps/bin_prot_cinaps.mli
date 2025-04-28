@@ -9,6 +9,7 @@ module Code : sig
     | INT64
 
   val char : t -> unit
+  val pipe_char : t -> unit
 end
 
 module Sig : sig

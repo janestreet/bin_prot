@@ -3,5 +3,5 @@
  (public_name bin_prot.shape)
  (libraries base base.md5)
  (preprocess
-  (pps ppx_compare ppx_sexp_conv ppx_fields_conv ppx_variants_conv
-    ppx_custom_printf)))
+  (pps ppx_compare ppx_custom_printf ppx_fields_conv ppx_globalize
+    ppx_sexp_conv ppx_template ppx_variants_conv)))
