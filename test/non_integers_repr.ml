@@ -515,6 +515,32 @@ module%template Tests = struct
     }
   ;;
 
+  let iarray =
+    { writer = Write.bin_write_iarray Write.bin_write_int32
+    ; writer_local =
+        Some
+          ((Write.bin_write_iarray [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; reader = Read.bin_read_iarray Read.bin_read_int32
+    ; reader_local =
+        Some
+          { reader_local = (Read.bin_read_iarray [@mode local]) Read.bin_read_int32
+          ; globalize = [%globalize: int32 iarray]
+          }
+    ; values =
+        [ Iarray.empty
+        ; Iarray.of_list [ 0l ]
+        ; Iarray.of_list [ 0l; 1l ]
+        ; Iarray.of_list [ 1l; -1l ]
+        ; Iarray.of_list [ 0l; Int32.max_value ]
+        ; Iarray.of_list [ Int32.max_value; Int32.min_value ]
+        ]
+    ; equal = Iarray.equal Int32.equal
+    ; sexp_of = [%sexp_of: int32 iarray]
+    ; hi_bound = None
+    ; lo_bound = Minimum.bin_size_iarray
+    }
+  ;;
+
   module R1 = struct
     type t =
       { x : int32
@@ -895,6 +921,16 @@ let%expect_test "Non-integer bin_prot size tests" =
     80 00 00 00 fd 7f ff ff ff fd 02 -> (2147483647 -2147483648)
     |}];
   gen_tests Tests.array;
+  [%expect
+    {|
+    .. .. .. .. .. .. .. .. .. .. 00 -> ()
+    .. .. .. .. .. .. .. .. .. 00 01 -> (0)
+    .. .. .. .. .. .. .. .. 01 00 02 -> (0 1)
+    .. .. .. .. .. .. .. ff ff 01 02 -> (1 -1)
+    .. .. .. .. 7f ff ff ff fd 00 02 -> (0 2147483647)
+    80 00 00 00 fd 7f ff ff ff fd 02 -> (2147483647 -2147483648)
+    |}];
+  gen_tests Tests.iarray;
   [%expect
     {|
     .. .. .. .. .. .. .. .. .. .. 00 -> ()

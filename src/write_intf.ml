@@ -1,3 +1,5 @@
+open! Base
+
 module%template Definitions = struct
   open Common
 
@@ -42,6 +44,7 @@ module type Write = sig @@ portable
   val bin_write_triple : (('a, 'b, 'c, 'a * 'b * 'c) writer3[@mode m])
   val bin_write_list : (('a, 'a list) writer1[@mode m])
   val bin_write_array : (('a, 'a array) writer1[@mode m])
+  val bin_write_iarray : (('a, 'a iarray) writer1[@mode m])
 
   val bin_write_bigarray1
     :  kind:('a, 'k) Stdlib.Bigarray.kind

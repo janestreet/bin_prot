@@ -1,3 +1,5 @@
+open! Base
+
 module Definitions = struct
   type ('a : any) writer =
     { size : 'a Size.sizer
@@ -151,6 +153,12 @@ module type Type_class = sig @@ portable
   val bin_reader_array : ('a, 'a array) S1.reader
   val bin_shape_array : Shape.t -> Shape.t
   val bin_array : ('a, 'a array) S1.t
+
+  (*$ mk_base1 "iarray" *)
+  val bin_writer_iarray : ('a, 'a iarray) S1.writer
+  val bin_reader_iarray : ('a, 'a iarray) S1.reader
+  val bin_shape_iarray : Shape.t -> Shape.t
+  val bin_iarray : ('a, 'a iarray) S1.t
 
   (*$ mk_base_tp "float32_vec" "vec32" *)
   val bin_writer_float32_vec : vec32 writer

@@ -41,6 +41,7 @@ val bin_shape_ref : t -> t
 val bin_shape_option : t -> t
 val bin_shape_list : t -> t
 val bin_shape_array : t -> t
+val bin_shape_iarray : t -> t
 val bin_shape_lazy : t -> t
 val bin_shape_pair : t -> t -> t
 val bin_shape_triple : t -> t -> t -> t

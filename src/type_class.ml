@@ -307,6 +307,28 @@ let bin_array bin_el =
   }
 ;;
 
+(*$ mk_base1 "iarray" *)
+let bin_writer_iarray bin_writer_el =
+  { size = (fun v -> Size.bin_size_iarray bin_writer_el.size v)
+  ; write = (fun buf ~pos v -> Write.bin_write_iarray bin_writer_el.write buf ~pos v)
+  }
+;;
+
+let bin_reader_iarray bin_reader_el =
+  { read = (fun buf ~pos_ref -> Read.bin_read_iarray bin_reader_el.read buf ~pos_ref)
+  ; vtag_read = variant_wrong_type "iarray"
+  }
+;;
+
+let bin_shape_iarray x1 = Shape.bin_shape_iarray x1
+
+let bin_iarray bin_el =
+  { shape = bin_shape_iarray bin_el.shape
+  ; writer = bin_writer_iarray bin_el.writer
+  ; reader = bin_reader_iarray bin_el.reader
+  }
+;;
+
 (*$ mk_base "float32_vec" *)
 let bin_writer_float32_vec =
   { size = Size.bin_size_float32_vec; write = Write.bin_write_float32_vec }

@@ -1,5 +1,6 @@
 @@ portable
 
+open! Base
 open Common
 
 (** sizers *)
@@ -169,6 +170,7 @@ val bin_vec : vec Type_class.t
 (** shapes *)
 
 val bin_shape_array : Bin_shape.t -> Bin_shape.t
+val bin_shape_iarray : Bin_shape.t -> Bin_shape.t
 val bin_shape_lazy : Bin_shape.t -> Bin_shape.t
 val bin_shape_lazy_t : Bin_shape.t -> Bin_shape.t
 val bin_shape_list : Bin_shape.t -> Bin_shape.t
@@ -178,6 +180,7 @@ val bin_shape_ref : Bin_shape.t -> Bin_shape.t
 (** readers *)
 
 val bin_read_array : ('a, 'a array) Read.reader1
+val bin_read_iarray : ('a, 'a iarray) Read.reader1
 val bin_read_lazy : ('a, 'a lazy_t) Read.reader1
 val bin_read_lazy_t : ('a, 'a lazy_t) Read.reader1
 val bin_read_list : ('a, 'a list) Read.reader1
@@ -187,6 +190,7 @@ val bin_read_ref : ('a, 'a ref) Read.reader1
 (** vtag readers *)
 
 val __bin_read_array__ : ('a, 'a array) Read.vtag_reader1
+val __bin_read_iarray__ : ('a, 'a iarray) Read.vtag_reader1
 val __bin_read_lazy__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_lazy_t__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_list__ : ('a, 'a list) Read.vtag_reader1
@@ -203,6 +207,7 @@ type ('a, 'b) writer1 := (('a, 'b) Write.writer1[@mode m])
 [@@@mode.default m]
 
 val bin_write_array : ('a, 'a array) writer1
+val bin_write_iarray : ('a, 'a iarray) writer1
 val bin_write_lazy : ('a, 'a lazy_t) writer1
 val bin_write_lazy_t : ('a, 'a lazy_t) writer1
 val bin_write_list : ('a, 'a list) writer1
@@ -214,6 +219,7 @@ val bin_write_ref : ('a, 'a ref) writer1
 (** type class readers *)
 
 val bin_reader_array : ('a, 'a array) Type_class.S1.reader
+val bin_reader_iarray : ('a, 'a iarray) Type_class.S1.reader
 val bin_reader_lazy : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_lazy_t : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_list : ('a, 'a list) Type_class.S1.reader
@@ -223,6 +229,7 @@ val bin_reader_ref : ('a, 'a ref) Type_class.S1.reader
 (** type class writers **)
 
 val bin_writer_array : ('a, 'a array) Type_class.S1.writer
+val bin_writer_iarray : ('a, 'a iarray) Type_class.S1.writer
 val bin_writer_lazy : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_lazy_t : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_list : ('a, 'a list) Type_class.S1.writer
@@ -232,6 +239,7 @@ val bin_writer_ref : ('a, 'a ref) Type_class.S1.writer
 (** type classes *)
 
 val bin_array : ('a, 'a array) Type_class.S1.t
+val bin_iarray : ('a, 'a iarray) Type_class.S1.t
 val bin_lazy : ('a, 'a lazy_t) Type_class.S1.t
 val bin_lazy_t : ('a, 'a lazy_t) Type_class.S1.t
 val bin_list : ('a, 'a list) Type_class.S1.t

@@ -226,6 +226,21 @@ let __bin_read_array__ _f _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "array" !pos_ref
 ;;
 
+let bin_iarray = Type_class.bin_iarray
+let bin_shape_iarray = Type_class.bin_shape_iarray
+let bin_writer_iarray = Type_class.bin_writer_iarray
+
+let%template[@mode m = (global, local)] bin_write_iarray =
+  (Write.bin_write_iarray [@mode m])
+;;
+
+let bin_reader_iarray = Type_class.bin_reader_iarray
+let bin_read_iarray = Read.bin_read_iarray
+
+let __bin_read_iarray__ _f _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "iarray" !pos_ref
+;;
+
 let bin_bigstring = Type_class.bin_bigstring
 let bin_shape_bigstring = Type_class.bin_shape_bigstring
 let bin_writer_bigstring = Type_class.bin_writer_bigstring

@@ -53,6 +53,7 @@ module Minimum = struct
   let bin_size_len = bin_size_nat0
   let bin_size_list = bin_size_len
   let bin_size_array = bin_size_len
+  let bin_size_iarray = bin_size_len
   let bin_size_string = bin_size_len
   let bin_size_bytes = bin_size_len
   let bin_size_vec = bin_size_len
@@ -228,6 +229,36 @@ let bin_size_array (type a) bin_size_el ar =
     let total_len = bin_size_len n in
     bin_size_array_loop bin_size_el ar ~total_len ~n)
 ;;
+
+let bin_size_float_iarray ar =
+  let len = Base.Iarray.length ar in
+  bin_size_len len + (8 * len)
+;;
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+let bin_size_iarray_loop bin_size_el ar ~total_len ~n =
+  let total_len_ref = ref total_len in
+  for i = 0 to n - 1 do
+    let el = Base.Iarray.unsafe_get ar i in
+    total_len_ref := !total_len_ref + bin_size_el el
+  done;
+  !total_len_ref
+;;
+
+let bin_size_iarray (type a) bin_size_el ar =
+  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  if (Obj.magic (bin_size_el : (a sizer[@mode m])) : float sizer)
+     == (bin_size_float :> float sizer)
+  then
+    bin_size_float_iarray
+      (Obj.magic (ar : a Base.Iarray.t) : float Base.Iarray.t) [@nontail]
+  else (
+    let n = Base.Iarray.length ar in
+    let total_len = bin_size_len n in
+    (bin_size_iarray_loop [@mode m]) bin_size_el ar ~total_len ~n)
+;;]
 
 external array1_dim
   :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
