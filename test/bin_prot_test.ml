@@ -739,6 +739,41 @@ let%expect_test ("array" [@tags "no-js"]) =
       bin_read_int_array bad_buf ~pos_ref:(ref 0)))
 ;;
 
+let%expect_test ("iarray" [@tags "no-js"]) =
+  let bin_read_int_iarray = Read.bin_read_iarray Read.bin_read_int in
+  check_all_with_local
+    (module struct
+      type t = int iarray [@@deriving equal, sexp_of]
+    end)
+    12
+    "iarray"
+    bin_read_int_iarray
+    (Write.bin_write_iarray Write.bin_write_int)
+    ((Write.bin_write_iarray [@mode local]) (Write.bin_write_int [@mode local]))
+    [ Iarray.of_list [ 42; -1; 200; 33000 ], "[:42; -1; 200; 33000:]", 12
+    ; Iarray.empty, "[::]", 1
+    ];
+  if Sys.word_size_in_bits = 32
+  then (
+    let bad_buf = Bigstring.of_string "\253\000\000\064\000" in
+    require_does_raise
+      [%here]
+      (Read_error (Array_too_long, 0))
+      (fun () -> bin_read_int_iarray bad_buf ~pos_ref:(ref 0));
+    let bad_buf = Bigstring.of_string "\253\255\255\063\000" in
+    require_does_raise [%here] Buffer_short (fun () ->
+      bin_read_int_iarray bad_buf ~pos_ref:(ref 0)))
+  else (
+    let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\064\000\000" in
+    require_does_raise
+      [%here]
+      (Read_error (Array_too_long, 0))
+      (fun () -> bin_read_int_iarray bad_buf ~pos_ref:(ref 0));
+    let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\063\000\000" in
+    require_does_raise [%here] Buffer_short (fun () ->
+      bin_read_int_iarray bad_buf ~pos_ref:(ref 0)))
+;;
+
 module Array1_extras (M : sig
     type t [@@deriving equal, sexp_of]
   end) =

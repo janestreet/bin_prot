@@ -45,3 +45,4 @@ let bin_shape_array x = basetype (Uuid.of_string "array") [ x ]
 let bin_shape_lazy x = x
 let bin_shape_pair x y = tuple [ x; y ]
 let bin_shape_triple x y z = tuple [ x; y; z ]
+let bin_shape_iarray = bin_shape_array

@@ -552,7 +552,8 @@ let bin_read_float_array buf ~pos_ref =
     ~pos_ref
 ;;
 
-let check_array_len (bin_read_el : _ reader) ~len ~start_pos =
+let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start_pos =
+  let module Obj = Base.Exported_for_specific_uses.Obj_local in
   if arch_sixtyfour
   then (
     if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long start_pos)
@@ -570,7 +571,7 @@ let check_array_len (bin_read_el : _ reader) ~len ~start_pos =
       if len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos
     | Some el ->
-      if Obj.tag (Obj.repr el) = Obj.double_tag || len > Sys.max_array_length
+      if Obj.tag (Obj.repr el) = Stdlib.Obj.double_tag || len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos)
 ;;
 
@@ -609,6 +610,17 @@ let%template[@mode local] bin_read_array bin_read_el buf ~pos_ref =
       Base.Array.unsafe_set res i el
     done;
     res)
+;;
+
+let bin_read_iarray bin_read_el buf ~pos_ref =
+  Base.Iarray.unsafe_of_array__promise_no_mutation
+    (bin_read_array bin_read_el buf ~pos_ref)
+;;
+
+let%template[@mode local] bin_read_iarray bin_read_el buf ~pos_ref =
+  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+  check_array_len bin_read_el ~len ~start_pos:!pos_ref;
+  Base.Iarray.Local.init len ~f:(fun _ -> bin_read_el buf ~pos_ref)
 ;;
 
 external buf_of_array1

@@ -1,3 +1,5 @@
+open! Base
+
 module Definitions = struct
   open Common
 
@@ -66,6 +68,7 @@ module type Read = sig
   (* Note: since the contents of an [array] must always be global, this takes a global
      reader rather than a local one *)
   val bin_read_array : 'a global_reader -> 'a array reader
+  val bin_read_iarray : 'a reader -> 'a iarray reader
   val bin_read_float32_vec : vec32 reader
   val bin_read_float64_vec : vec64 reader
   val bin_read_vec : vec reader

@@ -1,3 +1,5 @@
+open! Base
+
 module%template Definitions = struct
   [@@@mode.default m = (global, local)]
 
@@ -38,6 +40,7 @@ module type Size = sig
   val bin_size_triple : (('a, 'b, 'c, 'a * 'b * 'c) sizer3[@mode m])
   val bin_size_list : (('a, 'a list) sizer1[@mode m])
   val bin_size_array : (('a, 'a array) sizer1[@mode m])
+  val bin_size_iarray : (('a, 'a iarray) sizer1[@mode m])
   val bin_size_float32_vec : (vec32 sizer[@mode m])
   val bin_size_float64_vec : (vec64 sizer[@mode m])
   val bin_size_vec : (vec sizer[@mode m])
@@ -110,6 +113,7 @@ module type Size = sig
     val bin_size_triple : int
     val bin_size_list : int
     val bin_size_array : int
+    val bin_size_iarray : int
     val bin_size_float32_vec : int
     val bin_size_float64_vec : int
     val bin_size_vec : int

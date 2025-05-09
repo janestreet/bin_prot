@@ -319,6 +319,41 @@ let bin_write_array (type a) bin_write_el buf ~pos ar =
     bin_write_array_loop bin_write_el buf ~els_pos ~n ar)
 ;;
 
+let bin_write_float_iarray buf ~pos ar =
+  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  bin_write_float_array
+    buf
+    ~pos
+    (Obj.magic (ar : float Base.Iarray.t) : float array) [@nontail]
+;;
+
+[%%template
+[@@@mode.default m = (global, local)]
+
+let bin_write_iarray_loop bin_write_el buf ~els_pos ~n ar =
+  let els_pos_ref = ref els_pos in
+  for i = 0 to n - 1 do
+    els_pos_ref := bin_write_el buf ~pos:!els_pos_ref (Base.Iarray.unsafe_get ar i)
+  done;
+  !els_pos_ref
+;;
+
+let bin_write_iarray (type a) bin_write_el buf ~pos ar =
+  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  if (Obj.magic (bin_write_el : (a writer[@mode m])) : float writer)
+     == (bin_write_float :> float writer)
+  then
+    bin_write_float_iarray
+      buf
+      ~pos
+      (Obj.magic (ar : a Base.Iarray.t) : float Base.Iarray.t) [@nontail]
+  else (
+    let n = Base.Iarray.length ar in
+    let pn = Nat0.unsafe_of_int n in
+    let els_pos = bin_write_nat0 buf ~pos pn in
+    (bin_write_iarray_loop [@mode m]) bin_write_el buf ~els_pos ~n ar)
+;;]
+
 external buf_of_array1
   :  (_ Stdlib.Bigarray.Array1.t[@local_opt])
   -> (buf[@local_opt])
