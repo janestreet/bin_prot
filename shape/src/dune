@@ -4,4 +4,4 @@
  (libraries base base.md5)
  (preprocess
   (pps ppx_compare ppx_custom_printf ppx_fields_conv ppx_globalize
-    ppx_sexp_conv ppx_template ppx_variants_conv)))
+    ppx_sexp_conv ppx_template -require-template-extension ppx_variants_conv)))

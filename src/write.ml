@@ -308,7 +308,7 @@ let bin_write_array_loop bin_write_el buf ~els_pos ~n ar =
 ;;
 
 let bin_write_array (type a) bin_write_el buf ~pos ar =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   if (Obj.magic (bin_write_el : a writer) : float writer)
      == (bin_write_float :> float writer)
   then bin_write_float_array buf ~pos (Obj.magic (ar : a array) : float array) [@nontail]
@@ -320,7 +320,7 @@ let bin_write_array (type a) bin_write_el buf ~pos ar =
 ;;
 
 let bin_write_float_iarray buf ~pos ar =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   bin_write_float_array
     buf
     ~pos
@@ -339,7 +339,7 @@ let bin_write_iarray_loop bin_write_el buf ~els_pos ~n ar =
 ;;
 
 let bin_write_iarray (type a) bin_write_el buf ~pos ar =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   if (Obj.magic (bin_write_el : (a writer[@mode m])) : float writer)
      == (bin_write_float :> float writer)
   then

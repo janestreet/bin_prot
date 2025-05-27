@@ -25,18 +25,14 @@ let max_int_int64 = Int64.of_int max_int
 let min_int_int64 = Int64.of_int min_int
 
 external unsafe_get16 : buf -> int -> int = "%caml_bigstring_get16u"
-
-include struct
-  external unsafe_get32 : buf -> int -> int32 = "%caml_bigstring_get32u"
-  external unsafe_get64 : buf -> int -> int64 = "%caml_bigstring_get64u"
-  external unbox_int32 : int32 -> int32 = "%identity"
-  external unbox_int64 : int64 -> int64 = "%identity"
-  external unbox_nativeint : nativeint -> nativeint = "%identity"
-  external box_int32 : int32 -> int32 = "%identity"
-  external box_int64 : int64 -> int64 = "%identity"
-  external box_nativeint : nativeint -> nativeint = "%identity"
-end
-
+external unsafe_get32 : buf -> int -> int32 = "%caml_bigstring_get32u"
+external unsafe_get64 : buf -> int -> int64 = "%caml_bigstring_get64u"
+external unbox_int32 : int32 -> int32 = "%identity"
+external unbox_int64 : int64 -> int64 = "%identity"
+external unbox_nativeint : nativeint -> nativeint = "%identity"
+external box_int32 : int32 -> int32 = "%identity"
+external box_int64 : int64 -> int64 = "%identity"
+external box_nativeint : nativeint -> nativeint = "%identity"
 external bswap16 : int -> int = "%bswap16"
 external bswap32 : (int32[@local_opt]) -> (int32[@local_opt]) = "%bswap_int32"
 external bswap64 : (int64[@local_opt]) -> (int64[@local_opt]) = "%bswap_int64"
@@ -274,19 +270,17 @@ let bin_read_nat0 buf ~pos_ref =
   | _ -> raise_read_error ReadError.Nat0_code pos
 ;;
 
+[%%template
+[@@@alloc.default a = (heap, stack)]
+
 let unsafe_bin_read_bytes buf ~pos ~len =
-  let str = Bytes.create len in
-  unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
-  str
+  (let str = (Base.Bytes.create [@alloc a]) len in
+   unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
+   str)
+  [@exclave_if_stack a]
 ;;
 
-let%template[@mode local] unsafe_bin_read_bytes buf ~pos ~len =
-  let str = Base.Bytes.create_local len in
-  unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
-  str
-;;
-
-let%template[@mode m = (global, local)] bin_read_bytes buf ~pos_ref =
+let bin_read_bytes buf ~pos_ref =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > Sys.max_string_length then raise_read_error ReadError.String_too_long start_pos;
@@ -294,18 +288,16 @@ let%template[@mode m = (global, local)] bin_read_bytes buf ~pos_ref =
   let next = pos + len in
   check_next_check_overflow buf pos next;
   pos_ref := next;
-  (unsafe_bin_read_bytes [@mode m]) buf ~pos ~len [@exclave_if_local m]
+  (unsafe_bin_read_bytes [@alloc a]) buf ~pos ~len [@exclave_if_stack a]
+[@@zero_alloc_if_stack a opt]
 ;;
 
 let bin_read_string buf ~pos_ref =
-  let str = bin_read_bytes buf ~pos_ref in
-  Bytes.unsafe_to_string str
-;;
-
-let%template[@mode local] bin_read_string buf ~pos_ref =
-  let str = (bin_read_bytes [@mode local]) buf ~pos_ref in
-  Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:str
-;;
+  (let str = (bin_read_bytes [@alloc a]) buf ~pos_ref in
+   Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:str)
+  [@exclave_if_stack a]
+[@@zero_alloc_if_stack a opt]
+;;]
 
 let bin_read_char buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -335,12 +327,13 @@ let bin_read_int buf ~pos_ref =
   | _ -> raise_read_error ReadError.Int_code pos
 ;;
 
-include struct
-  external unbox_float : float -> float = "%identity"
-  external box_float : float -> float = "%identity"
-end
+external unbox_float : float -> float = "%identity"
+external box_float : float -> float = "%identity"
 
-let%template[@mode m = (global, local)] bin_read_float buf ~pos_ref =
+[%%template
+[@@@alloc.default a = (heap, stack)]
+
+let bin_read_float buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -348,94 +341,89 @@ let%template[@mode m = (global, local)] bin_read_float buf ~pos_ref =
   pos_ref := next;
   (* No error possible either. *)
   let f = unsafe_get64le buf pos |> box_int64 |> Int64.float_of_bits |> unbox_float in
-  box_float f [@exclave_if_local m]
+  box_float f [@exclave_if_stack a]
 ;;
 
-let%template[@mode m = (global, local)] bin_read_int32 buf ~pos_ref =
+let bin_read_int32 buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Int32.of_int n [@exclave_if_local m]
+    Int32.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Int32.of_int n [@exclave_if_local m]
+    Int32.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Int32.of_int n [@exclave_if_local m]
+    Int32.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32 buf ~pos_ref ~pos:(pos + 1) in
-    box_int32 n [@exclave_if_local m]
+    box_int32 n [@exclave_if_stack a]
   | _ -> raise_read_error ReadError.Int32_code pos
 ;;
 
-let%template[@mode m = (global, local)] bin_read_int64 buf ~pos_ref =
+let bin_read_int64 buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Int64.of_int n [@exclave_if_local m]
+    Int64.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Int64.of_int n [@exclave_if_local m]
+    Int64.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Int64.of_int n [@exclave_if_local m]
+    Int64.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32_as_int64 buf ~pos_ref ~pos:(pos + 1) in
-    box_int64 n [@exclave_if_local m]
+    box_int64 n [@exclave_if_stack a]
   (*$ Code.pipe_char INT64 *)
   | '\xfc' (*$*) ->
     let n = safe_bin_read_int64 buf ~pos_ref ~pos:(pos + 1) in
-    box_int64 n [@exclave_if_local m]
+    box_int64 n [@exclave_if_stack a]
   | _ -> raise_read_error ReadError.Int64_code pos
 ;;
 
-let%template[@mode m = (global, local)] bin_read_nativeint buf ~pos_ref =
+let bin_read_nativeint buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Nativeint.of_int n [@exclave_if_local m]
+    Nativeint.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Nativeint.of_int n [@exclave_if_local m]
+    Nativeint.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Nativeint.of_int n [@exclave_if_local m]
+    Nativeint.of_int n [@exclave_if_stack a]
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32_as_nativeint buf ~pos_ref ~pos:(pos + 1) in
-    box_nativeint n [@exclave_if_local m]
+    box_nativeint n [@exclave_if_stack a]
   (*$ Code.pipe_char INT64 *)
   | '\xfc' (*$*) when arch_sixtyfour ->
     let n = safe_bin_read_int64_as_nativeint buf ~pos_ref ~pos:(pos + 1) in
-    box_nativeint n [@exclave_if_local m]
+    box_nativeint n [@exclave_if_stack a]
   | _ -> raise_read_error ReadError.Nativeint_code pos
 ;;
 
-let%template[@mode m = (global, local)] bin_read_ref bin_read_el buf ~pos_ref =
+let bin_read_ref bin_read_el buf ~pos_ref =
   let el = bin_read_el buf ~pos_ref in
-  ref el [@exclave_if_local m]
-;;
-
-let bin_read_lazy bin_read_el buf ~pos_ref =
-  let el = bin_read_el buf ~pos_ref in
-  Lazy.from_val el
+  ref el [@exclave_if_stack a]
 ;;
 
 let bin_read_option bin_read_el buf ~pos_ref =
@@ -447,22 +435,30 @@ let bin_read_option bin_read_el buf ~pos_ref =
     None
   | '\001' ->
     pos_ref := pos + 1;
-    let el = bin_read_el buf ~pos_ref in
-    Some el
+    (let el = bin_read_el buf ~pos_ref in
+     Some el)
+    [@exclave_if_stack a]
   | _ -> raise_read_error ReadError.Option_code pos
 ;;
 
 let bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
-  a, b
+  (let a = bin_read_a buf ~pos_ref in
+   let b = bin_read_b buf ~pos_ref in
+   a, b)
+  [@exclave_if_stack a]
 ;;
 
 let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
-  let c = bin_read_c buf ~pos_ref in
-  a, b, c
+  (let a = bin_read_a buf ~pos_ref in
+   let b = bin_read_b buf ~pos_ref in
+   let c = bin_read_c buf ~pos_ref in
+   a, b, c)
+  [@exclave_if_stack a]
+;;]
+
+let bin_read_lazy bin_read_el buf ~pos_ref =
+  let el = bin_read_el buf ~pos_ref in
+  Lazy.from_val el
 ;;
 
 let[@tail_mod_cons] rec bin_read_n_list bin_read_el buf ~pos_ref len =
@@ -473,7 +469,7 @@ let[@tail_mod_cons] rec bin_read_n_list bin_read_el buf ~pos_ref len =
     el :: bin_read_n_list bin_read_el buf ~pos_ref (len - 1))
 ;;
 
-let%template[@mode local] bin_read_n_rev_list bin_read_el buf ~pos_ref len =
+let%template[@mode stack] bin_read_n_rev_list bin_read_el buf ~pos_ref len =
   let rec loop n acc =
     if n = 0 then acc else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)
   in
@@ -489,11 +485,11 @@ let rev l =
   loop l []
 ;;
 
-let%template[@mode local] bin_read_n_list bin_read_el buf ~pos_ref len =
-  rev ((bin_read_n_rev_list [@mode local]) bin_read_el buf ~pos_ref len)
+let%template[@mode stack] bin_read_n_list bin_read_el buf ~pos_ref len =
+  rev ((bin_read_n_rev_list [@alloc stack]) bin_read_el buf ~pos_ref len)
 ;;
 
-let%template[@mode m = (global, local)] bin_read_list_with_max_len
+let%template[@alloc a = (heap, stack)] bin_read_list_with_max_len
   ~max_len
   bin_read_el
   buf
@@ -501,15 +497,15 @@ let%template[@mode m = (global, local)] bin_read_list_with_max_len
   =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > max_len then raise_read_error (List_too_long { len; max_len }) !pos_ref;
-  (bin_read_n_list [@mode m]) bin_read_el buf ~pos_ref len [@exclave_if_local m]
+  (bin_read_n_list [@alloc a]) bin_read_el buf ~pos_ref len [@exclave_if_stack a]
 ;;
 
-let%template[@mode m = (global, local)] bin_read_list bin_read_el buf ~pos_ref =
-  (bin_read_list_with_max_len [@mode m])
+let%template[@alloc a = (heap, stack)] bin_read_list bin_read_el buf ~pos_ref =
+  (bin_read_list_with_max_len [@alloc a])
     ~max_len:max_int
     bin_read_el
     buf
-    ~pos_ref [@exclave_if_local m]
+    ~pos_ref [@exclave_if_stack a]
 ;;
 
 let dummy_float_buf () =
@@ -553,7 +549,7 @@ let bin_read_float_array buf ~pos_ref =
 ;;
 
 let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start_pos =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   if arch_sixtyfour
   then (
     if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long start_pos)
@@ -575,28 +571,11 @@ let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start
       then raise_read_error ReadError.Array_too_long start_pos)
 ;;
 
-let bin_read_array (type a) (bin_read_el : _ reader) buf ~pos_ref =
-  if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
-  then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
-  else (
-    let start_pos = !pos_ref in
-    let len = (bin_read_nat0 buf ~pos_ref :> int) in
-    if len = 0
-    then [||]
-    else (
-      check_array_len bin_read_el ~len ~start_pos;
-      let first = bin_read_el buf ~pos_ref in
-      let res = Array.make len first in
-      for i = 1 to len - 1 do
-        let el = bin_read_el buf ~pos_ref in
-        Array.unsafe_set res i el
-      done;
-      res))
-;;
-
-external make_local_array : int -> 'a -> 'a array = "caml_make_vect" [@@noalloc]
-
-let%template[@mode local] bin_read_array bin_read_el buf ~pos_ref =
+let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
+  bin_read_el
+  buf
+  ~pos_ref
+  =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len = 0
@@ -604,23 +583,39 @@ let%template[@mode local] bin_read_array bin_read_el buf ~pos_ref =
   else (
     check_array_len bin_read_el ~len ~start_pos;
     let first = bin_read_el buf ~pos_ref in
-    let res = make_local_array len first in
-    for i = 1 to len - 1 do
-      let el = bin_read_el buf ~pos_ref in
-      Base.Array.unsafe_set res i el
-    done;
-    res)
+    (let res = (Base.Array.create [@alloc a]) ~len first in
+     for i = 1 to len - 1 do
+       let el = bin_read_el buf ~pos_ref in
+       Base.Array.unsafe_set res i el
+     done;
+     res)
+    [@exclave_if_stack a])
 ;;
 
-let bin_read_iarray bin_read_el buf ~pos_ref =
-  Base.Iarray.unsafe_of_array__promise_no_mutation
-    (bin_read_array bin_read_el buf ~pos_ref)
+let%template bin_read_array (type a) (bin_read_el : _ reader) buf ~pos_ref =
+  if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
+  then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
+  else
+    (bin_read_array_aux__no_float_array_blit_optimization [@alloc heap])
+      bin_read_el
+      buf
+      ~pos_ref
 ;;
 
-let%template[@mode local] bin_read_iarray bin_read_el buf ~pos_ref =
+let%template[@alloc stack] bin_read_array bin_read_el buf ~pos_ref =
+  (bin_read_array_aux__no_float_array_blit_optimization [@alloc stack])
+    bin_read_el
+    buf
+    ~pos_ref
+;;
+
+let%template[@alloc a = (heap, stack)] bin_read_iarray bin_read_el buf ~pos_ref =
+  let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
-  check_array_len bin_read_el ~len ~start_pos:!pos_ref;
-  Base.Iarray.Local.init len ~f:(fun _ -> bin_read_el buf ~pos_ref)
+  check_array_len bin_read_el ~len ~start_pos;
+  (Base.Iarray.init [@alloc a]) len ~f:(fun _ ->
+    bin_read_el buf ~pos_ref [@exclave_if_stack a])
+  [@nontail] [@exclave_if_stack a]
 ;;
 
 external buf_of_array1
@@ -744,24 +739,24 @@ let bin_read_int_64bit buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let%template[@mode m = (global, local)] bin_read_int32_bits buf ~pos_ref =
+let%template[@alloc a = (heap, stack)] bin_read_int32_bits buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get32le buf pos in
-  box_int32 n [@exclave_if_local m]
+  box_int32 n [@exclave_if_stack a]
 ;;
 
-let%template[@mode m = (global, local)] bin_read_int64_bits buf ~pos_ref =
+let%template[@alloc a = (heap, stack)] bin_read_int64_bits buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get64le buf pos in
-  box_int64 n [@exclave_if_local m]
+  box_int64 n [@exclave_if_stack a]
 ;;
 
 let bin_read_network16_int buf ~pos_ref =
@@ -783,14 +778,14 @@ let bin_read_network32_int buf ~pos_ref =
   safe_int_of_int32 pos n
 ;;
 
-let%template[@mode m = (global, local)] bin_read_network32_int32 buf ~pos_ref =
+let%template[@alloc a = (heap, stack)] bin_read_network32_int32 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get32be buf pos in
-  box_int32 n [@exclave_if_local m]
+  box_int32 n [@exclave_if_stack a]
 ;;
 
 let bin_read_network64_int buf ~pos_ref =
@@ -803,14 +798,14 @@ let bin_read_network64_int buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let%template[@mode m = (global, local)] bin_read_network64_int64 buf ~pos_ref =
+let%template[@alloc a = (heap, stack)] bin_read_network64_int64 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get64be buf pos in
-  box_int64 n [@exclave_if_local m]
+  box_int64 n [@exclave_if_stack a]
 ;;
 
 [%%if ocaml_version < (4, 07, 0)]
@@ -820,10 +815,8 @@ external unsafe_bytes_set64 : bytes -> int -> int64 -> unit = "%caml_string_set6
 
 [%%else]
 
-include struct
-  external unsafe_bytes_set32 : bytes -> int -> int32 -> unit = "%caml_bytes_set32u"
-  external unsafe_bytes_set64 : bytes -> int -> int64 -> unit = "%caml_bytes_set64u"
-end
+external unsafe_bytes_set32 : bytes -> int -> int32 -> unit = "%caml_bytes_set32u"
+external unsafe_bytes_set64 : bytes -> int -> int64 -> unit = "%caml_bytes_set64u"
 
 [%%endif]
 
@@ -845,100 +838,87 @@ let bin_read_md5_aux res buf pos =
     unsafe_bytes_set32 res 12 d)
 ;;
 
+[%%template
+[@@@alloc.default a @ m = (heap_global, stack_local)]
+
 let unsafe_bin_read_md5 buf pos =
-  let res = Bytes.create 16 in
-  bin_read_md5_aux res buf pos;
-  Md5_lib.unsafe_of_binary (Bytes.unsafe_to_string res)
+  (let res = (Base.Bytes.create [@alloc a]) 16 in
+   bin_read_md5_aux res buf pos;
+   (Md5_lib.unsafe_of_binary [@mode m])
+     (Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res))
+  [@exclave_if_stack a]
 ;;
 
-let%template[@mode local] unsafe_bin_read_md5 buf pos =
-  let res = Base.Bytes.create_local 16 in
-  bin_read_md5_aux res buf pos;
-  Md5_lib.unsafe_of_binary_local
-    (Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res)
-;;
-
-let%template[@mode m = (global, local)] bin_read_md5 buf ~pos_ref =
+let bin_read_md5 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 16 in
   check_next buf next;
   pos_ref := next;
-  (unsafe_bin_read_md5 [@mode m]) buf pos [@exclave_if_local m]
-;;
+  (unsafe_bin_read_md5 [@alloc a]) buf pos [@exclave_if_stack a]
+;;]
 
 (* Local readers *)
 
 [%%template
-let[@mode local] [@inline] bin_read_unit buf ~pos_ref = bin_read_unit buf ~pos_ref
-let[@mode local] [@inline] bin_read_bool buf ~pos_ref = bin_read_bool buf ~pos_ref
-let[@mode local] [@inline] bin_read_char buf ~pos_ref = bin_read_char buf ~pos_ref
-let[@mode local] [@inline] bin_read_int buf ~pos_ref = bin_read_int buf ~pos_ref
-let[@mode local] [@inline] bin_read_nat0 buf ~pos_ref = bin_read_nat0 buf ~pos_ref
+[@@@mode.default local]
 
-let[@mode local] bin_read_option bin_read_el buf ~pos_ref =
-  let pos = safe_get_pos buf pos_ref in
-  assert_pos pos;
-  match unsafe_get buf pos with
-  | '\000' ->
-    pos_ref := pos + 1;
-    None
-  | '\001' ->
-    pos_ref := pos + 1;
-    let el = bin_read_el buf ~pos_ref in
-    Some el
-  | _ -> raise_read_error ReadError.Option_code pos
+let[@inline] bin_read_unit buf ~pos_ref = bin_read_unit buf ~pos_ref
+let[@inline] bin_read_bool buf ~pos_ref = bin_read_bool buf ~pos_ref
+let[@inline] bin_read_char buf ~pos_ref = bin_read_char buf ~pos_ref
+let[@inline] bin_read_int buf ~pos_ref = bin_read_int buf ~pos_ref
+let[@inline] bin_read_nat0 buf ~pos_ref = bin_read_nat0 buf ~pos_ref
+let[@inline] bin_read_float buf ~pos_ref = (bin_read_float [@alloc stack]) buf ~pos_ref
+let[@inline] bin_read_int32 buf ~pos_ref = (bin_read_int32 [@alloc stack]) buf ~pos_ref
+let[@inline] bin_read_int64 buf ~pos_ref = (bin_read_int64 [@alloc stack]) buf ~pos_ref
+
+let[@inline] bin_read_nativeint buf ~pos_ref =
+  (bin_read_nativeint [@alloc stack]) buf ~pos_ref
 ;;
 
-let[@mode local] bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
-  a, b
-;;
-
-let[@mode local] bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
-  let c = bin_read_c buf ~pos_ref in
-  a, b, c
-;;
+let[@inline] bin_read_bytes buf ~pos_ref = (bin_read_bytes [@alloc stack]) buf ~pos_ref
+let[@inline] bin_read_string buf ~pos_ref = (bin_read_string [@alloc stack]) buf ~pos_ref
+let[@inline] bin_read_md5 buf ~pos_ref = (bin_read_md5 [@alloc stack]) buf ~pos_ref
+let bin_read_ref = (bin_read_ref [@alloc stack])
+let bin_read_option = (bin_read_option [@alloc stack])
+let bin_read_list = (bin_read_list [@alloc stack])
+let bin_read_list_with_max_len = (bin_read_list_with_max_len [@alloc stack])
+let bin_read_array = (bin_read_array [@alloc stack])
+let bin_read_iarray = (bin_read_iarray [@alloc stack])
+let bin_read_pair = (bin_read_pair [@alloc stack])
+let bin_read_triple = (bin_read_triple [@alloc stack])
 
 (* The vec and mat readers return bigarrays, which cannot be allocated on the stack, so we
    make no effort to localize them *)
-let[@mode local] bin_read_float32_vec = bin_read_float32_vec
-let[@mode local] bin_read_float64_vec = bin_read_float64_vec
-let[@mode local] bin_read_vec = bin_read_vec
-let[@mode local] bin_read_float32_mat = bin_read_float32_mat
-let[@mode local] bin_read_float64_mat = bin_read_float64_mat
-let[@mode local] bin_read_mat = bin_read_mat
-let[@mode local] bin_read_bigstring = bin_read_bigstring
+let bin_read_float32_vec = bin_read_float32_vec
+let bin_read_float64_vec = bin_read_float64_vec
+let bin_read_vec = bin_read_vec
+let bin_read_float32_mat = bin_read_float32_mat
+let bin_read_float64_mat = bin_read_float64_mat
+let bin_read_mat = bin_read_mat
+let bin_read_bigstring = bin_read_bigstring
+let[@inline] bin_read_variant_int buf ~pos_ref = bin_read_variant_int buf ~pos_ref
+let[@inline] bin_read_int_8bit buf ~pos_ref = bin_read_int_8bit buf ~pos_ref
+let[@inline] bin_read_int_16bit buf ~pos_ref = bin_read_int_16bit buf ~pos_ref
+let[@inline] bin_read_int_32bit buf ~pos_ref = bin_read_int_32bit buf ~pos_ref
+let[@inline] bin_read_int_64bit buf ~pos_ref = bin_read_int_64bit buf ~pos_ref
 
-let[@mode local] [@inline] bin_read_variant_int buf ~pos_ref =
-  bin_read_variant_int buf ~pos_ref
+let[@inline] bin_read_int32_bits buf ~pos_ref =
+  (bin_read_int32_bits [@alloc stack]) buf ~pos_ref
 ;;
 
-let[@mode local] [@inline] bin_read_int_8bit buf ~pos_ref = bin_read_int_8bit buf ~pos_ref
-
-let[@mode local] [@inline] bin_read_int_16bit buf ~pos_ref =
-  bin_read_int_16bit buf ~pos_ref
+let[@inline] bin_read_int64_bits buf ~pos_ref =
+  (bin_read_int64_bits [@alloc stack]) buf ~pos_ref
 ;;
 
-let[@mode local] [@inline] bin_read_int_32bit buf ~pos_ref =
-  bin_read_int_32bit buf ~pos_ref
+let[@inline] bin_read_network16_int buf ~pos_ref = bin_read_network16_int buf ~pos_ref
+let[@inline] bin_read_network32_int buf ~pos_ref = bin_read_network32_int buf ~pos_ref
+let[@inline] bin_read_network64_int buf ~pos_ref = bin_read_network64_int buf ~pos_ref
+
+let[@inline] bin_read_network32_int32 buf ~pos_ref =
+  (bin_read_network32_int32 [@alloc stack]) buf ~pos_ref
 ;;
 
-let[@mode local] [@inline] bin_read_int_64bit buf ~pos_ref =
-  bin_read_int_64bit buf ~pos_ref
-;;
-
-let[@mode local] [@inline] bin_read_network16_int buf ~pos_ref =
-  bin_read_network16_int buf ~pos_ref
-;;
-
-let[@mode local] [@inline] bin_read_network32_int buf ~pos_ref =
-  bin_read_network32_int buf ~pos_ref
-;;
-
-let[@mode local] [@inline] bin_read_network64_int buf ~pos_ref =
-  bin_read_network64_int buf ~pos_ref
+let[@inline] bin_read_network64_int64 buf ~pos_ref =
+  (bin_read_network64_int64 [@alloc stack]) buf ~pos_ref
 ;;]

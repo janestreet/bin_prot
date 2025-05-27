@@ -47,7 +47,7 @@ type 'a id = 'a
 (*_ This type synonym is introduced because older versions of OCaml
   do not support destructive substitutions with `type 'a t1 = t2`. *)
 
-type 'a t = 'a [@@deriving compare, sexp_of]
+type 'a t = 'a [@@deriving compare ~localize, sexp_of]
 
 include Binable.S1 with type 'a t := 'a id
 
@@ -65,7 +65,7 @@ include Binable.S1 with type 'a t := 'a id
     [Opaque.String.t] is a string. *)
 module Opaque : sig
   module Bigstring : sig
-    type t [@@deriving compare, sexp_of]
+    type t [@@deriving compare ~localize, sexp_of]
 
     include Binable.S with type t := t
 
@@ -74,7 +74,7 @@ module Opaque : sig
   end
 
   module String : sig
-    type t [@@deriving compare, sexp_of]
+    type t [@@deriving compare ~localize, sexp_of]
 
     include Binable.S with type t := t
 
@@ -114,7 +114,7 @@ end
     similar), you can define a type which is similar to T but has various components
     replaced with [Ignored.t]. *)
 module Ignored : sig
-  type t
+  type t [@@immediate]
 
   val bin_size_t : t Size.sizer
   val bin_read_t : t Read.reader

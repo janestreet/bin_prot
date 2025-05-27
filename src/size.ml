@@ -217,7 +217,7 @@ let bin_size_array_loop bin_size_el ar ~total_len ~n =
 ;;
 
 let bin_size_array (type a) bin_size_el ar =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   if (Obj.magic (bin_size_el : a sizer) : float sizer) == (bin_size_float :> float sizer)
   then bin_size_float_array (Obj.magic (ar : a array) : float array) [@nontail]
   else (
@@ -244,7 +244,7 @@ let bin_size_iarray_loop bin_size_el ar ~total_len ~n =
 ;;
 
 let bin_size_iarray (type a) bin_size_el ar =
-  let module Obj = Base.Exported_for_specific_uses.Obj_local in
+  let module Obj = Base.Obj in
   if (Obj.magic (bin_size_el : (a sizer[@mode m])) : float sizer)
      == (bin_size_float :> float sizer)
   then
