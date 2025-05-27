@@ -771,7 +771,8 @@ let%expect_test ("iarray" [@tags "no-js"]) =
       (fun () -> bin_read_int_iarray bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\063\000\000" in
     require_does_raise [%here] Buffer_short (fun () ->
-      bin_read_int_iarray bad_buf ~pos_ref:(ref 0)))
+      bin_read_int_iarray bad_buf ~pos_ref:(ref 0)));
+  [%expect {| |}]
 ;;
 
 module Array1_extras (M : sig

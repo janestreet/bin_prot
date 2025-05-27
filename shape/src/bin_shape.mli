@@ -79,7 +79,7 @@ val annotate : Uuid.t -> t -> t
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving equal, sexp]
+    type nonrec t = t [@@deriving equal ~localize, sexp]
   end
 end
 
@@ -102,7 +102,7 @@ end
     might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t [@@deriving compare, globalize, sexp]
+  type t [@@deriving compare ~localize, globalize, sexp]
 
   val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t
@@ -113,7 +113,7 @@ end
 
 module Expert : sig
   module Sorted_table : sig
-    type 'a t [@@deriving compare, sexp_of]
+    type 'a t [@@deriving compare ~localize, sexp_of]
 
     val expose : 'a t -> (string * 'a) list
   end
@@ -129,20 +129,21 @@ module Expert : sig
       | Application of 'a * 'a list
       | Rec_app of int * 'a list
       | Var of int
-    [@@deriving compare, sexp_of]
+    [@@deriving compare ~localize, sexp_of]
   end
 
   module Canonical : sig
     module Exp1 : sig
-      type t0 = Exp of t0 Canonical_exp_constructor.t [@@deriving compare, sexp_of]
+      type t0 = Exp of t0 Canonical_exp_constructor.t
+      [@@deriving compare ~localize, sexp_of]
     end
 
-    type t = Exp1.t0 [@@deriving compare, sexp_of]
+    type t = Exp1.t0 [@@deriving compare ~localize, sexp_of]
   end
 end
 
 module Canonical : sig
-  type t = Expert.Canonical.t [@@deriving compare, sexp_of]
+  type t = Expert.Canonical.t [@@deriving compare ~localize, sexp_of]
 
   val to_string_hum : t -> string
   val to_digest : t -> Digest.t

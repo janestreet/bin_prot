@@ -6,7 +6,8 @@
  (libraries bin_shape base.md5 base ppx_stable_witness.stable_witness)
  (public_name bin_prot)
  (preprocess
-  (pps ppx_sexp_conv ppx_compare ppx_optcomp ppx_template))
+  (pps ppx_sexp_conv ppx_compare ppx_optcomp ppx_template
+    -require-template-extension))
  (js_of_ocaml
   (javascript_files runtime.js))
  (wasm_of_ocaml

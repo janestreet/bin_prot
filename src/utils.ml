@@ -424,7 +424,7 @@ let raise_read_not_enough =
 ;;
 
 module%template.portable
-  [@modality p] [@conflate_modality_as_mode p] Make_iterable_binable
+  [@modality p] Make_iterable_binable
     (S : Make_iterable_binable_spec) =
 struct
   open S
