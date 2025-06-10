@@ -675,9 +675,8 @@ let%template[@alloc a = (heap, stack)] bin_read_iarray bin_read_el buf ~pos_ref 
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   check_array_len bin_read_el ~len ~start_pos;
-  (Base.Iarray.init [@alloc a])
-    len
-    ~f:(stack_ fun _ -> bin_read_el buf ~pos_ref [@exclave_if_stack a])
+  (Base.Iarray.init [@alloc a]) len ~f:(stack_ fun _ ->
+    bin_read_el buf ~pos_ref [@exclave_if_stack a])
   [@nontail] [@exclave_if_stack a]
 ;;
 

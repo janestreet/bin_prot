@@ -400,8 +400,8 @@ module Gid : sig @@ portable
 end = struct
   type t = int [@@deriving compare ~localize, equal ~localize, sexp]
 
-  let r = Atomic.make 0
-  let create () = Atomic.fetch_and_add r 1
+  let r = Stdlib.Atomic.make 0
+  let create () = Stdlib.Atomic.fetch_and_add r 1
 end
 
 module Expression = struct
