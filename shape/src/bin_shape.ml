@@ -400,8 +400,8 @@ module Gid : sig
 end = struct
   type t = int [@@deriving compare ~localize, equal ~localize, sexp]
 
-  let r = Atomic.make 0
-  let create () = Atomic.fetch_and_add r 1
+  let r = Stdlib.Atomic.make 0
+  let create () = Stdlib.Atomic.fetch_and_add r 1
 end
 
 module Expression = struct
@@ -418,36 +418,23 @@ module Expression = struct
     val id : 'a t -> Gid.t
     val lookup : 'a t -> Tid.t -> Vid.t list * 'a
   end = struct
-    module Inner = struct
-      type 'a t =
-        { gid : Gid.t
-        ; loc : Location.t
-        ; members : (Tid.t * (Vid.t list * 'a)) list
-        }
-      [@@unsafe_allow_any_mode_crossing]
-      [@@deriving compare ~localize, equal ~localize, sexp]
-    end
-
-    type 'a t = { inner : 'a Inner.t } [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-    [%%template
-    [@@@mode.default m = (local, global)]
-
-    let compare compare_a t1 t2 = (Inner.compare [@mode m]) compare_a t1.inner t2.inner
-    let equal equal_a t1 t2 = (Inner.equal [@mode m]) equal_a t1.inner t2.inner]
-
-    let sexp_of_t sexp_of_a { inner } = Inner.sexp_of_t sexp_of_a inner
-    let t_of_sexp a_of_sexp sexp = { inner = Inner.t_of_sexp a_of_sexp sexp }
+    type 'a t =
+      { gid : Gid.t
+      ; loc : Location.t
+      ; members : (Tid.t * (Vid.t list * 'a)) list
+      }
+    [@@unsafe_allow_any_mode_crossing]
+    [@@deriving compare ~localize, equal ~localize, sexp]
 
     let create loc trips =
       let gid = Gid.create () in
       let members = List.map trips ~f:(fun (x, vs, t) -> x, (vs, t)) in
-      { inner = { gid; loc; members } }
+      { gid; loc; members }
     ;;
 
-    let id { inner = g } = g.gid
+    let id g = g.gid
 
-    let lookup { inner = g } tid =
+    let lookup g tid =
       match List.Assoc.find g.members ~equal:Tid.( = ) tid with
       | Some scheme -> scheme
       | None ->
