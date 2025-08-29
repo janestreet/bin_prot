@@ -69,6 +69,23 @@ let maybe_annotate_shape maybe_uuid shape =
   | Some uuid -> Shape.annotate uuid shape
 ;;
 
+let with_module_name f ~module_name function_name =
+  match module_name with
+  | None -> f function_name
+  | Some module_name -> f (String.concat ~sep:"." [ module_name; function_name ])
+;;
+
+let raise_concurrent_modification = with_module_name raise_concurrent_modification
+
+let raise_read_too_much =
+  with_module_name (fun str ->
+    failwith (str ^ ": tried to read more elements than available"))
+;;
+
+let raise_read_not_enough =
+  with_module_name (fun str -> failwith (str ^ ": didn't read all elements"))
+;;
+
 [%%template
 [@@@mode.default m = (global, local)]
 
@@ -404,28 +421,12 @@ Make_binable3_gen [@mode m] [@modality p] (struct
     include S
 
     let maybe_caller_identity = None
-  end)]
-
-let with_module_name f ~module_name function_name =
-  match module_name with
-  | None -> f function_name
-  | Some module_name -> f (String.concat ~sep:"." [ module_name; function_name ])
-;;
-
-let raise_concurrent_modification = with_module_name raise_concurrent_modification
-
-let raise_read_too_much =
-  with_module_name (fun str ->
-    failwith (str ^ ": tried to read more elements than available"))
-;;
-
-let raise_read_not_enough =
-  with_module_name (fun str -> failwith (str ^ ": didn't read all elements"))
-;;
+  end)
 
 module%template.portable
   [@modality p] Make_iterable_binable
-    (S : Make_iterable_binable_spec) =
+    (S : Make_iterable_binable_spec
+  [@mode m]) =
 struct
   open S
 
@@ -439,30 +440,34 @@ struct
         ])
   ;;
 
-  let bin_size_t t =
-    let size_ref = ref 0 in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      size_ref := !size_ref + bin_size_el el;
-      Int.incr cnt_ref);
-    let len = length t in
-    if !cnt_ref = len
-    then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
-    else raise_concurrent_modification ~module_name "bin_size_t"
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t buf ~pos t =
-    let len = length t in
-    let plen = Nat0.unsafe_of_int len in
-    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      pos_ref := bin_write_el buf ~pos:!pos_ref el;
-      Int.incr cnt_ref);
-    if !cnt_ref = len
-    then !pos_ref
-    else raise_concurrent_modification ~module_name "bin_write_t"
-  ;;
+    let bin_size_t t =
+      let size_ref = ref 0 in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        size_ref := !size_ref + (bin_size_el [@mode m]) el;
+        Int.incr cnt_ref);
+      let len = (length [@mode m]) t in
+      if !cnt_ref = len
+      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      else raise_concurrent_modification ~module_name "bin_size_t"
+    ;;
+
+    let bin_write_t buf ~pos t =
+      let len = (length [@mode m]) t in
+      let plen = Nat0.unsafe_of_int len in
+      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        pos_ref := (bin_write_el [@mode m]) buf ~pos:!pos_ref el;
+        Int.incr cnt_ref);
+      if !cnt_ref = len
+      then !pos_ref
+      else raise_concurrent_modification ~module_name "bin_write_t"
+    ;;
+  end
 
   let bin_read_t buf ~pos_ref =
     let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
@@ -483,7 +488,10 @@ struct
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
-module%template.portable Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
+module%template.portable Make_iterable_binable1
+    (S : Make_iterable_binable1_spec
+  [@mode m]) =
+struct
   open S
 
   let bin_shape_t t =
@@ -496,30 +504,34 @@ module%template.portable Make_iterable_binable1 (S : Make_iterable_binable1_spec
         ])
   ;;
 
-  let bin_size_t bin_size_a t =
-    let size_ref = ref 0 in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      size_ref := !size_ref + bin_size_el bin_size_a el;
-      Int.incr cnt_ref);
-    let len = length t in
-    if !cnt_ref = len
-    then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
-    else raise_concurrent_modification ~module_name "bin_size_t"
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_a buf ~pos t =
-    let len = length t in
-    let plen = Nat0.unsafe_of_int len in
-    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      pos_ref := bin_write_el bin_write_a buf ~pos:!pos_ref el;
-      Int.incr cnt_ref);
-    if !cnt_ref = len
-    then !pos_ref
-    else raise_concurrent_modification ~module_name "bin_write_t"
-  ;;
+    let bin_size_t bin_size_a t =
+      let size_ref = ref 0 in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        size_ref := !size_ref + (bin_size_el [@mode m]) bin_size_a el;
+        Int.incr cnt_ref);
+      let len = (length [@mode m]) t in
+      if !cnt_ref = len
+      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      else raise_concurrent_modification ~module_name "bin_size_t"
+    ;;
+
+    let bin_write_t bin_write_a buf ~pos t =
+      let len = (length [@mode m]) t in
+      let plen = Nat0.unsafe_of_int len in
+      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        pos_ref := (bin_write_el [@mode m]) bin_write_a buf ~pos:!pos_ref el;
+        Int.incr cnt_ref);
+      if !cnt_ref = len
+      then !pos_ref
+      else raise_concurrent_modification ~module_name "bin_write_t"
+    ;;
+  end
 
   let bin_read_t bin_read_a buf ~pos_ref =
     let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
@@ -556,7 +568,10 @@ module%template.portable Make_iterable_binable1 (S : Make_iterable_binable1_spec
   ;;
 end
 
-module%template.portable Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
+module%template.portable Make_iterable_binable2
+    (S : Make_iterable_binable2_spec
+  [@mode m]) =
+struct
   open S
 
   let bin_shape_t t1 t2 =
@@ -569,30 +584,34 @@ module%template.portable Make_iterable_binable2 (S : Make_iterable_binable2_spec
         ])
   ;;
 
-  let bin_size_t bin_size_a bin_size_b t =
-    let size_ref = ref 0 in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      size_ref := !size_ref + bin_size_el bin_size_a bin_size_b el;
-      Int.incr cnt_ref);
-    let len = length t in
-    if !cnt_ref = len
-    then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
-    else raise_concurrent_modification ~module_name "bin_size_t"
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_a bin_write_b buf ~pos t =
-    let len = length t in
-    let plen = Nat0.unsafe_of_int len in
-    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      pos_ref := bin_write_el bin_write_a bin_write_b buf ~pos:!pos_ref el;
-      Int.incr cnt_ref);
-    if !cnt_ref = len
-    then !pos_ref
-    else raise_concurrent_modification ~module_name "bin_write_t"
-  ;;
+    let bin_size_t bin_size_a bin_size_b t =
+      let size_ref = ref 0 in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        size_ref := !size_ref + (bin_size_el [@mode m]) bin_size_a bin_size_b el;
+        Int.incr cnt_ref);
+      let len = (length [@mode m]) t in
+      if !cnt_ref = len
+      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      else raise_concurrent_modification ~module_name "bin_size_t"
+    ;;
+
+    let bin_write_t bin_write_a bin_write_b buf ~pos t =
+      let len = (length [@mode m]) t in
+      let plen = Nat0.unsafe_of_int len in
+      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        pos_ref := (bin_write_el [@mode m]) bin_write_a bin_write_b buf ~pos:!pos_ref el;
+        Int.incr cnt_ref);
+      if !cnt_ref = len
+      then !pos_ref
+      else raise_concurrent_modification ~module_name "bin_write_t"
+    ;;
+  end
 
   let bin_read_t bin_read_a bin_read_b buf ~pos_ref =
     let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
@@ -635,7 +654,10 @@ module%template.portable Make_iterable_binable2 (S : Make_iterable_binable2_spec
   ;;
 end
 
-module%template.portable Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
+module%template.portable Make_iterable_binable3
+    (S : Make_iterable_binable3_spec
+  [@mode m]) =
+struct
   open S
 
   let bin_shape_t t1 t2 t3 =
@@ -648,30 +670,42 @@ module%template.portable Make_iterable_binable3 (S : Make_iterable_binable3_spec
         ])
   ;;
 
-  let bin_size_t bin_size_a bin_size_b bin_size_c t =
-    let size_ref = ref 0 in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      size_ref := !size_ref + bin_size_el bin_size_a bin_size_b bin_size_c el;
-      Int.incr cnt_ref);
-    let len = length t in
-    if !cnt_ref = len
-    then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
-    else raise_concurrent_modification ~module_name "bin_size_t"
-  ;;
+  include struct
+    [@@@mode.default m = (global, m)]
 
-  let bin_write_t bin_write_a bin_write_b bin_write_c buf ~pos t =
-    let len = length t in
-    let plen = Nat0.unsafe_of_int len in
-    let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
-    let cnt_ref = ref 0 in
-    iter t ~f:(fun el ->
-      pos_ref := bin_write_el bin_write_a bin_write_b bin_write_c buf ~pos:!pos_ref el;
-      Int.incr cnt_ref);
-    if !cnt_ref = len
-    then !pos_ref
-    else raise_concurrent_modification ~module_name "bin_write_t"
-  ;;
+    let bin_size_t bin_size_a bin_size_b bin_size_c t =
+      let size_ref = ref 0 in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        size_ref
+        := !size_ref + (bin_size_el [@mode m]) bin_size_a bin_size_b bin_size_c el;
+        Int.incr cnt_ref);
+      let len = (length [@mode m]) t in
+      if !cnt_ref = len
+      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      else raise_concurrent_modification ~module_name "bin_size_t"
+    ;;
+
+    let bin_write_t bin_write_a bin_write_b bin_write_c buf ~pos t =
+      let len = (length [@mode m]) t in
+      let plen = Nat0.unsafe_of_int len in
+      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let cnt_ref = ref 0 in
+      (iter [@mode m]) t ~f:(fun el ->
+        pos_ref
+        := (bin_write_el [@mode m])
+             bin_write_a
+             bin_write_b
+             bin_write_c
+             buf
+             ~pos:!pos_ref
+             el;
+        Int.incr cnt_ref);
+      if !cnt_ref = len
+      then !pos_ref
+      else raise_concurrent_modification ~module_name "bin_write_t"
+    ;;
+  end
 
   let bin_read_t bin_read_a bin_read_b bin_read_c buf ~pos_ref =
     let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
@@ -714,4 +748,4 @@ module%template.portable Make_iterable_binable3 (S : Make_iterable_binable3_spec
     ; reader = bin_reader_t type_class1.reader type_class2.reader type_class3.reader
     }
   ;;
-end
+end]
