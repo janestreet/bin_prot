@@ -9,9 +9,13 @@ module%template Definitions = struct
       position and a value, and return the next position after writing out the value. *)
   type ('a : any) writer = buf -> pos:pos -> 'a @ m -> pos
 
-  type ('a, 'b) writer1 = ('a writer[@mode m]) -> ('b writer[@mode m])
-  type ('a, 'b, 'c) writer2 = ('a writer[@mode m]) -> (('b, 'c) writer1[@mode m])
-  type ('a, 'b, 'c, 'd) writer3 = ('a writer[@mode m]) -> (('b, 'c, 'd) writer2[@mode m])
+  type ('a : any, 'b : any) writer1 = ('a writer[@mode m]) -> ('b writer[@mode m])
+
+  type ('a : any, 'b : any, 'c : any) writer2 =
+    ('a writer[@mode m]) -> (('b, 'c) writer1[@mode m])
+
+  type ('a : any, 'b : any, 'c : any, 'd : any) writer3 =
+    ('a writer[@mode m]) -> (('b, 'c, 'd) writer2[@mode m])
 end
 
 module type Write = sig @@ portable
@@ -37,7 +41,7 @@ module type Write = sig @@ portable
   val bin_write_int32 : (int32 writer[@mode m])
   val bin_write_int64 : (int64 writer[@mode m])
   val bin_write_nativeint : (nativeint writer[@mode m])
-  val bin_write_ref : (('a, 'a ref) writer1[@mode m])
+  val bin_write_ref : ('a : value_or_null). (('a, 'a ref) writer1[@mode m])
   val bin_write_lazy : (('a, 'a lazy_t) writer1[@mode m])
   val bin_write_option : (('a, 'a option) writer1[@mode m])
   val bin_write_pair : (('a, 'b, 'a * 'b) writer2[@mode m])

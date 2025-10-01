@@ -17,26 +17,30 @@ module Definitions = struct
     ; reader : 'a reader
     }
 
-  type 'a writer0 = 'a writer
-  type 'a reader0 = 'a reader
-  type 'a t0 = 'a t
+  type ('a : any) writer0 = 'a writer
+  type ('a : any) reader0 = 'a reader
+  type ('a : any) t0 = 'a t
 
   module S1 = struct
-    type ('a, 'b) writer = 'a writer0 -> 'b writer0
-    type ('a, 'b) reader = 'a reader0 -> 'b reader0
-    type ('a, 'b) t = 'a t0 -> 'b t0
+    type ('a : any, 'b : any) writer = 'a writer0 -> 'b writer0
+    type ('a : any, 'b : any) reader = 'a reader0 -> 'b reader0
+    type ('a : any, 'b : any) t = 'a t0 -> 'b t0
   end
 
   module S2 = struct
-    type ('a, 'b, 'c) writer = 'a writer0 -> ('b, 'c) S1.writer
-    type ('a, 'b, 'c) reader = 'a reader0 -> ('b, 'c) S1.reader
-    type ('a, 'b, 'c) t = 'a t0 -> ('b, 'c) S1.t
+    type ('a : any, 'b : any, 'c : any) writer = 'a writer0 -> ('b, 'c) S1.writer
+    type ('a : any, 'b : any, 'c : any) reader = 'a reader0 -> ('b, 'c) S1.reader
+    type ('a : any, 'b : any, 'c : any) t = 'a t0 -> ('b, 'c) S1.t
   end
 
   module S3 = struct
-    type ('a, 'b, 'c, 'd) writer = 'a writer0 -> ('b, 'c, 'd) S2.writer
-    type ('a, 'b, 'c, 'd) reader = 'a reader0 -> ('b, 'c, 'd) S2.reader
-    type ('a, 'b, 'c, 'd) t = 'a t0 -> ('b, 'c, 'd) S2.t
+    type ('a : any, 'b : any, 'c : any, 'd : any) writer =
+      'a writer0 -> ('b, 'c, 'd) S2.writer
+
+    type ('a : any, 'b : any, 'c : any, 'd : any) reader =
+      'a reader0 -> ('b, 'c, 'd) S2.reader
+
+    type ('a : any, 'b : any, 'c : any, 'd : any) t = 'a t0 -> ('b, 'c, 'd) S2.t
   end
 end
 
@@ -116,11 +120,11 @@ module type Type_class = sig @@ portable
   val bin_shape_nat0 : Shape.t
   val bin_nat0 : Nat0.t t
 
-  (*$ mk_base1 "ref" *)
-  val bin_writer_ref : ('a, 'a ref) S1.writer
-  val bin_reader_ref : ('a, 'a ref) S1.reader
+  (*$ mk_base1 ~layout:"value_or_null" "ref" *)
+  val bin_writer_ref : ('a : value_or_null). ('a, 'a ref) S1.writer
+  val bin_reader_ref : ('a : value_or_null). ('a, 'a ref) S1.reader
   val bin_shape_ref : Shape.t -> Shape.t
-  val bin_ref : ('a, 'a ref) S1.t
+  val bin_ref : ('a : value_or_null). ('a, 'a ref) S1.t
 
   (*$ mk_base1_tp "lazy" "lazy_t" *)
   val bin_writer_lazy : ('a, 'a lazy_t) S1.writer

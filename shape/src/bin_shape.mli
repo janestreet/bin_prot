@@ -5,35 +5,35 @@
 
     There is a direct mapping from ocaml type definition syntax to the corresponding
     [Shape.group] and from ocaml type expression syntax to the corresponding [Shape.t]. *)
-type t : value mod contended portable [@@deriving sexp_of]
+type t : immutable_data [@@deriving sexp_of]
 
 (** [Tid.t] & [Vid.t] are identifiers for type-constructors & type-vars. i.e. Given
     [type 'a t = ... ] *)
 
 module Tid : sig
   (* [t] *)
-  type t : value mod contended portable
+  type t : immutable_data
 
   val of_string : string -> t
 end
 
 module Vid : sig
   (* ['a] *)
-  type t : value mod contended portable
+  type t : immutable_data
 
   val of_string : string -> t
 end
 
 (** [Location.t] is required when constructing shapes for which evaluation might fail. *)
 module Location : sig
-  type t : value mod contended portable
+  type t : immutable_data
 
   val of_string : string -> t
 end
 
 (** [Uuid.t] is used by [basetype] and [annotate]. *)
 module Uuid : sig
-  type t : value mod contended portable
+  type t : immutable_data
 
   (** [of_string s] returns a [Uuid.t] wrapping [s]. There are currently no requirements
       of the format of [s] although it is common to use string in `uuid' format:
@@ -45,7 +45,7 @@ module Uuid : sig
 end
 
 (** group of mutually recursive type definitions *)
-type group : value mod contended portable
+type group : immutable_data
 
 (** This function is generative; repeated calls create distinct groups *)
 val group : Location.t -> (Tid.t * Vid.t list * t) list -> group
@@ -102,7 +102,7 @@ end
     might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t [@@deriving compare ~localize, globalize, sexp]
+  type t : immutable_data [@@deriving compare ~localize, globalize, sexp]
 
   val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t

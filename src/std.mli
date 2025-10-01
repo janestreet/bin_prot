@@ -185,7 +185,7 @@ val bin_read_lazy : ('a, 'a lazy_t) Read.reader1
 val bin_read_lazy_t : ('a, 'a lazy_t) Read.reader1
 val bin_read_list : ('a, 'a list) Read.reader1
 val bin_read_option : ('a, 'a option) Read.reader1
-val bin_read_ref : ('a, 'a ref) Read.reader1
+val bin_read_ref : ('a : value_or_null). ('a, 'a ref) Read.reader1
 
 (** vtag readers *)
 
@@ -195,14 +195,14 @@ val __bin_read_lazy__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_lazy_t__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_list__ : ('a, 'a list) Read.vtag_reader1
 val __bin_read_option__ : ('a, 'a option) Read.vtag_reader1
-val __bin_read_ref__ : ('a, 'a ref) Read.vtag_reader1
+val __bin_read_ref__ : ('a : value_or_null). ('a, 'a ref) Read.vtag_reader1
 
 (** writers **)
 
 [%%template:
 [@@@mode m = (global, local)]
 
-type ('a, 'b) writer1 := (('a, 'b) Write.writer1[@mode m])
+type ('a : any, 'b : any) writer1 := (('a : any, 'b : any) Write.writer1[@mode m])
 
 [@@@mode.default m]
 
@@ -212,7 +212,7 @@ val bin_write_lazy : ('a, 'a lazy_t) writer1
 val bin_write_lazy_t : ('a, 'a lazy_t) writer1
 val bin_write_list : ('a, 'a list) writer1
 val bin_write_option : ('a, 'a option) writer1
-val bin_write_ref : ('a, 'a ref) writer1
+val bin_write_ref : ('a : value_or_null). ('a, 'a ref) writer1
 
 (* end [%%template] *)]
 
@@ -224,7 +224,7 @@ val bin_reader_lazy : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_lazy_t : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_list : ('a, 'a list) Type_class.S1.reader
 val bin_reader_option : ('a, 'a option) Type_class.S1.reader
-val bin_reader_ref : ('a, 'a ref) Type_class.S1.reader
+val bin_reader_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.reader
 
 (** type class writers **)
 
@@ -234,7 +234,7 @@ val bin_writer_lazy : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_lazy_t : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_list : ('a, 'a list) Type_class.S1.writer
 val bin_writer_option : ('a, 'a option) Type_class.S1.writer
-val bin_writer_ref : ('a, 'a ref) Type_class.S1.writer
+val bin_writer_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.writer
 
 (** type classes *)
 
@@ -244,4 +244,4 @@ val bin_lazy : ('a, 'a lazy_t) Type_class.S1.t
 val bin_lazy_t : ('a, 'a lazy_t) Type_class.S1.t
 val bin_list : ('a, 'a list) Type_class.S1.t
 val bin_option : ('a, 'a option) Type_class.S1.t
-val bin_ref : ('a, 'a ref) Type_class.S1.t
+val bin_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.t

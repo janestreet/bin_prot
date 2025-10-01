@@ -1,7 +1,7 @@
 open! Base
 
 module Location : sig @@ portable
-  type t : value mod contended portable
+  type t : immutable_data
 
   include%template Identifiable.S [@mode local] with type t := t
 end = struct
@@ -9,7 +9,7 @@ end = struct
 end
 
 module Uuid : sig @@ portable
-  type t : value mod contended portable
+  type t : immutable_data
 
   include%template Identifiable.S [@mode local] with type t := t
 end = struct
@@ -376,7 +376,7 @@ module Canonical_full = struct
 end
 
 module Tid : sig @@ portable
-  type t : value mod contended portable
+  type t : immutable_data
 
   include%template Identifiable.S [@mode local] with type t := t
 end = struct
@@ -384,7 +384,7 @@ end = struct
 end
 
 module Vid : sig @@ portable
-  type t : value mod contended portable
+  type t : immutable_data
 
   include%template Identifiable.S [@mode local] with type t := t
 end = struct
@@ -393,8 +393,7 @@ end
 
 module Gid : sig @@ portable
   (* unique group-id, used as key for Tenv below *)
-  type t : value mod contended portable
-  [@@deriving compare ~localize, equal ~localize, sexp]
+  type t : immutable_data [@@deriving compare ~localize, equal ~localize, sexp]
 
   val create : unit -> t
 end = struct
@@ -412,45 +411,30 @@ module Expression = struct
   [@@deriving compare ~localize, equal ~localize, sexp]
 
   module Group : sig @@ portable
-    type ('a : value mod contended portable) t : value mod contended portable
+    type ('a : immutable_data) t : immutable_data
     [@@deriving compare ~localize, equal ~localize, sexp]
 
     val create : Location.t -> (Tid.t * Vid.t list * 'a) list -> 'a t
     val id : 'a t -> Gid.t
     val lookup : 'a t -> Tid.t -> Vid.t list * 'a
   end = struct
-    module Inner = struct
-      type 'a t =
-        { gid : Gid.t
-        ; loc : Location.t
-        ; members : (Tid.t * (Vid.t list * 'a)) list
-        }
-      [@@unsafe_allow_any_mode_crossing]
-      [@@deriving compare ~localize, equal ~localize, sexp]
-    end
-
-    type ('a : value mod contended portable) t : value mod contended portable =
-      { inner : 'a Inner.t }
-    [@@unboxed] [@@unsafe_allow_any_mode_crossing]
-
-    [%%template
-    [@@@mode.default m = (local, global)]
-
-    let compare compare_a t1 t2 = (Inner.compare [@mode m]) compare_a t1.inner t2.inner
-    let equal equal_a t1 t2 = (Inner.equal [@mode m]) equal_a t1.inner t2.inner]
-
-    let sexp_of_t sexp_of_a { inner } = Inner.sexp_of_t sexp_of_a inner
-    let t_of_sexp a_of_sexp sexp = { inner = Inner.t_of_sexp a_of_sexp sexp }
+    type ('a : immutable_data) t : immutable_data =
+      { gid : Gid.t
+      ; loc : Location.t
+      ; members : (Tid.t * (Vid.t list * 'a)) list
+      }
+    [@@unsafe_allow_any_mode_crossing]
+    [@@deriving compare ~localize, equal ~localize, sexp]
 
     let create loc trips =
       let gid = Gid.create () in
       let members = List.map trips ~f:(fun (x, vs, t) -> x, (vs, t)) in
-      { inner = { gid; loc; members } }
+      { gid; loc; members }
     ;;
 
-    let id { inner = g } = g.gid
+    let id g = g.gid
 
-    let lookup { inner = g } tid =
+    let lookup g tid =
       match List.Assoc.find g.members ~equal:Tid.( = ) tid with
       | Some scheme -> scheme
       | None ->
@@ -464,7 +448,7 @@ module Expression = struct
 
   module Stable = struct
     module V1 = struct
-      type t : value mod contended portable =
+      type t : immutable_data =
         | Annotate of Uuid.t * t
         | Base of Uuid.t * t list
         | Record of (string * t) list

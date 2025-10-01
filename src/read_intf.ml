@@ -11,18 +11,24 @@ module Definitions = struct
       after reading in the value will be stored in the position reference. *)
   type ('a : any) reader = buf -> pos_ref:pos_ref -> 'a @ m
 
-  type ('a, 'b) reader1 = ('a reader[@mode m]) -> ('b reader[@mode m])
-  type ('a, 'b, 'c) reader2 = ('a reader[@mode m]) -> (('b, 'c) reader1[@mode m])
-  type ('a, 'b, 'c, 'd) reader3 = ('a reader[@mode m]) -> (('b, 'c, 'd) reader2[@mode m])]
+  type ('a : any, 'b : any) reader1 = ('a reader[@mode m]) -> ('b reader[@mode m])
+
+  type ('a : any, 'b : any, 'c : any) reader2 =
+    ('a reader[@mode m]) -> (('b, 'c) reader1[@mode m])
+
+  type ('a : any, 'b : any, 'c : any, 'd : any) reader3 =
+    ('a reader[@mode m]) -> (('b, 'c, 'd) reader2[@mode m])]
 
   (** Type of reader functions for polymorphic variant readers, after reading their tag.
       Used for definitions such as [__bin_read_t__]. The [int] argument is a numerical
       representation of the variant tag, such as [`a]. *)
   type ('a : any) vtag_reader = buf -> pos_ref:pos_ref -> int -> 'a
 
-  type ('a, 'b) vtag_reader1 = 'a reader -> 'b vtag_reader
-  type ('a, 'b, 'c) vtag_reader2 = 'a reader -> ('b, 'c) vtag_reader1
-  type ('a, 'b, 'c, 'd) vtag_reader3 = 'a reader -> ('b, 'c, 'd) vtag_reader2
+  type ('a : any, 'b : any) vtag_reader1 = 'a reader -> 'b vtag_reader
+  type ('a : any, 'b : any, 'c : any) vtag_reader2 = 'a reader -> ('b, 'c) vtag_reader1
+
+  type ('a : any, 'b : any, 'c : any, 'd : any) vtag_reader3 =
+    'a reader -> ('b, 'c, 'd) vtag_reader2
 end
 
 module type Read = sig @@ portable
@@ -37,11 +43,13 @@ module type Read = sig @@ portable
   [%%template:
   [@@@mode m = (global, local)]
 
-  type 'a global_reader := ('a reader[@mode global])
-  type 'a reader := ('a reader[@mode m])
-  type ('a, 'b) reader1 := (('a, 'b) reader1[@mode m])
-  type ('a, 'b, 'c) reader2 := (('a, 'b, 'c) reader2[@mode m])
-  type ('a, 'b, 'c, 'd) reader3 := (('a, 'b, 'c, 'd) reader3[@mode m])
+  type ('a : any) global_reader := ('a reader[@mode global])
+  type ('a : any) reader := ('a reader[@mode m])
+  type ('a : any, 'b : any) reader1 := (('a, 'b) reader1[@mode m])
+  type ('a : any, 'b : any, 'c : any) reader2 := (('a, 'b, 'c) reader2[@mode m])
+
+  type ('a : any, 'b : any, 'c : any, 'd : any) reader3 :=
+    (('a, 'b, 'c, 'd) reader3[@mode m])
 
   [@@@mode.default m]
 
@@ -59,7 +67,7 @@ module type Read = sig @@ portable
 
   (* Note: since the contents of a [ref] must always be global, this takes a global reader
      rather than a local one *)
-  val bin_read_ref : 'a global_reader -> 'a ref reader
+  val bin_read_ref : ('a : value_or_null). 'a global_reader -> 'a ref reader
   val bin_read_option : ('a, 'a option) reader1
   val bin_read_pair : ('a, 'b, 'a * 'b) reader2
   val bin_read_triple : ('a, 'b, 'c, 'a * 'b * 'c) reader3

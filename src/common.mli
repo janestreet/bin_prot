@@ -4,6 +4,9 @@
 
 open Bigarray
 
+(** Same purpose as [Base.Nothing.t] *)
+type nothing = |
+
 (** {2 Buffers} *)
 
 (** Position within buffers *)

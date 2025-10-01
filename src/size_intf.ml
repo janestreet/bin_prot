@@ -4,9 +4,13 @@ module%template Definitions = struct
   [@@@mode.default m = (global, local)]
 
   type ('a : any) sizer = 'a @ m -> int
-  type ('a, 'b) sizer1 = ('a sizer[@mode m]) -> ('b sizer[@mode m])
-  type ('a, 'b, 'c) sizer2 = ('a sizer[@mode m]) -> (('b, 'c) sizer1[@mode m])
-  type ('a, 'b, 'c, 'd) sizer3 = ('a sizer[@mode m]) -> (('b, 'c, 'd) sizer2[@mode m])
+  type ('a : any, 'b : any) sizer1 = ('a sizer[@mode m]) -> ('b sizer[@mode m])
+
+  type ('a : any, 'b : any, 'c : any) sizer2 =
+    ('a sizer[@mode m]) -> (('b, 'c) sizer1[@mode m])
+
+  type ('a : any, 'b : any, 'c : any, 'd : any) sizer3 =
+    ('a sizer[@mode m]) -> (('b, 'c, 'd) sizer2[@mode m])
 end
 
 module type Size = sig @@ portable
@@ -32,7 +36,7 @@ module type Size = sig @@ portable
   val bin_size_int64 : (int64 sizer[@mode m])
   val bin_size_nativeint : (nativeint sizer[@mode m])
   val bin_size_nat0 : (Nat0.t sizer[@mode m])
-  val bin_size_ref : (('a, 'a ref) sizer1[@mode m])
+  val bin_size_ref : ('a : value_or_null). (('a, 'a ref) sizer1[@mode m])
   val bin_size_lazy_t : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_lazy : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_option : (('a, 'a option) sizer1[@mode m])
