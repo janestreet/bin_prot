@@ -32,7 +32,7 @@ module type Size = sig
   val bin_size_int64 : (int64 sizer[@mode m])
   val bin_size_nativeint : (nativeint sizer[@mode m])
   val bin_size_nat0 : (Nat0.t sizer[@mode m])
-  val bin_size_ref : (('a, 'a ref) sizer1[@mode m])
+  val bin_size_ref : 'a. (('a, 'a ref) sizer1[@mode m])
   val bin_size_lazy_t : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_lazy : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_option : (('a, 'a option) sizer1[@mode m])

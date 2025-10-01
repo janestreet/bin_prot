@@ -38,18 +38,23 @@ val bin_%{name} : %{typ} t%{deprecate}
 
   let mk_base ?deprecate name : unit = mk_base_tp ?deprecate name name
 
-  let mk_base1_tp name typ =
+  let mk_base1_tp ?layout name typ =
+    let layout =
+      match layout with
+      | None -> ""
+      | Some l -> [%string "('a : %{l})."]
+    in
     print_string
       [%string
         {|
-val bin_writer_%{name} : ('a, 'a %{typ}) S1.writer
-val bin_reader_%{name} : ('a, 'a %{typ}) S1.reader
+val bin_writer_%{name} : %{layout} ('a, 'a %{typ}) S1.writer
+val bin_reader_%{name} : %{layout} ('a, 'a %{typ}) S1.reader
 val bin_shape_%{name} : Shape.t -> Shape.t
-val bin_%{name} : ('a, 'a %{typ}) S1.t
+val bin_%{name} : %{layout} ('a, 'a %{typ}) S1.t
 |}]
   ;;
 
-  let mk_base1 name = mk_base1_tp name name
+  let mk_base1 ?layout name = mk_base1_tp ?layout name name
 
   let mk_base2_tp name typ =
     print_string

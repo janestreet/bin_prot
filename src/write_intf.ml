@@ -37,7 +37,7 @@ module type Write = sig
   val bin_write_int32 : (int32 writer[@mode m])
   val bin_write_int64 : (int64 writer[@mode m])
   val bin_write_nativeint : (nativeint writer[@mode m])
-  val bin_write_ref : (('a, 'a ref) writer1[@mode m])
+  val bin_write_ref : 'a. (('a, 'a ref) writer1[@mode m])
   val bin_write_lazy : (('a, 'a lazy_t) writer1[@mode m])
   val bin_write_option : (('a, 'a option) writer1[@mode m])
   val bin_write_pair : (('a, 'b, 'a * 'b) writer2[@mode m])

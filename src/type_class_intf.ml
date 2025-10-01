@@ -116,11 +116,11 @@ module type Type_class = sig
   val bin_shape_nat0 : Shape.t
   val bin_nat0 : Nat0.t t
 
-  (*$ mk_base1 "ref" *)
-  val bin_writer_ref : ('a, 'a ref) S1.writer
-  val bin_reader_ref : ('a, 'a ref) S1.reader
+  (*$ mk_base1 ~layout:"value_or_null" "ref" *)
+  val bin_writer_ref : 'a. ('a, 'a ref) S1.writer
+  val bin_reader_ref : 'a. ('a, 'a ref) S1.reader
   val bin_shape_ref : Shape.t -> Shape.t
-  val bin_ref : ('a, 'a ref) S1.t
+  val bin_ref : 'a. ('a, 'a ref) S1.t
 
   (*$ mk_base1_tp "lazy" "lazy_t" *)
   val bin_writer_lazy : ('a, 'a lazy_t) S1.writer

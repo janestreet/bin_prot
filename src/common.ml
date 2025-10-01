@@ -4,6 +4,7 @@ open Base
 open Printf
 open Bigarray
 
+type nothing = |
 type pos = int [@@deriving sexp_of]
 
 (* Errors and exceptions *)
