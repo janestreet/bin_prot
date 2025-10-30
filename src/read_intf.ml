@@ -60,10 +60,10 @@ module type Read = sig
   (* Note: since the contents of a [ref] must always be global, this takes a global reader
      rather than a local one *)
   val bin_read_ref : 'a. 'a global_reader -> 'a ref reader
-  val bin_read_option : ('a, 'a option) reader1
+  val bin_read_option : 'a. ('a, 'a option) reader1
   val bin_read_pair : ('a, 'b, 'a * 'b) reader2
   val bin_read_triple : ('a, 'b, 'c, 'a * 'b * 'c) reader3
-  val bin_read_list : ('a, 'a list) reader1
+  val bin_read_list : 'a. ('a, 'a list) reader1
 
   (* Note: since the contents of an [array] must always be global, this takes a global
      reader rather than a local one *)
