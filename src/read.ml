@@ -7,8 +7,8 @@ open Bigarray
 open Common
 include Read_intf.Definitions
 
-external unsafe_get : buf -> int -> char @@ portable = "%caml_ba_unsafe_ref_1"
-external unsafe_get8 : buf -> int -> int @@ portable = "%caml_ba_unsafe_ref_1"
+external unsafe_get : buf @ local -> int -> char @@ portable = "%caml_ba_unsafe_ref_1"
+external unsafe_get8 : buf @ local -> int -> int @@ portable = "%caml_ba_unsafe_ref_1"
 
 let unsafe_get8_signed buf pos =
   let c = unsafe_get8 buf pos in
@@ -24,17 +24,17 @@ let min_int_int32 = if arch_sixtyfour then Int32.min_int else Int32.of_int min_i
 let max_int_int64 = Int64.of_int max_int
 let min_int_int64 = Int64.of_int min_int
 
-external unsafe_get16 : buf -> int -> int @@ portable = "%caml_bigstring_get16u"
+external unsafe_get16 : buf @ local -> int -> int @@ portable = "%caml_bigstring_get16u"
 
 external unsafe_get32
-  :  buf
+  :  local_ buf
   -> int
   -> (int32#[@unboxed])
   @@ portable
   = "%caml_bigstring_get32u#"
 
 external unsafe_get64
-  :  buf
+  :  local_ buf
   -> int
   -> (int64#[@unboxed])
   @@ portable

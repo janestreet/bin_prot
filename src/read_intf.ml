@@ -9,7 +9,7 @@ module Definitions = struct
   (** Type of reader functions for the binary protocol. They take a buffer and a reference
       to a read position, and return the unmarshalled value. The next buffer position
       after reading in the value will be stored in the position reference. *)
-  type ('a : any) reader = buf -> pos_ref:pos_ref -> 'a @ m
+  type ('a : any) reader = buf @ local -> pos_ref:pos_ref @ local -> 'a @ m
 
   type ('a : any, 'b : any) reader1 = ('a reader[@mode m]) -> ('b reader[@mode m])
 
@@ -22,7 +22,7 @@ module Definitions = struct
   (** Type of reader functions for polymorphic variant readers, after reading their tag.
       Used for definitions such as [__bin_read_t__]. The [int] argument is a numerical
       representation of the variant tag, such as [`a]. *)
-  type ('a : any) vtag_reader = buf -> pos_ref:pos_ref -> int -> 'a
+  type ('a : any) vtag_reader = buf @ local -> pos_ref:pos_ref @ local -> int -> 'a
 
   type ('a : any, 'b : any) vtag_reader1 = 'a reader -> 'b vtag_reader
   type ('a : any, 'b : any, 'c : any) vtag_reader2 = 'a reader -> ('b, 'c) vtag_reader1
@@ -68,10 +68,10 @@ module type Read = sig @@ portable
   (* Note: since the contents of a [ref] must always be global, this takes a global reader
      rather than a local one *)
   val bin_read_ref : ('a : value_or_null). 'a global_reader -> 'a ref reader
-  val bin_read_option : ('a, 'a option) reader1
+  val bin_read_option : ('a : value_or_null). ('a, 'a option) reader1
   val bin_read_pair : ('a, 'b, 'a * 'b) reader2
   val bin_read_triple : ('a, 'b, 'c, 'a * 'b * 'c) reader3
-  val bin_read_list : ('a, 'a list) reader1
+  val bin_read_list : ('a : value_or_null). ('a, 'a list) reader1
 
   (* Note: since the contents of an [array] must always be global, this takes a global
      reader rather than a local one *)

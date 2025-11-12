@@ -607,7 +607,7 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  type nonrec 'a list = 'a list [@@deriving bin_io ~localize]
+  type nonrec ('a : value_or_null) list = 'a list [@@deriving bin_io ~localize]
 
   let%expect_test "list" =
     test
@@ -675,7 +675,7 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  type nonrec 'a option = 'a option [@@deriving bin_io ~localize]
+  type nonrec ('a : value_or_null) option = 'a option [@@deriving bin_io ~localize]
 
   let%expect_test "option" =
     test

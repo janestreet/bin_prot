@@ -22,7 +22,7 @@ type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 val create_buf : int -> buf
 
 (** [buf_len buf] returns the length of [buf]. *)
-val buf_len : buf -> int
+val buf_len : buf @ local -> int
 
 (** [assert_pos pos]
     @raise Invalid_argument if position [pos] is negative. *)
@@ -30,20 +30,20 @@ val assert_pos : pos -> unit
 
 (** [check_pos buf pos]
     @raise Buffer_short if position [pos] is past the end of buffer [buf]. *)
-val check_pos : buf -> pos -> unit
+val check_pos : buf @ local -> pos -> unit
 
 (** [check_next buf pos]
     @raise Buffer_short
       if the position [pos] exceeds the length of buffer [buf]. Used to ensure that the
       half-open range of indexes ending at [pos] is valid. *)
-val check_next : buf -> pos -> unit
+val check_next : buf @ local -> pos -> unit
 
 (** [check_next_check_overflow buf pos next]
     @raise Buffer_short
       if the position [next] exceeds the length of buffer [buf]. Uses the old position
       [pos] to check that the position advances forward, and if overflow is detected
       ([next < pos]), [Buffer_short] is raised as well. *)
-val check_next_check_overflow : buf -> pos -> pos -> unit
+val check_next_check_overflow : buf @ local -> pos -> pos -> unit
 
 (** [safe_get_pos buf pos_ref]
     @return
@@ -52,42 +52,72 @@ val check_next_check_overflow : buf -> pos -> pos -> unit
       \@raise Buffer_short
 
       if the position is past the end of the buffer [buf]. *)
-val safe_get_pos : buf -> pos_ref -> pos
+val safe_get_pos : buf @ local -> pos_ref @ local -> pos
 
 (** [blit_string_buf ?src_pos src ?dst_pos dst ~len] blits [len] bytes of the source
     string [src] starting at position [src_pos] to buffer [dst] starting at position
     [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid. *)
-val blit_string_buf : ?src_pos:int -> string -> ?dst_pos:int -> buf -> len:int -> unit
+val blit_string_buf
+  :  ?src_pos:int
+  -> string
+  -> ?dst_pos:int
+  -> buf @ local
+  -> len:int
+  -> unit
 
 (** [blit_bytes_buf ?src_pos src ?dst_pos dst ~len] blits [len] bytes of the source byte
     sequence [src] starting at position [src_pos] to buffer [dst] starting at position
     [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid. *)
-val blit_bytes_buf : ?src_pos:int -> bytes -> ?dst_pos:int -> buf -> len:int -> unit
+val blit_bytes_buf
+  :  ?src_pos:int
+  -> bytes
+  -> ?dst_pos:int
+  -> buf @ local
+  -> len:int
+  -> unit
 
 (** [blit_buf_string ?src_pos src ?dst_pos dst ~len] blits [len] bytes of the source
     buffer [src] starting at position [src_pos] to string [dst] starting at position
     [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid. *)
-val blit_buf_string : ?src_pos:int -> buf -> ?dst_pos:int -> bytes -> len:int -> unit
+val blit_buf_string
+  :  ?src_pos:int
+  -> buf @ local
+  -> ?dst_pos:int
+  -> bytes
+  -> len:int
+  -> unit
 
 (** [blit_buf_bytes ?src_pos src ?dst_pos dst ~len] blits [len] bytes of the source buffer
     [src] starting at position [src_pos] to byte sequence [dst] starting at position
     [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid. *)
-val blit_buf_bytes : ?src_pos:int -> buf -> ?dst_pos:int -> bytes -> len:int -> unit
+val blit_buf_bytes
+  :  ?src_pos:int
+  -> buf @ local
+  -> ?dst_pos:int
+  -> bytes
+  -> len:int
+  -> unit
 
 (** [blit_buf ?src_pos ~src ?dst_pos ~dst len] blits [len] bytes of the source buffer
     [src] starting at position [src_pos] to destination buffer [dst] starting at position
     [dst_pos].
 
     @raise Invalid_argument if the designated ranges are invalid. *)
-val blit_buf : ?src_pos:int -> src:buf -> ?dst_pos:int -> dst:buf -> int -> unit
+val blit_buf
+  :  ?src_pos:int
+  -> src:buf @ local
+  -> ?dst_pos:int
+  -> dst:buf @ local
+  -> int
+  -> unit
 
 (** {2 Errors and exceptions} *)
 
@@ -151,7 +181,7 @@ exception Empty_type of string
 val raise_read_error : ReadError.t -> pos -> 'a
 
 (** [raise_variant_wrong_type name pos] *)
-val raise_variant_wrong_type : string -> pos -> 'a
+val raise_variant_wrong_type : string -> pos -> 'a @@ stateless
 
 (** [raise_concurrent_modification loc]
     @raise Failure
@@ -179,18 +209,18 @@ val copy_htbl_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 external unsafe_blit_buf
   :  src_pos:int
-  -> src:(buf[@local_opt])
+  -> src:buf @ local
   -> dst_pos:int
-  -> dst:buf
+  -> dst:buf @ local
   -> len:int
   -> unit
   = "bin_prot_blit_buf_stub"
 
 external unsafe_blit_string_buf
   :  src_pos:int
-  -> (string[@local_opt])
+  -> string @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   = "bin_prot_blit_string_buf_stub"
@@ -198,9 +228,9 @@ external unsafe_blit_string_buf
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   = "bin_prot_blit_bytes_buf_stub"
@@ -208,9 +238,9 @@ external unsafe_blit_bytes_buf
 
 external unsafe_blit_buf_string
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
@@ -218,9 +248,9 @@ external unsafe_blit_buf_string
 
 external unsafe_blit_buf_bytes
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
@@ -228,9 +258,9 @@ external unsafe_blit_buf_bytes
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
-  -> (float array[@local_opt])
+  -> float array @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   = "bin_prot_blit_float_array_buf_stub"
@@ -238,7 +268,7 @@ external unsafe_blit_float_array_buf
 
 external unsafe_blit_buf_float_array
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
   -> float array
   -> len:int
@@ -248,9 +278,9 @@ external unsafe_blit_buf_float_array
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
-  -> (floatarray[@local_opt])
+  -> floatarray @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   = "bin_prot_blit_float_array_buf_stub"
@@ -258,7 +288,7 @@ external unsafe_blit_floatarray_buf
 
 external unsafe_blit_buf_floatarray
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
   -> floatarray
   -> len:int

@@ -7,7 +7,7 @@ open Common
 include Write_intf.Definitions
 
 external unsafe_set
-  :  buf
+  :  local_ buf
   -> int
   -> local_ char
   -> unit
@@ -15,7 +15,7 @@ external unsafe_set
   = "%caml_ba_unsafe_set_1"
 
 external unsafe_set8
-  :  buf
+  :  local_ buf
   -> int
   -> local_ int
   -> unit
@@ -23,7 +23,7 @@ external unsafe_set8
   = "%caml_ba_unsafe_set_1"
 
 external unsafe_set16
-  :  buf
+  :  local_ buf
   -> int
   -> local_ int
   -> unit
@@ -31,7 +31,7 @@ external unsafe_set16
   = "%caml_bigstring_set16u"
 
 external unsafe_set32
-  :  buf
+  :  local_ buf
   -> int
   -> local_ int32
   -> unit
@@ -39,7 +39,7 @@ external unsafe_set32
   = "%caml_bigstring_set32u"
 
 external unsafe_set64
-  :  buf
+  :  local_ buf
   -> int
   -> local_ int64
   -> unit

@@ -7,7 +7,7 @@ module%template Definitions = struct
 
   (** Type of writer functions for the binary protocol. They take a buffer, a write
       position and a value, and return the next position after writing out the value. *)
-  type ('a : any) writer = buf -> pos:pos -> 'a @ m -> pos
+  type ('a : any) writer = buf @ local -> pos:pos -> 'a @ m -> pos
 
   type ('a : any, 'b : any) writer1 = ('a writer[@mode m]) -> ('b writer[@mode m])
 
@@ -43,10 +43,10 @@ module type Write = sig @@ portable
   val bin_write_nativeint : (nativeint writer[@mode m])
   val bin_write_ref : ('a : value_or_null). (('a, 'a ref) writer1[@mode m])
   val bin_write_lazy : (('a, 'a lazy_t) writer1[@mode m])
-  val bin_write_option : (('a, 'a option) writer1[@mode m])
+  val bin_write_option : ('a : value_or_null). (('a, 'a option) writer1[@mode m])
   val bin_write_pair : (('a, 'b, 'a * 'b) writer2[@mode m])
   val bin_write_triple : (('a, 'b, 'c, 'a * 'b * 'c) writer3[@mode m])
-  val bin_write_list : (('a, 'a list) writer1[@mode m])
+  val bin_write_list : ('a : value_or_null). (('a, 'a list) writer1[@mode m])
   val bin_write_array : (('a, 'a array) writer1[@mode m])
   val bin_write_iarray : (('a, 'a iarray) writer1[@mode m])
 

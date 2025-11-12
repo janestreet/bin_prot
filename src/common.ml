@@ -83,6 +83,14 @@ let array_bound_error () = invalid_arg "index out of bounds"
 
 (* Buffers *)
 
+module Array1 = struct
+  type ('elt, 'repr, 'layout) t = ('elt, 'repr, 'layout) Array1.t
+
+  let create = Array1.create
+
+  external dim : ('a, 'b, 'c) t @ local -> int @@ portable = "%caml_ba_dim_1"
+end
+
 type pos_ref = pos ref
 type buf = (char, int8_unsigned_elt, c_layout) Array1.t
 
@@ -112,9 +120,9 @@ let get_opt_pos ~loc ~var = function
 
 external unsafe_blit_buf
   :  src_pos:int
-  -> src:(buf[@local_opt])
+  -> src:buf @ local
   -> dst_pos:int
-  -> dst:buf
+  -> dst:buf @ local
   -> len:int
   -> unit
   @@ portable
@@ -141,9 +149,9 @@ let blit_buf ?src_pos ~src ?dst_pos ~dst len =
 
 external unsafe_blit_string_buf
   :  src_pos:int
-  -> (string[@local_opt])
+  -> string @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   @@ portable
@@ -152,9 +160,9 @@ external unsafe_blit_string_buf
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   @@ portable
@@ -201,9 +209,9 @@ let blit_bytes_buf ?src_pos str ?dst_pos buf ~len =
 
 external unsafe_blit_buf_string
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> len:int
   -> unit
   @@ portable
@@ -212,9 +220,9 @@ external unsafe_blit_buf_string
 
 external unsafe_blit_buf_bytes
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes @ local
   -> len:int
   -> unit
   @@ portable
@@ -264,9 +272,9 @@ type mat = mat64
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
-  -> (float array[@local_opt])
+  -> float array @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   @@ portable
@@ -275,7 +283,7 @@ external unsafe_blit_float_array_buf
 
 external unsafe_blit_buf_float_array
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
   -> float array
   -> len:int
@@ -286,9 +294,9 @@ external unsafe_blit_buf_float_array
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
-  -> (floatarray[@local_opt])
+  -> floatarray @ local
   -> dst_pos:int
-  -> buf
+  -> buf @ local
   -> len:int
   -> unit
   @@ portable
@@ -297,7 +305,7 @@ external unsafe_blit_floatarray_buf
 
 external unsafe_blit_buf_floatarray
   :  src_pos:int
-  -> buf
+  -> buf @ local
   -> dst_pos:int
   -> floatarray
   -> len:int

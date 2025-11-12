@@ -54,7 +54,7 @@ val tuple : t list -> t
 val record : (string * t) list -> t
 val variant : (string * t list) list -> t
 
-type poly_variant_row
+type poly_variant_row : immutable_data
 
 val constr : string -> t option -> poly_variant_row
 val inherit_ : Location.t -> t -> poly_variant_row

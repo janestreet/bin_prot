@@ -183,8 +183,8 @@ val bin_read_array : ('a, 'a array) Read.reader1
 val bin_read_iarray : ('a, 'a iarray) Read.reader1
 val bin_read_lazy : ('a, 'a lazy_t) Read.reader1
 val bin_read_lazy_t : ('a, 'a lazy_t) Read.reader1
-val bin_read_list : ('a, 'a list) Read.reader1
-val bin_read_option : ('a, 'a option) Read.reader1
+val bin_read_list : ('a : value_or_null). ('a, 'a list) Read.reader1
+val bin_read_option : ('a : value_or_null). ('a, 'a option) Read.reader1
 val bin_read_ref : ('a : value_or_null). ('a, 'a ref) Read.reader1
 
 (** vtag readers *)
@@ -193,8 +193,8 @@ val __bin_read_array__ : ('a, 'a array) Read.vtag_reader1
 val __bin_read_iarray__ : ('a, 'a iarray) Read.vtag_reader1
 val __bin_read_lazy__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_lazy_t__ : ('a, 'a lazy_t) Read.vtag_reader1
-val __bin_read_list__ : ('a, 'a list) Read.vtag_reader1
-val __bin_read_option__ : ('a, 'a option) Read.vtag_reader1
+val __bin_read_list__ : ('a : value_or_null). ('a, 'a list) Read.vtag_reader1
+val __bin_read_option__ : ('a : value_or_null). ('a, 'a option) Read.vtag_reader1
 val __bin_read_ref__ : ('a : value_or_null). ('a, 'a ref) Read.vtag_reader1
 
 (** writers **)
@@ -210,8 +210,8 @@ val bin_write_array : ('a, 'a array) writer1
 val bin_write_iarray : ('a, 'a iarray) writer1
 val bin_write_lazy : ('a, 'a lazy_t) writer1
 val bin_write_lazy_t : ('a, 'a lazy_t) writer1
-val bin_write_list : ('a, 'a list) writer1
-val bin_write_option : ('a, 'a option) writer1
+val bin_write_list : ('a : value_or_null). ('a, 'a list) writer1
+val bin_write_option : ('a : value_or_null). ('a, 'a option) writer1
 val bin_write_ref : ('a : value_or_null). ('a, 'a ref) writer1
 
 (* end [%%template] *)]
@@ -222,8 +222,8 @@ val bin_reader_array : ('a, 'a array) Type_class.S1.reader
 val bin_reader_iarray : ('a, 'a iarray) Type_class.S1.reader
 val bin_reader_lazy : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_lazy_t : ('a, 'a lazy_t) Type_class.S1.reader
-val bin_reader_list : ('a, 'a list) Type_class.S1.reader
-val bin_reader_option : ('a, 'a option) Type_class.S1.reader
+val bin_reader_list : ('a : value_or_null). ('a, 'a list) Type_class.S1.reader
+val bin_reader_option : ('a : value_or_null). ('a, 'a option) Type_class.S1.reader
 val bin_reader_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.reader
 
 (** type class writers **)
@@ -232,8 +232,8 @@ val bin_writer_array : ('a, 'a array) Type_class.S1.writer
 val bin_writer_iarray : ('a, 'a iarray) Type_class.S1.writer
 val bin_writer_lazy : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_lazy_t : ('a, 'a lazy_t) Type_class.S1.writer
-val bin_writer_list : ('a, 'a list) Type_class.S1.writer
-val bin_writer_option : ('a, 'a option) Type_class.S1.writer
+val bin_writer_list : ('a : value_or_null). ('a, 'a list) Type_class.S1.writer
+val bin_writer_option : ('a : value_or_null). ('a, 'a option) Type_class.S1.writer
 val bin_writer_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.writer
 
 (** type classes *)
@@ -242,6 +242,6 @@ val bin_array : ('a, 'a array) Type_class.S1.t
 val bin_iarray : ('a, 'a iarray) Type_class.S1.t
 val bin_lazy : ('a, 'a lazy_t) Type_class.S1.t
 val bin_lazy_t : ('a, 'a lazy_t) Type_class.S1.t
-val bin_list : ('a, 'a list) Type_class.S1.t
-val bin_option : ('a, 'a option) Type_class.S1.t
+val bin_list : ('a : value_or_null). ('a, 'a list) Type_class.S1.t
+val bin_option : ('a : value_or_null). ('a, 'a option) Type_class.S1.t
 val bin_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.t
