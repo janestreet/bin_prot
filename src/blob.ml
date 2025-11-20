@@ -177,8 +177,8 @@ end
 
 module Ignored = struct
   (* The representation of an ignored value is just the size of the value it was created
-     from (i.e., the number of bytes that were ignored from the buffer we were reading
-     -- we exclude the 8 byte size header from which the size was read). *)
+     from (i.e., the number of bytes that were ignored from the buffer we were reading --
+     we exclude the 8 byte size header from which the size was read). *)
   type t = int
 
   let bin_size_t size = Utils.size_header_length + size

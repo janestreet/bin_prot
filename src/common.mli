@@ -181,7 +181,7 @@ exception Empty_type of string
 val raise_read_error : ReadError.t -> pos -> 'a
 
 (** [raise_variant_wrong_type name pos] *)
-val raise_variant_wrong_type : string -> pos -> 'a @@ stateless
+val raise_variant_wrong_type : ('a : value_or_null). string -> pos -> 'a @@ stateless
 
 (** [raise_concurrent_modification loc]
     @raise Failure

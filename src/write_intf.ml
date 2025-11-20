@@ -47,8 +47,14 @@ module type Write = sig @@ portable
   val bin_write_pair : (('a, 'b, 'a * 'b) writer2[@mode m])
   val bin_write_triple : (('a, 'b, 'c, 'a * 'b * 'c) writer3[@mode m])
   val bin_write_list : ('a : value_or_null). (('a, 'a list) writer1[@mode m])
-  val bin_write_array : (('a, 'a array) writer1[@mode m])
-  val bin_write_iarray : (('a, 'a iarray) writer1[@mode m])
+
+  val bin_write_array
+    : ('a : value_or_null mod separable).
+    (('a, 'a array) writer1[@mode m])
+
+  val bin_write_iarray
+    : ('a : value_or_null mod separable).
+    (('a, 'a iarray) writer1[@mode m])
 
   val bin_write_bigarray1
     :  kind:('a, 'k) Stdlib.Bigarray.kind

@@ -951,8 +951,8 @@ let%expect_test "bigstring" =
 
 let%expect_test "bigstring (big)" =
   let module Random = Random () in
-  (* [n] is a 16bits integer that will be serialized differently depending on
-     whether it is considered as an integer or an unsigned integer. *)
+  (* [n] is a 16bits integer that will be serialized differently depending on whether it
+     is considered as an integer or an unsigned integer. *)
   let n = 40_000 in
   let header = 3 in
   let size = header + n in

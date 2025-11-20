@@ -51,6 +51,7 @@ type group : immutable_data
 val group : Location.t -> (Tid.t * Vid.t list * t) list -> group
 
 val tuple : t list -> t
+val unboxed_tuple : t list -> t
 val record : (string * t) list -> t
 val variant : (string * t list) list -> t
 
@@ -123,6 +124,7 @@ module Expert : sig
       | Annotate of Uuid.t * 'a
       | Base of Uuid.t * 'a list
       | Tuple of 'a list
+      | Unboxed_tuple of 'a list
       | Record of (string * 'a) list
       | Variant of (string * 'a list) list
       | Poly_variant of 'a option Sorted_table.t

@@ -180,8 +180,8 @@ let safe_bin_read_int16 buf ~pos_ref ~pos =
   let next = pos + 2 in
   check_next buf next;
   pos_ref := next;
-  (* Can be above next line (no errors possible with 16bit).
-     This should improve the generated code. *)
+  (* Can be above next line (no errors possible with 16bit). This should improve the
+     generated code. *)
   unsafe_get16le_signed buf pos
 ;;
 
@@ -610,7 +610,12 @@ let bin_read_float_array buf ~pos_ref =
     ~pos_ref
 ;;
 
-let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start_pos =
+let%template check_array_len
+  (type a : value_or_null mod separable)
+  (bin_read_el : (a reader[@mode local]))
+  ~len
+  ~start_pos
+  =
   let module Obj = Base.Obj in
   if arch_sixtyfour
   then (
@@ -629,12 +634,14 @@ let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start
       if len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos
     | Some el ->
-      if Obj.tag (Obj.repr el) = Stdlib.Obj.double_tag || len > Sys.max_array_length
+      if Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
+         || len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos)
 ;;
 
 let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
-  bin_read_el
+  (type a : value_or_null mod separable)
+  (bin_read_el : a reader)
   buf
   ~pos_ref
   =
@@ -654,7 +661,12 @@ let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_ar
     [@exclave_if_stack a])
 ;;
 
-let%template bin_read_array (type a) (bin_read_el : _ reader) buf ~pos_ref =
+let%template bin_read_array
+  (type a : value_or_null mod separable)
+  (bin_read_el : a reader)
+  buf
+  ~pos_ref
+  =
   if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
   then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
   else
@@ -671,7 +683,12 @@ let%template[@alloc stack] bin_read_array bin_read_el buf ~pos_ref = exclave_
     ~pos_ref
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_iarray bin_read_el buf ~pos_ref =
+let%template[@alloc a @ m = (heap_global, stack_local)] bin_read_iarray
+  (type a : value_or_null mod separable)
+  (bin_read_el : (a reader[@mode m]))
+  buf
+  ~pos_ref
+  =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   check_array_len bin_read_el ~len ~start_pos;

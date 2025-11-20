@@ -1,6 +1,6 @@
-(* Binable: signatures defining generated functions for the binary protocol.
-   [S, S1, etc] are the signatures satisfied by the generated code and
-   [Minimal.S, Minimal.S1, etc] are the signatures that generated code uses. *)
+(* Binable: signatures defining generated functions for the binary protocol. [S, S1, etc]
+   are the signatures satisfied by the generated code and [Minimal.S, Minimal.S1, etc] are
+   the signatures that generated code uses. *)
 
 [%%template
 [@@@mode.default m = (global, local)]
@@ -122,7 +122,7 @@ module Minimal = struct
   [@@@mode.default m = (global, local)]
 
   module type S = sig
-    type t
+    type t : value_or_null
 
     val bin_shape_t : Shape.t
 
@@ -140,7 +140,7 @@ module Minimal = struct
   [@@@kind.default ka = (value, any)]
 
   module type S1 = sig
-    type ('a : ka) t
+    type ('a : ka) t : value_or_null
 
     val bin_shape_t : Shape.t -> Shape.t
 
@@ -158,7 +158,7 @@ module Minimal = struct
   [@@@kind.default kb = (value, any)]
 
   module type S2 = sig
-    type ('a : ka, 'b : kb) t
+    type ('a : ka, 'b : kb) t : value_or_null
 
     val bin_shape_t : Shape.t -> Shape.t -> Shape.t
 
@@ -176,7 +176,7 @@ module Minimal = struct
   [@@@kind.default kc = (value, any)]
 
   module type S3 = sig
-    type ('a : ka, 'b : kb, 'c : kc) t
+    type ('a : ka, 'b : kb, 'c : kc) t : value_or_null
 
     val bin_shape_t : Shape.t -> Shape.t -> Shape.t -> Shape.t
 

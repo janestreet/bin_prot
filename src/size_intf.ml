@@ -43,8 +43,15 @@ module type Size = sig @@ portable
   val bin_size_pair : (('a, 'b, 'a * 'b) sizer2[@mode m])
   val bin_size_triple : (('a, 'b, 'c, 'a * 'b * 'c) sizer3[@mode m])
   val bin_size_list : ('a : value_or_null). (('a, 'a list) sizer1[@mode m])
-  val bin_size_array : (('a, 'a array) sizer1[@mode m])
-  val bin_size_iarray : (('a, 'a iarray) sizer1[@mode m])
+
+  val bin_size_array
+    : ('a : value_or_null mod separable).
+    (('a, 'a array) sizer1[@mode m])
+
+  val bin_size_iarray
+    : ('a : value_or_null mod separable).
+    (('a, 'a iarray) sizer1[@mode m])
+
   val bin_size_float32_vec : (vec32 sizer[@mode m])
   val bin_size_float64_vec : (vec64 sizer[@mode m])
   val bin_size_vec : (vec sizer[@mode m])
@@ -68,7 +75,7 @@ module type Size = sig @@ portable
   val bin_size_md5 : (Md5_lib.t sizer[@mode m])]
 
   (* Provide the maximum sizes for fields which do not depend upon an array/vector/matrix
-     length, choosing the size required for the largest architecture.  This allows for the
+     length, choosing the size required for the largest architecture. This allows for the
      most conservative estimation of space required. *)
   module Maximum : sig
     val bin_size_unit : int

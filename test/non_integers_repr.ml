@@ -6,9 +6,9 @@ open Stdio
 open Bigarray
 open Import
 
-(* Generate reference serialized output for various functions of
-   [Bin_prot.Write] for the purpose of ensuring [Bin_prot.Size.Maximum] and
-   [Bin_prot.Size.Minimum] bound correctness.
+(* Generate reference serialized output for various functions of [Bin_prot.Write] for the
+   purpose of ensuring [Bin_prot.Size.Maximum] and [Bin_prot.Size.Minimum] bound
+   correctness.
 
    We can't generate reference output for every possible values as it would be huge,
    instead we choose a few interesting points and generate tests around and including

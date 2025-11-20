@@ -9,7 +9,7 @@ module Definitions = struct
   module type Make_binable_without_uuid_spec = sig
     module Binable : Binable.Minimal.S [@mode m]
 
-    type t
+    type t : value_or_null
 
     val to_binable : t @ m -> Binable.t @ m [@@mode m = (global, m)]
     val of_binable : Binable.t -> t
@@ -28,7 +28,7 @@ module Definitions = struct
   module type Make_binable1_without_uuid_spec = sig
     module Binable : Binable.Minimal.S1 [@kind ka] [@mode m]
 
-    type ('a : ka) t
+    type ('a : ka) t : value_or_null
 
     val to_binable : ('a : ka). 'a t @ m -> 'a Binable.t @ m [@@mode m = (global, m)]
     val of_binable : ('a : ka). 'a Binable.t -> 'a t
@@ -45,7 +45,7 @@ module Definitions = struct
   module type Make_binable2_without_uuid_spec = sig
     module Binable : Binable.Minimal.S2 [@kind ka kb] [@mode m]
 
-    type ('a : ka, 'b : kb) t
+    type ('a : ka, 'b : kb) t : value_or_null
 
     val to_binable : ('a : ka) ('b : kb). ('a, 'b) t @ m -> ('a, 'b) Binable.t @ m
     [@@mode m = (global, m)]
@@ -64,7 +64,7 @@ module Definitions = struct
   module type Make_binable3_without_uuid_spec = sig
     module Binable : Binable.Minimal.S3 [@kind ka kb kc] [@mode m]
 
-    type ('a : ka, 'b : kb, 'c : kc) t
+    type ('a : ka, 'b : kb, 'c : kc) t : value_or_null
 
     val to_binable
       : ('a : ka) ('b : kb) ('c : kc).
