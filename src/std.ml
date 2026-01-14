@@ -200,6 +200,21 @@ let __bin_read_option__ _f _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "option" !pos_ref
 ;;
 
+let bin_or_null = Type_class.bin_or_null
+let bin_shape_or_null = Type_class.bin_shape_or_null
+let bin_writer_or_null = Type_class.bin_writer_or_null
+
+let%template[@mode m = (global, local)] bin_write_or_null =
+  (Write.bin_write_or_null [@mode m])
+;;
+
+let bin_reader_or_null = Type_class.bin_reader_or_null
+let bin_read_or_null = Read.bin_read_or_null
+
+let __bin_read_or_null__ _f _buf ~pos_ref _vint =
+  Common.raise_variant_wrong_type "or_null" !pos_ref
+;;
+
 let bin_list = Type_class.bin_list
 let bin_shape_list = Type_class.bin_shape_list
 let bin_writer_list = Type_class.bin_writer_list

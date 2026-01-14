@@ -48,6 +48,7 @@ module Minimum = struct
   let bin_size_ref = 1
   let bin_size_lazy_t = 1
   let bin_size_option = 1
+  let bin_size_or_null = 1
   let bin_size_pair = 1 + 1
   let bin_size_triple = 1 + 1 + 1
   let bin_size_len = bin_size_nat0
@@ -172,6 +173,11 @@ let bin_size_lazy = bin_size_lazy_t
 let bin_size_option bin_size_el = function
   | None -> 1
   | Some v -> 1 + bin_size_el v
+;;
+
+let bin_size_or_null bin_size_el = function
+  | Base.Or_null.Null -> 1
+  | Base.Or_null.This v -> 1 + bin_size_el v
 ;;
 
 let bin_size_pair bin_size_a bin_size_b (a, b) = bin_size_a a + bin_size_b b

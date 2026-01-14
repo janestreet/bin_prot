@@ -133,6 +133,12 @@ module type Type_class = sig
   val bin_reader_option : 'a. ('a, 'a option) S1.reader
   val bin_shape_option : Shape.t -> Shape.t
   val bin_option : 'a. ('a, 'a option) S1.t
+
+  (*$ mk_base1 "or_null" *)
+  val bin_writer_or_null : ('a, 'a or_null) S1.writer
+  val bin_reader_or_null : ('a, 'a or_null) S1.reader
+  val bin_shape_or_null : Shape.t -> Shape.t
+  val bin_or_null : ('a, 'a or_null) S1.t
   (*$*)
 
   val bin_writer_pair : ('a, 'b, 'a * 'b) S2.writer
@@ -148,17 +154,17 @@ module type Type_class = sig
   val bin_shape_list : Shape.t -> Shape.t
   val bin_list : 'a. ('a, 'a list) S1.t
 
-  (*$ mk_base1 "array" *)
-  val bin_writer_array : ('a, 'a array) S1.writer
-  val bin_reader_array : ('a, 'a array) S1.reader
+  (*$ mk_base1 ~layout:"value_or_null mod separable" "array" *)
+  val bin_writer_array : 'a. ('a, 'a array) S1.writer
+  val bin_reader_array : 'a. ('a, 'a array) S1.reader
   val bin_shape_array : Shape.t -> Shape.t
-  val bin_array : ('a, 'a array) S1.t
+  val bin_array : 'a. ('a, 'a array) S1.t
 
-  (*$ mk_base1 "iarray" *)
-  val bin_writer_iarray : ('a, 'a iarray) S1.writer
-  val bin_reader_iarray : ('a, 'a iarray) S1.reader
+  (*$ mk_base1 ~layout:"value_or_null mod separable" "iarray" *)
+  val bin_writer_iarray : 'a. ('a, 'a iarray) S1.writer
+  val bin_reader_iarray : 'a. ('a, 'a iarray) S1.reader
   val bin_shape_iarray : Shape.t -> Shape.t
-  val bin_iarray : ('a, 'a iarray) S1.t
+  val bin_iarray : 'a. ('a, 'a iarray) S1.t
 
   (*$ mk_base_tp "float32_vec" "vec32" *)
   val bin_writer_float32_vec : vec32 writer

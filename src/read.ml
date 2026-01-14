@@ -134,8 +134,8 @@ let safe_bin_read_int16 buf ~pos_ref ~pos =
   let next = pos + 2 in
   check_next buf next;
   pos_ref := next;
-  (* Can be above next line (no errors possible with 16bit).
-     This should improve the generated code. *)
+  (* Can be above next line (no errors possible with 16bit). This should improve the
+     generated code. *)
   unsafe_get16le_signed buf pos
 ;;
 
@@ -426,21 +426,6 @@ let bin_read_ref bin_read_el buf ~pos_ref =
   ref el [@exclave_if_stack a]
 ;;
 
-let bin_read_option bin_read_el buf ~pos_ref =
-  let pos = safe_get_pos buf pos_ref in
-  assert_pos pos;
-  match unsafe_get buf pos with
-  | '\000' ->
-    pos_ref := pos + 1;
-    None
-  | '\001' ->
-    pos_ref := pos + 1;
-    (let el = bin_read_el buf ~pos_ref in
-     Some el)
-    [@exclave_if_stack a]
-  | _ -> raise_read_error ReadError.Option_code pos
-;;
-
 let bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
   (let a = bin_read_a buf ~pos_ref in
    let b = bin_read_b buf ~pos_ref in
@@ -454,6 +439,44 @@ let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
    let c = bin_read_c buf ~pos_ref in
    a, b, c)
   [@exclave_if_stack a]
+;;]
+
+[%%template
+[@@@alloc.default a @ m = (heap_global, stack_local)]
+
+let[@inline] bin_read_option_like ~none ~some ~read_error bin_read_el buf ~pos_ref =
+  let pos = safe_get_pos buf pos_ref in
+  assert_pos pos;
+  match unsafe_get buf pos with
+  | '\000' ->
+    pos_ref := pos + 1;
+    none
+  | '\001' ->
+    pos_ref := pos + 1;
+    (let el = bin_read_el buf ~pos_ref in
+     (some [@inlined hint]) el)
+    [@exclave_if_stack a]
+  | _ -> raise_read_error read_error pos
+;;
+
+let bin_read_option bin_read_el buf ~pos_ref =
+  (bin_read_option_like [@alloc a])
+    ~none:None
+    ~some:(Base.Option.some [@mode m])
+    ~read_error:Option_code
+    bin_read_el
+    buf
+    ~pos_ref [@exclave_if_stack a]
+;;
+
+let bin_read_or_null bin_read_el buf ~pos_ref =
+  (bin_read_option_like [@alloc a])
+    ~none:Base.Or_null.Null
+    ~some:(Base.Or_null.this [@mode m])
+    ~read_error:Or_null_code
+    bin_read_el
+    buf
+    ~pos_ref [@exclave_if_stack a]
 ;;]
 
 let bin_read_lazy bin_read_el buf ~pos_ref =
@@ -548,7 +571,12 @@ let bin_read_float_array buf ~pos_ref =
     ~pos_ref
 ;;
 
-let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start_pos =
+let%template check_array_len
+  (type a)
+  (bin_read_el : (a reader[@mode local]))
+  ~len
+  ~start_pos
+  =
   let module Obj = Base.Obj in
   if arch_sixtyfour
   then (
@@ -567,12 +595,14 @@ let%template check_array_len (bin_read_el : (_ reader[@mode local])) ~len ~start
       if len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos
     | Some el ->
-      if Obj.tag (Obj.repr el) = Stdlib.Obj.double_tag || len > Sys.max_array_length
+      if Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
+         || len > Sys.max_array_length
       then raise_read_error ReadError.Array_too_long start_pos)
 ;;
 
 let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
-  bin_read_el
+  (type a)
+  (bin_read_el : a reader)
   buf
   ~pos_ref
   =
@@ -592,7 +622,7 @@ let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_ar
     [@exclave_if_stack a])
 ;;
 
-let%template bin_read_array (type a) (bin_read_el : _ reader) buf ~pos_ref =
+let%template bin_read_array (type a) (bin_read_el : a reader) buf ~pos_ref =
   if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
   then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
   else
@@ -609,7 +639,12 @@ let%template[@alloc stack] bin_read_array bin_read_el buf ~pos_ref =
     ~pos_ref
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_iarray bin_read_el buf ~pos_ref =
+let%template[@alloc a @ m = (heap_global, stack_local)] bin_read_iarray
+  (type a)
+  (bin_read_el : (a reader[@mode m]))
+  buf
+  ~pos_ref
+  =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   check_array_len bin_read_el ~len ~start_pos;
@@ -881,6 +916,7 @@ let[@inline] bin_read_string buf ~pos_ref = (bin_read_string [@alloc stack]) buf
 let[@inline] bin_read_md5 buf ~pos_ref = (bin_read_md5 [@alloc stack]) buf ~pos_ref
 let bin_read_ref = (bin_read_ref [@alloc stack])
 let bin_read_option = (bin_read_option [@alloc stack])
+let bin_read_or_null = (bin_read_or_null [@alloc stack])
 let bin_read_list = (bin_read_list [@alloc stack])
 let bin_read_list_with_max_len = (bin_read_list_with_max_len [@alloc stack])
 let bin_read_array = (bin_read_array [@alloc stack])

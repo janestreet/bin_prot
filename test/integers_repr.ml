@@ -10,8 +10,8 @@ open Import
    diff is easy to understand.
 
    We can't generate reference output for every possible values as it would be huge,
-   instead we choose a few interesting points and generate tests in a window around
-   them. The points we choose are:
+   instead we choose a few interesting points and generate tests in a window around them.
+   The points we choose are:
 
    - 0
    - min value

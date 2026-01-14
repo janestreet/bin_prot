@@ -1,13 +1,13 @@
-(* Binable: signatures defining generated functions for the binary protocol.
-   [S, S1, etc] are the signatures satisfied by the generated code and
-   [Minimal.S, Minimal.S1, etc] are the signatures that generated code uses. *)
+(* Binable: signatures defining generated functions for the binary protocol. [S, S1, etc]
+   are the signatures satisfied by the generated code and [Minimal.S, Minimal.S1, etc] are
+   the signatures that generated code uses. *)
 
 [%%template
 [@@@mode.default m = (global, local)]
 
 (* the subset of S containing only functions, so that one can recursively define modules
    implementing this interface *)
-module type S_any_only_functions = sig
+module type S_only_functions = sig
   type t
 
   include sig
@@ -26,27 +26,15 @@ module type S_any_only_functions = sig
   val __bin_read_t__ : t Read.vtag_reader
 end
 
-module type S_any = sig
+module type S = sig
   type t
 
-  include S_any_only_functions [@mode m] with type t := t
+  include S_only_functions [@mode m] with type t := t
 
   val bin_shape_t : Shape.t
   val bin_writer_t : t Type_class.writer
   val bin_reader_t : t Type_class.reader
   val bin_t : t Type_class.t
-end
-
-module type S = sig
-  type t
-
-  include S_any [@mode m] with type t := t
-end
-
-module type S_only_functions = sig
-  type t
-
-  include S_any_only_functions [@mode m] with type t := t
 end
 
 [@@@kind.default ka = (value, any)]

@@ -146,8 +146,8 @@ module%test _ = struct
     let buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
     let value = Dropped.bin_reader_t.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0) in
     let ignored = value.mystery in
-    (* The value deserialized with [Dropped] agrees with the value serialized by
-         [Known], except for the ignored bit. *)
+    (* The value deserialized with [Dropped] agrees with the value serialized by [Known],
+       except for the ignored bit. *)
     assert ({ Known.value with mystery = ignored } = value);
     (* [Dropped] remembered the size of the ignored data. *)
     assert (Dropped.bin_size_t value = Known.bin_size_t Known.value)

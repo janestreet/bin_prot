@@ -44,8 +44,8 @@
 
 type 'a id = 'a
 
-(*_ This type synonym is introduced because older versions of OCaml
-  do not support destructive substitutions with `type 'a t1 = t2`. *)
+(*_ This type synonym is introduced because older versions of OCaml do not support
+    destructive substitutions with `type 'a t1 = t2`. *)
 
 type 'a t = 'a [@@deriving compare ~localize, sexp_of]
 

@@ -108,6 +108,7 @@ module ReadError : sig
     | Unit_code (** Illegal unit value *)
     | Bool_code (** Illegal boolean value *)
     | Option_code (** Illegal option code *)
+    | Or_null_code (** Illegal or_null code *)
     | String_too_long (** String too long *)
     | Variant_tag (** Untagged integer encoding for variant tag *)
     | Array_too_long (** Array too long *)
@@ -146,10 +147,10 @@ exception Poly_rec_write of string
 exception Empty_type of string
 
 (** [raise_read_error err pos] *)
-val raise_read_error : ReadError.t -> pos -> 'a
+val raise_read_error : 'a. ReadError.t -> pos -> 'a
 
 (** [raise_variant_wrong_type name pos] *)
-val raise_variant_wrong_type : string -> pos -> 'a
+val raise_variant_wrong_type : 'a. string -> pos -> 'a
 
 (** [raise_concurrent_modification loc]
     @raise Failure
@@ -177,7 +178,7 @@ val copy_htbl_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
 
 external unsafe_blit_buf
   :  src_pos:int
-  -> src:(buf[@local_opt])
+  -> src:buf
   -> dst_pos:int
   -> dst:buf
   -> len:int
@@ -186,7 +187,7 @@ external unsafe_blit_buf
 
 external unsafe_blit_string_buf
   :  src_pos:int
-  -> (string[@local_opt])
+  -> string
   -> dst_pos:int
   -> buf
   -> len:int
@@ -196,7 +197,7 @@ external unsafe_blit_string_buf
 
 external unsafe_blit_bytes_buf
   :  src_pos:int
-  -> (bytes[@local_opt])
+  -> bytes
   -> dst_pos:int
   -> buf
   -> len:int
@@ -208,7 +209,7 @@ external unsafe_blit_buf_string
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
@@ -218,7 +219,7 @@ external unsafe_blit_buf_bytes
   :  src_pos:int
   -> buf
   -> dst_pos:int
-  -> (bytes[@local_opt])
+  -> bytes
   -> len:int
   -> unit
   = "bin_prot_blit_buf_bytes_stub"
@@ -226,7 +227,7 @@ external unsafe_blit_buf_bytes
 
 external unsafe_blit_float_array_buf
   :  src_pos:int
-  -> (float array[@local_opt])
+  -> float array
   -> dst_pos:int
   -> buf
   -> len:int
@@ -246,7 +247,7 @@ external unsafe_blit_buf_float_array
 
 external unsafe_blit_floatarray_buf
   :  src_pos:int
-  -> (floatarray[@local_opt])
+  -> floatarray
   -> dst_pos:int
   -> buf
   -> len:int

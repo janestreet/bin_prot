@@ -693,4 +693,23 @@ module _ : module type of Bin_prot.Std = struct
       "\001\001"
       |}]
   ;;
+
+  type nonrec 'a or_null = 'a or_null [@@deriving bin_io ~localize]
+
+  let%expect_test "or_null" =
+    test
+      (module struct
+        type t = int64 or_null [@@deriving bin_io ~localize, equal, sexp_of]
+
+        let examples = [ Null; This Int64.min_value; This 0L; This 1L ]
+      end);
+    [%expect
+      {|
+      (digest 9b883eb873d7cc508dd54069f77504ae)
+      "\000"
+      "\001\252\000\000\000\000\000\000\000\128"
+      "\001\000"
+      "\001\001"
+      |}]
+  ;;
 end

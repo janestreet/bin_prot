@@ -103,21 +103,21 @@ end = struct
 end
 
 module Canonical_exp_constructor = struct
-  (* ['a t] is a non-recursive type, used to represent 1-layer of expression.  The
+  (* ['a t] is a non-recursive type, used to represent 1-layer of expression. The
      recursive knot is tied below in [Canonical_full.Exp.t]. *)
   type 'a t =
     | Annotate of Uuid.t * 'a
     | Base of Uuid.t * 'a list
     | Tuple of 'a list
+    | Unboxed_tuple of 'a list
     | Record of (string * 'a) list
     | Variant of (string * 'a list) list
     (* Polymorphic variants are insensitive to the order the constructors are listed *)
     | Poly_variant of 'a option Sorted_table.t
-    (* Left-hand-side of [Application] is a potentially recursive definition: it
-       can refer to itself using [Rec_app (i, _)] where [i] is the depth of this
-       application node (how many application nodes are above it).
-       It also has its own scope of type variables so it can not refer to type variables
-       of the enclosing scope.
+    (* Left-hand-side of [Application] is a potentially recursive definition: it can refer
+       to itself using [Rec_app (i, _)] where [i] is the depth of this application node
+       (how many application nodes are above it). It also has its own scope of type
+       variables so it can not refer to type variables of the enclosing scope.
     *)
     | Application of 'a * 'a list
     | Rec_app of int * 'a list
@@ -129,6 +129,7 @@ module Canonical_exp_constructor = struct
     | Annotate (u, x) -> Annotate (u, f x)
     | Base (s, xs) -> Base (s, List.map ~f xs)
     | Tuple xs -> Tuple (List.map ~f xs)
+    | Unboxed_tuple xs -> Unboxed_tuple (List.map ~f xs)
     | Record l -> Record (List.map l ~f:(fun (s, x) -> s, f x))
     | Variant l -> Variant (List.map l ~f:(fun (s, xs) -> s, List.map ~f xs))
     | Poly_variant t -> Poly_variant (Sorted_table.map t ~f:(Option.map ~f))
@@ -149,6 +150,7 @@ end = struct
       Digest.constructor "annotate" [ Digest.uuid u; x ]
     | Base (u, l) -> Digest.constructor "base" [ Digest.uuid u; Digest.list l ]
     | Tuple l -> Digest.constructor "tuple" [ Digest.list l ]
+    | Unboxed_tuple l -> Digest.constructor "unboxed_tuple" [ Digest.list l ]
     | Record l ->
       Digest.constructor
         "record"
@@ -206,6 +208,7 @@ module type Canonical = sig
     val annotate : Uuid.t -> _ Exp1.t -> _ Exp1.t
     val basetype : Uuid.t -> _ Exp1.t list -> _ Exp1.t
     val tuple : _ Exp1.t list -> _ Exp1.t
+    val unboxed_tuple : _ Exp1.t list -> _ Exp1.t
     val poly_variant : Location.t -> (string * _ Exp1.t option) list -> _ Exp1.t
     val define : Visibility.visible Exp1.t -> Def.t
     val record : (string * _ Exp1.t) list -> _ Exp1.t
@@ -252,37 +255,35 @@ end = struct
       | Base _ -> Non_poly_variant (desc, CD.digest_layer x)
       | Annotate _ ->
         (* It's unsafe to use deriving bin_io when inheriting from a polymorphic variant
-           that has a custom bin_io.  If we forbid that, we can happily reject here
+           that has a custom bin_io. If we forbid that, we can happily reject here
            anything that's annotated. *)
         Non_poly_variant (desc, CD.digest_layer x)
       | Application _ ->
-        (* Application can really be a poly-variant you can inherit from!  But it's a
-           rare situation that mostly (only?) arises with inheritance from recursive
-           polymorpic variants, which we've not seen anywhere yet.  So we reject it. *)
+        (* Application can really be a poly-variant you can inherit from! But it's a rare
+           situation that mostly (only?) arises with inheritance from recursive polymorpic
+           variants, which we've not seen anywhere yet. So we reject it. *)
         Non_poly_variant (desc, CD.digest_layer x)
       | Rec_app _ ->
         (* You can only get the [Rec_app] constructor for type-references within the
-           mutual group being defined. References which
-           follow after the current group will always be [Application]s.
+           mutual group being defined. References which follow after the current group
+           will always be [Application]s.
 
            And since ocaml rejects references in `inheritance' position to types within
            the current group (see example) with:
 
-           Error: The type constructor t
-           is not yet completely defined
+           Error: The type constructor t is not yet completely defined
 
            then its ok to say that a rec-app is something that can't be inherited from and
            return [Non_poly_variant].
 
-           And unlike the [Application] case, it should never be possible to see
-           an error message with the [desc] = [Rec_app].
+           And unlike the [Application] case, it should never be possible to see an error
+           message with the [desc] = [Rec_app].
 
-           Example: [type t = [`a of [ | t] ]]
-           Here, [| t] would be an example of inheritance from a Rec_app, which
-           is rejected by the compiler.
+           Example: [type t = [`a of [ | t] ]] Here, [| t] would be an example of
+           inheritance from a Rec_app, which is rejected by the compiler.
         *)
         Non_poly_variant (desc, CD.digest_layer x)
-      | Var _ | Tuple _ | Record _ | Variant _ ->
+      | Var _ | Tuple _ | Unboxed_tuple _ | Record _ | Variant _ ->
         Non_poly_variant (desc, CD.digest_layer x)
     ;;
 
@@ -305,6 +306,7 @@ end = struct
     let annotate u x = Exp1.create (Annotate (u, x))
     let basetype u l = Exp1.create (Base (u, l))
     let tuple l = Exp1.create (Tuple l)
+    let unboxed_tuple l = Exp1.create (Unboxed_tuple l)
 
     let poly_variant loc l =
       Exp1.create (Poly_variant (Sorted_table.create loc ~eq:(equal_option Exp1.equal) l))
@@ -363,6 +365,7 @@ module Canonical_full = struct
     let annotate u x = Exp1.Exp (Annotate (u, x))
     let basetype u xs = Exp1.Exp (Base (u, xs))
     let tuple xs = Exp1.Exp (Tuple xs)
+    let unboxed_tuple xs = Exp1.Exp (Unboxed_tuple xs)
     let poly_variant loc xs = Exp1.poly_variant loc xs
     let var n = Exp1.Exp (Var n)
     let recurse r xs = Exp1.recurse r xs
@@ -454,6 +457,7 @@ module Expression = struct
         | Record of (string * t) list
         | Variant of (string * t list) list
         | Tuple of t list
+        | Unboxed_tuple of t list
         | Poly_variant of (Location.t * t poly_constr list)
         | Var of (Location.t * Vid.t)
         | Rec_app of Tid.t * t list
@@ -486,7 +490,8 @@ module Expression = struct
     let rec trav = function
       (* We look for cycles by traversing the structure of type-expressions *)
       | Annotate (_, t) -> trav t
-      | Base (_, ts) | Tuple ts | Top_app (_, _, ts) -> List.iter ts ~f:trav
+      | Base (_, ts) | Tuple ts | Unboxed_tuple ts | Top_app (_, _, ts) ->
+        List.iter ts ~f:trav
       (* ..including poly-variants *)
       | Poly_variant (_, cs) ->
         List.iter cs ~f:(function
@@ -525,8 +530,7 @@ end
 include Expression
 
 module Evaluation (Canonical : Canonical) = struct
-  (* [Venv.t]
-     Environment for resolving type-vars *)
+  (* [Venv.t] Environment for resolving type-vars *)
   module Venv : sig
     type t
 
@@ -551,8 +555,7 @@ module Evaluation (Canonical : Canonical) = struct
       | Definition of Canonical.Def.t
   end
 
-  (* [Tenv.t]
-     Environment for resolving type-definitions *)
+  (* [Tenv.t] Environment for resolving type-definitions *)
   module Tenv : sig
     type key = Gid.t * Tid.t
     type t
@@ -579,8 +582,7 @@ module Evaluation (Canonical : Canonical) = struct
     let extend t k v = Map.set ~key:k ~data:v t
   end
 
-  (* [Defining.t]
-     Monad for managing un-rolling depth, and maintaing a [Tenv.t] *)
+  (* [Defining.t] Monad for managing un-rolling depth, and maintaing a [Tenv.t] *)
   module Defining : sig
     type 'a t
 
@@ -628,18 +630,18 @@ module Evaluation (Canonical : Canonical) = struct
     loop [] xs
   ;;
 
-  (*
-     Shape evaluation.
+  (* Shape evaluation.
 
      Shapes are evaluated to canonical-shape (expressions), with additional defs collected
      in the [defining] monad, which also manages generation/mapping to [Canonical.Tid.t]
 
-     There is downwards context of [group] and [Venv.t]
-     The (current) [group] changes when the case for [Top_app] calls [eval_app].
+     There is downwards context of [group] and [Venv.t] The (current) [group] changes when
+     the case for [Top_app] calls [eval_app].
 
-     The current [Venv.t] is abandoned when [eval_app] is called, and then re-created after
-     the decision has been made to either inline the type-application, or make a reference
-     to a type-definition, which is created at most once for each (Gid.t * Tid.t).
+     The current [Venv.t] is abandoned when [eval_app] is called, and then re-created
+     after the decision has been made to either inline the type-application, or make a
+     reference to a type-definition, which is created at most once for each (Gid.t *
+     Tid.t).
 
      We make a type-definition always for Records and Variants, and in addition for any
      other cyclic type-definition.
@@ -665,6 +667,8 @@ module Evaluation (Canonical : Canonical) = struct
     | Base (s, ts) ->
       eval_list group venv ts >>= fun vs -> return (Canonical.Create.basetype s vs)
     | Tuple ts -> eval_list group venv ts >>= fun vs -> return (Canonical.Create.tuple vs)
+    | Unboxed_tuple ts ->
+      eval_list group venv ts >>= fun vs -> return (Canonical.Create.unboxed_tuple vs)
     | Top_app (in_group, tid, args) ->
       eval_list group venv args
       >>= fun args ->
@@ -713,8 +717,14 @@ module Evaluation (Canonical : Canonical) = struct
     let record_or_normal_variant =
       match body with
       | Record _ | Variant _ -> true
-      | Tuple _ | Annotate _ | Base _ | Poly_variant _ | Var _ | Rec_app _ | Top_app _ ->
-        false
+      | Tuple _
+      | Unboxed_tuple _
+      | Annotate _
+      | Base _
+      | Poly_variant _
+      | Var _
+      | Rec_app _
+      | Top_app _ -> false
     in
     let cyclic = is_cyclic group tid in
     let cyclic_no_VR = is_cyclic_with_no_intervening_VR group tid in
@@ -768,6 +778,7 @@ module For_typerep = struct
   let deconstruct_tuple_exn t =
     match t with
     | Tuple ts -> ts
+    | Unboxed_tuple ts -> ts
     | _ -> raise (Not_a_tuple t)
   ;;
 end

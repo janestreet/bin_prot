@@ -37,6 +37,7 @@ module Tests : sig
   val ref : int32 ref to_test
   val lazy_t : int32 lazy_t to_test
   val option : int32 option to_test
+  val or_null : int32 or_null to_test
   val pair : (int32 * int32) to_test
   val triple : (int32 * int32 * int32) to_test
   val list : int32 list to_test

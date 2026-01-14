@@ -38,6 +38,7 @@ let bin_shape_network64_int64 = basetype (Uuid.of_string "network64_int64") []
 (* new shape constructors *)
 let bin_shape_ref x = basetype (Uuid.of_string "ref") [ x ]
 let bin_shape_option x = basetype (Uuid.of_string "option") [ x ]
+let bin_shape_or_null x = basetype (Uuid.of_string "or_null") [ x ]
 let bin_shape_list x = basetype (Uuid.of_string "list") [ x ]
 let bin_shape_array x = basetype (Uuid.of_string "array") [ x ]
 

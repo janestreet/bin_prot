@@ -659,6 +659,19 @@ let%expect_test "option" =
     [ Some 42, "Some 42", 2; None, "None", 1 ]
 ;;
 
+let%expect_test "or_null" =
+  check_all_with_local
+    (module struct
+      type t = int or_null [@@deriving equal, sexp_of]
+    end)
+    2
+    "or_null"
+    (Read.bin_read_or_null Read.bin_read_int)
+    (Write.bin_write_or_null Write.bin_write_int)
+    ((Write.bin_write_or_null [@mode local]) (Write.bin_write_int [@mode local]))
+    [ This 42, "This 42", 2; Null, "Null", 1 ]
+;;
+
 let%expect_test "pair" =
   check_all_with_local
     (module struct
@@ -951,8 +964,8 @@ let%expect_test "bigstring" =
 
 let%expect_test "bigstring (big)" =
   let module Random = Random () in
-  (* [n] is a 16bits integer that will be serialized differently depending on
-     whether it is considered as an integer or an unsigned integer. *)
+  (* [n] is a 16bits integer that will be serialized differently depending on whether it
+     is considered as an integer or an unsigned integer. *)
   let n = 40_000 in
   let header = 3 in
   let size = header + n in
