@@ -69,6 +69,7 @@ module type Read = sig @@ portable
      rather than a local one *)
   val bin_read_ref : ('a : value_or_null). 'a global_reader -> 'a ref reader
   val bin_read_option : ('a : value_or_null). ('a, 'a option) reader1
+  val bin_read_or_null : ('a, 'a or_null) reader1
   val bin_read_pair : ('a, 'b, 'a * 'b) reader2
   val bin_read_triple : ('a, 'b, 'c, 'a * 'b * 'c) reader3
   val bin_read_list : ('a : value_or_null). ('a, 'a list) reader1

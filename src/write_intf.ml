@@ -44,6 +44,7 @@ module type Write = sig @@ portable
   val bin_write_ref : ('a : value_or_null). (('a, 'a ref) writer1[@mode m])
   val bin_write_lazy : (('a, 'a lazy_t) writer1[@mode m])
   val bin_write_option : ('a : value_or_null). (('a, 'a option) writer1[@mode m])
+  val bin_write_or_null : (('a, 'a or_null) writer1[@mode m])
   val bin_write_pair : (('a, 'b, 'a * 'b) writer2[@mode m])
   val bin_write_triple : (('a, 'b, 'c, 'a * 'b * 'c) writer3[@mode m])
   val bin_write_list : ('a : value_or_null). (('a, 'a list) writer1[@mode m])

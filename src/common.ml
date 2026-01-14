@@ -25,6 +25,7 @@ module ReadError = struct
     | Unit_code
     | Bool_code
     | Option_code
+    | Or_null_code
     | String_too_long
     | Variant_tag
     | Array_too_long
@@ -52,6 +53,7 @@ module ReadError = struct
     | Unit_code -> "Unit_code"
     | Bool_code -> "Bool_code"
     | Option_code -> "Option_code"
+    | Or_null_code -> "Or_null_code"
     | String_too_long -> "String_too_long"
     | Variant_tag -> "Variant_tag"
     | Array_too_long -> "Array_too_long"

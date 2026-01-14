@@ -198,6 +198,28 @@ let bin_option bin_el =
   }
 ;;
 
+(*$ mk_base1 "or_null" *)
+let bin_writer_or_null bin_writer_el =
+  { size = (fun v -> Size.bin_size_or_null bin_writer_el.size v)
+  ; write = (fun buf ~pos v -> Write.bin_write_or_null bin_writer_el.write buf ~pos v)
+  }
+;;
+
+let bin_reader_or_null bin_reader_el =
+  { read = (fun buf ~pos_ref -> Read.bin_read_or_null bin_reader_el.read buf ~pos_ref)
+  ; vtag_read = variant_wrong_type "or_null"
+  }
+;;
+
+let bin_shape_or_null x1 = Shape.bin_shape_or_null x1
+
+let bin_or_null bin_el =
+  { shape = bin_shape_or_null bin_el.shape
+  ; writer = bin_writer_or_null bin_el.writer
+  ; reader = bin_reader_or_null bin_el.reader
+  }
+;;
+
 (*$ mk_base2 "pair" *)
 let bin_writer_pair bin_writer_el1 bin_writer_el2 =
   { size = (fun v -> Size.bin_size_pair bin_writer_el1.size bin_writer_el2.size v)

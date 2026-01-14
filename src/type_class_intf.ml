@@ -137,6 +137,12 @@ module type Type_class = sig @@ portable
   val bin_reader_option : ('a : value_or_null). ('a, 'a option) S1.reader
   val bin_shape_option : Shape.t -> Shape.t
   val bin_option : ('a : value_or_null). ('a, 'a option) S1.t
+
+  (*$ mk_base1 "or_null" *)
+  val bin_writer_or_null : ('a, 'a or_null) S1.writer
+  val bin_reader_or_null : ('a, 'a or_null) S1.reader
+  val bin_shape_or_null : Shape.t -> Shape.t
+  val bin_or_null : ('a, 'a or_null) S1.t
   (*$*)
 
   val bin_writer_pair : ('a, 'b, 'a * 'b) S2.writer

@@ -40,6 +40,7 @@ module type Size = sig @@ portable
   val bin_size_lazy_t : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_lazy : (('a, 'a lazy_t) sizer1[@mode m])
   val bin_size_option : ('a : value_or_null). (('a, 'a option) sizer1[@mode m])
+  val bin_size_or_null : (('a, 'a or_null) sizer1[@mode m])
   val bin_size_pair : (('a, 'b, 'a * 'b) sizer2[@mode m])
   val bin_size_triple : (('a, 'b, 'c, 'a * 'b * 'c) sizer3[@mode m])
   val bin_size_list : ('a : value_or_null). (('a, 'a list) sizer1[@mode m])
@@ -120,6 +121,7 @@ module type Size = sig @@ portable
     val bin_size_ref : int
     val bin_size_lazy_t : int
     val bin_size_option : int
+    val bin_size_or_null : int
     val bin_size_pair : int
     val bin_size_triple : int
     val bin_size_list : int

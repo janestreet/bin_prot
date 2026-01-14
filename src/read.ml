@@ -488,21 +488,6 @@ let bin_read_ref bin_read_el buf ~pos_ref =
   ref el [@exclave_if_stack a]
 ;;
 
-let bin_read_option bin_read_el buf ~pos_ref =
-  let pos = safe_get_pos buf pos_ref in
-  assert_pos pos;
-  match unsafe_get buf pos with
-  | '\000' ->
-    pos_ref := pos + 1;
-    None
-  | '\001' ->
-    pos_ref := pos + 1;
-    (let el = bin_read_el buf ~pos_ref in
-     Some el)
-    [@exclave_if_stack a]
-  | _ -> raise_read_error ReadError.Option_code pos
-;;
-
 let bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
   (let a = bin_read_a buf ~pos_ref in
    let b = bin_read_b buf ~pos_ref in
@@ -516,6 +501,44 @@ let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
    let c = bin_read_c buf ~pos_ref in
    a, b, c)
   [@exclave_if_stack a]
+;;]
+
+[%%template
+[@@@alloc.default a @ m = (heap_global, stack_local)]
+
+let[@inline] bin_read_option_like ~none ~some ~read_error bin_read_el buf ~pos_ref =
+  let pos = safe_get_pos buf pos_ref in
+  assert_pos pos;
+  match unsafe_get buf pos with
+  | '\000' ->
+    pos_ref := pos + 1;
+    none
+  | '\001' ->
+    pos_ref := pos + 1;
+    (let el = bin_read_el buf ~pos_ref in
+     (some [@inlined hint]) el)
+    [@exclave_if_stack a]
+  | _ -> raise_read_error read_error pos
+;;
+
+let bin_read_option bin_read_el buf ~pos_ref =
+  (bin_read_option_like [@alloc a])
+    ~none:None
+    ~some:(Base.Option.some [@mode m])
+    ~read_error:Option_code
+    bin_read_el
+    buf
+    ~pos_ref [@exclave_if_stack a]
+;;
+
+let bin_read_or_null bin_read_el buf ~pos_ref =
+  (bin_read_option_like [@alloc a])
+    ~none:Base.Or_null.Null
+    ~some:(Base.Or_null.this [@mode m])
+    ~read_error:Or_null_code
+    bin_read_el
+    buf
+    ~pos_ref [@exclave_if_stack a]
 ;;]
 
 let bin_read_lazy bin_read_el buf ~pos_ref =
@@ -1006,6 +1029,7 @@ let[@inline] bin_read_md5 buf ~pos_ref = exclave_
 
 let bin_read_ref = (bin_read_ref [@alloc stack])
 let bin_read_option = (bin_read_option [@alloc stack])
+let bin_read_or_null = (bin_read_or_null [@alloc stack])
 let bin_read_list = (bin_read_list [@alloc stack])
 let bin_read_list_with_max_len = (bin_read_list_with_max_len [@alloc stack])
 let bin_read_array = (bin_read_array [@alloc stack])

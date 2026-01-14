@@ -1,11 +1,11 @@
 module Reader_local : sig
-  type%template 'a t =
+  type%template ('a : value_or_null) t =
     { reader_local : ('a Bin_prot.Read.reader[@mode local])
     ; globalize : local_ 'a -> 'a
     }
 end
 
-type%template 'a to_test =
+type%template ('a : value_or_null) to_test =
   { writer : 'a Bin_prot.Write.writer
   ; writer_local : ('a Bin_prot.Write.writer[@mode local]) option
   ; reader : 'a Bin_prot.Read.reader
@@ -37,6 +37,7 @@ module Tests : sig
   val ref : int32 ref to_test
   val lazy_t : int32 lazy_t to_test
   val option : int32 option to_test
+  val or_null : int32 or_null to_test
   val pair : (int32 * int32) to_test
   val triple : (int32 * int32 * int32) to_test
   val list : int32 list to_test

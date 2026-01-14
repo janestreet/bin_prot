@@ -27,12 +27,12 @@ module _ : module type of Bin_prot.Std = struct
     type float64_vec = vec64
 
     module type S0 = sig
-      type t [@@deriving bin_io ~localize, equal, sexp_of]
+      type t : value_or_null [@@deriving bin_io ~localize, equal, sexp_of]
 
       val examples : t list
     end
 
-    let test (type a) (module T : S0 with type t = a) =
+    let test (type a : value_or_null) (module T : S0 with type t = a) =
       print_s [%message "digest" (Bin_prot.Shape.eval_to_digest_string T.bin_shape_t)];
       print_and_check_round_trip
         (module T)
@@ -689,6 +689,25 @@ module _ : module type of Bin_prot.Std = struct
     [%expect
       {|
       (digest 4aeb106f47d6b4b035c25cd4327f578d)
+      "\000"
+      "\001\252\000\000\000\000\000\000\000\128"
+      "\001\000"
+      "\001\001"
+      |}]
+  ;;
+
+  type nonrec 'a or_null = 'a or_null [@@deriving bin_io ~localize]
+
+  let%expect_test "or_null" =
+    test
+      (module struct
+        type t = int64 or_null [@@deriving bin_io ~localize, equal, sexp_of]
+
+        let examples = [ Null; This Int64.min_value; This 0L; This 1L ]
+      end);
+    [%expect
+      {|
+      (digest 9b883eb873d7cc508dd54069f77504ae)
       "\000"
       "\001\252\000\000\000\000\000\000\000\128"
       "\001\000"

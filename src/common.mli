@@ -140,6 +140,7 @@ module ReadError : sig
     | Unit_code (** Illegal unit value *)
     | Bool_code (** Illegal boolean value *)
     | Option_code (** Illegal option code *)
+    | Or_null_code (** Illegal or_null code *)
     | String_too_long (** String too long *)
     | Variant_tag (** Untagged integer encoding for variant tag *)
     | Array_too_long (** Array too long *)
@@ -178,7 +179,7 @@ exception Poly_rec_write of string
 exception Empty_type of string
 
 (** [raise_read_error err pos] *)
-val raise_read_error : ReadError.t -> pos -> 'a
+val raise_read_error : ('a : value_or_null). ReadError.t -> pos -> 'a @@ stateless
 
 (** [raise_variant_wrong_type name pos] *)
 val raise_variant_wrong_type : ('a : value_or_null). string -> pos -> 'a @@ stateless

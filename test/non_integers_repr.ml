@@ -19,13 +19,13 @@ module Read = Bin_prot.Read
 module Write = Bin_prot.Write
 
 module Reader_local = struct
-  type%template 'a t =
+  type%template ('a : value_or_null) t =
     { reader_local : ('a Read.reader[@mode local])
     ; globalize : local_ 'a -> 'a
     }
 end
 
-type%template 'a to_test =
+type%template ('a : value_or_null) to_test =
   { writer : 'a Write.writer
   ; writer_local : ('a Write.writer[@mode local]) option
   ; reader : 'a Read.reader
@@ -394,6 +394,27 @@ module%template Tests = struct
     ; sexp_of = [%sexp_of: int32 option]
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_option
+    }
+  ;;
+
+  let or_null =
+    { writer = Write.bin_write_or_null Write.bin_write_int32
+    ; writer_local =
+        Some
+          ((Write.bin_write_or_null [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; reader = Read.bin_read_or_null Read.bin_read_int32
+    ; reader_local =
+        Some
+          { reader_local =
+              (Read.bin_read_or_null [@mode local]) (Read.bin_read_int32 [@mode local])
+          ; globalize = [%globalize: int32 or_null]
+          }
+    ; values =
+        [ Null; This 0l; This 1l; This (-1l); This Int32.max_value; This Int32.min_value ]
+    ; equal = Or_null.equal Int32.equal
+    ; sexp_of = [%sexp_of: int32 or_null]
+    ; hi_bound = None
+    ; lo_bound = Minimum.bin_size_or_null
     }
   ;;
 
@@ -812,7 +833,6 @@ let%expect_test "Non-integer bin_prot size tests" =
     |}];
   gen_tests Tests.float_nan;
   Expect_test_patterns.require_match
-    [%here]
     {|
     7f f{8,0} 00 00 00 00 00 01 -> NAN (glob)
     |};

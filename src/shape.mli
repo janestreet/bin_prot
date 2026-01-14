@@ -39,6 +39,7 @@ val bin_shape_network64_int : t
 val bin_shape_network64_int64 : t
 val bin_shape_ref : t -> t
 val bin_shape_option : t -> t
+val bin_shape_or_null : t -> t
 val bin_shape_list : t -> t
 val bin_shape_array : t -> t
 val bin_shape_iarray : t -> t

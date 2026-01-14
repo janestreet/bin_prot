@@ -51,6 +51,7 @@ let%expect_test "built-ins" =
     ; bin_shape_lazy_t bin_shape_int
     ; bin_shape_list bin_shape_int
     ; bin_shape_option bin_shape_int
+    ; bin_shape_or_null bin_shape_int
     ; bin_shape_ref bin_shape_int
     ];
   [%expect
@@ -79,6 +80,7 @@ let%expect_test "built-ins" =
     (Base int ())
     (Base list ((Base int ())))
     (Base option ((Base int ())))
+    (Base or_null ((Base int ())))
     (Base ref ((Base int ())))
     |}]
 ;;
