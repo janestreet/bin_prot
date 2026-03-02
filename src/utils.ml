@@ -30,11 +30,11 @@ let bin_dump ?(header = false) writer v =
 
 (* Reading from streams *)
 
-let bin_read_stream ?max_size ~read reader =
+let bin_read_stream ?(max_size:int option) ~read (reader:('a, 'ctx) reader) ~(ctx:'ctx) =
   let buf = create_buf size_header_length in
   read buf ~pos:0 ~len:size_header_length;
   let pos_ref = ref 0 in
-  let len = bin_read_size_header buf ~pos_ref in
+  let len = bin_read_size_header ~ctx:() buf ~pos_ref in
   match max_size with
   | Some max_size when len > max_size ->
     failwith
@@ -46,7 +46,7 @@ let bin_read_stream ?max_size ~read reader =
     let buf = if len > size_header_length then create_buf len else buf in
     read buf ~pos:0 ~len;
     pos_ref := 0;
-    let res = reader.read buf ~pos_ref in
+    let res = reader.read ~ctx buf ~pos_ref in
     if !pos_ref = len
     then res
     else (
@@ -109,8 +109,8 @@ struct
     let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
     let bin_size_t t = B.bin_size_t (S.to_binable t)
     let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
-    let bin_read_t buf ~pos_ref = S.of_binable (B.bin_read_t buf ~pos_ref)
-    let __bin_read_t__ buf ~pos_ref n = S.of_binable (B.__bin_read_t__ buf ~pos_ref n)
+    let bin_read_t ~ctx buf ~pos_ref = S.of_binable (B.bin_read_t ~ctx buf ~pos_ref)
+    let __bin_read_t__ ~ctx buf ~pos_ref n = S.of_binable (B.__bin_read_t__ ~ctx buf ~pos_ref n)
   end)
 end
 
@@ -132,12 +132,12 @@ struct
     B.bin_write_t bin_write_el buf ~pos (S.to_binable t)
   ;;
 
-  let bin_read_t bin_read_el buf ~pos_ref =
-    S.of_binable (B.bin_read_t bin_read_el buf ~pos_ref)
+  let bin_read_t bin_read_el ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el ~ctx buf ~pos_ref)
   ;;
 
-  let __bin_read_t__ bin_read_el buf ~pos_ref n =
-    S.of_binable (B.__bin_read_t__ bin_read_el buf ~pos_ref n)
+  let __bin_read_t__ bin_read_el ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el ~ctx buf ~pos_ref n)
   ;;
 
   let bin_writer_t bin_writer =
@@ -147,9 +147,9 @@ struct
   ;;
 
   let bin_reader_t bin_reader =
-    { read = (fun buf ~pos_ref -> bin_read_t bin_reader.read buf ~pos_ref)
+    { read = (fun ~ctx buf ~pos_ref -> bin_read_t bin_reader.read ~ctx buf ~pos_ref)
     ; vtag_read =
-        (fun _buf ~pos_ref _n ->
+        (fun ~ctx:_ _buf ~pos_ref _n ->
           raise_variant_wrong_type "Bin_prot.Utils.Make_binable1.bin_reader_t" !pos_ref)
     }
   ;;
@@ -184,12 +184,12 @@ struct
     B.bin_write_t bin_write_el1 bin_write_el2 buf ~pos (S.to_binable t)
   ;;
 
-  let bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref =
-    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 buf ~pos_ref)
+  let bin_read_t bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref)
   ;;
 
-  let __bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n =
-    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n)
+  let __bin_read_t__ bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref n)
   ;;
 
   let bin_writer_t bin_writer1 bin_writer2 =
@@ -201,9 +201,9 @@ struct
 
   let bin_reader_t bin_reader1 bin_reader2 =
     { read =
-        (fun buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read buf ~pos_ref)
+        (fun ~ctx buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read ~ctx buf ~pos_ref)
     ; vtag_read =
-        (fun _buf ~pos_ref _n ->
+        (fun ~ctx:_ _buf ~pos_ref _n ->
           raise_variant_wrong_type "Bin_prot.Utils.Make_binable2.bin_reader_t" !pos_ref)
     }
   ;;
@@ -238,12 +238,12 @@ struct
     B.bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos (S.to_binable t)
   ;;
 
-  let bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref =
-    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref)
+  let bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref)
   ;;
 
-  let __bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n =
-    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n)
+  let __bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref n)
   ;;
 
   let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
@@ -256,10 +256,10 @@ struct
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
     { read =
-        (fun buf ~pos_ref ->
-          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
+        (fun ~ctx buf ~pos_ref ->
+          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read ~ctx buf ~pos_ref)
     ; vtag_read =
-        (fun _buf ~pos_ref _n ->
+        (fun ~ctx:_ _buf ~pos_ref _n ->
           raise_variant_wrong_type "Bin_prot.Utils.Make_binable3.bin_reader_t" !pos_ref)
     }
   ;;
@@ -382,20 +382,20 @@ module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
     else raise_concurrent_modification ~module_name "bin_write_t"
   ;;
 
-  let bin_read_t buf ~pos_ref =
-    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
+  let bin_read_t ~ctx buf ~pos_ref =
+    let len = (Read.bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
       incr idx;
-      bin_read_el buf ~pos_ref
+      bin_read_el ~ctx buf ~pos_ref
     in
     let result = init ~len ~next in
     if !idx < len then raise_read_not_enough ~module_name "bin_read_t";
     result
   ;;
 
-  let __bin_read_t__ _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
+  let __bin_read_t__ ~ctx:_ _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
   let bin_writer_t = { size = bin_size_t; write = bin_write_t }
   let bin_reader_t = { read = bin_read_t; vtag_read = __bin_read_t__ }
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
@@ -439,20 +439,20 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
     else raise_concurrent_modification ~module_name "bin_write_t"
   ;;
 
-  let bin_read_t bin_read_a buf ~pos_ref =
-    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
+  let bin_read_t bin_read_a ~ctx buf ~pos_ref =
+    let len = (Read.bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
       incr idx;
-      bin_read_el bin_read_a buf ~pos_ref
+      bin_read_el bin_read_a ~ctx buf ~pos_ref
     in
     let result = init ~len ~next in
     if !idx < len then raise_read_not_enough ~module_name "bin_read_t";
     result
   ;;
 
-  let __bin_read_t__ _bin_read_a _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
+  let __bin_read_t__ _bin_read_a ~ctx:_ _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
 
   let bin_writer_t bin_writer =
     { size = (fun v -> bin_size_t bin_writer.size v)
@@ -461,8 +461,8 @@ module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
   ;;
 
   let bin_reader_t bin_reader =
-    { read = (fun buf ~pos_ref -> bin_read_t bin_reader.read buf ~pos_ref)
-    ; vtag_read = (fun buf ~pos_ref _n -> __bin_read_t__ bin_reader.read buf ~pos_ref _n)
+    { read = (fun ~ctx buf ~pos_ref -> bin_read_t bin_reader.read ~ctx buf ~pos_ref)
+    ; vtag_read = (fun ~ctx buf ~pos_ref _n -> __bin_read_t__ bin_reader.read ~ctx buf ~pos_ref _n)
     }
   ;;
 
@@ -512,20 +512,20 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
     else raise_concurrent_modification ~module_name "bin_write_t"
   ;;
 
-  let bin_read_t bin_read_a bin_read_b buf ~pos_ref =
-    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
+  let bin_read_t bin_read_a bin_read_b ~ctx buf ~pos_ref =
+    let len = (Read.bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
       incr idx;
-      bin_read_el bin_read_a bin_read_b buf ~pos_ref
+      bin_read_el bin_read_a bin_read_b ~ctx buf ~pos_ref
     in
     let result = init ~len ~next in
     if !idx < len then raise_read_not_enough ~module_name "bin_read_t";
     result
   ;;
 
-  let __bin_read_t__ _bin_read_a _bin_read_b _buf ~pos_ref _n =
+  let __bin_read_t__ _bin_read_a _bin_read_b ~ctx:_ _buf ~pos_ref _n =
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
@@ -538,10 +538,10 @@ module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
 
   let bin_reader_t bin_reader1 bin_reader2 =
     { read =
-        (fun buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read buf ~pos_ref)
+        (fun ~ctx buf ~pos_ref -> bin_read_t bin_reader1.read bin_reader2.read ~ctx buf ~pos_ref)
     ; vtag_read =
-        (fun buf ~pos_ref n ->
-          __bin_read_t__ bin_reader1.read bin_reader2.read buf ~pos_ref n)
+        (fun ~ctx buf ~pos_ref n ->
+          __bin_read_t__ bin_reader1.read bin_reader2.read ~ctx buf ~pos_ref n)
     }
   ;;
 
@@ -591,20 +591,20 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
     else raise_concurrent_modification ~module_name "bin_write_t"
   ;;
 
-  let bin_read_t bin_read_a bin_read_b bin_read_c buf ~pos_ref =
-    let len = (Read.bin_read_nat0 buf ~pos_ref :> int) in
+  let bin_read_t bin_read_a bin_read_b bin_read_c ~ctx buf ~pos_ref =
+    let len = (Read.bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
     let idx = ref 0 in
     let next () =
       if !idx >= len then raise_read_too_much ~module_name "bin_read_t";
       incr idx;
-      bin_read_el bin_read_a bin_read_b bin_read_c buf ~pos_ref
+      bin_read_el bin_read_a bin_read_b bin_read_c ~ctx buf ~pos_ref
     in
     let result = init ~len ~next in
     if !idx < len then raise_read_not_enough ~module_name "bin_read_t";
     result
   ;;
 
-  let __bin_read_t__ _bin_read_a _bin_read_b _bin_read_c _buf ~pos_ref _n =
+  let __bin_read_t__ _bin_read_a _bin_read_b _bin_read_c ~ctx:_ _buf ~pos_ref _n =
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
@@ -618,11 +618,11 @@ module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
     { read =
-        (fun buf ~pos_ref ->
-          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref)
+        (fun ~ctx buf ~pos_ref ->
+          bin_read_t bin_reader1.read bin_reader2.read bin_reader3.read ~ctx buf ~pos_ref)
     ; vtag_read =
-        (fun buf ~pos_ref n ->
-          __bin_read_t__ bin_reader1.read bin_reader2.read bin_reader3.read buf ~pos_ref n)
+        (fun ~ctx buf ~pos_ref n ->
+          __bin_read_t__ bin_reader1.read bin_reader2.read bin_reader3.read ~ctx buf ~pos_ref n)
     }
   ;;
 

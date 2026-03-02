@@ -10,7 +10,7 @@ module Stable = struct
     let bin_write_t = Write.bin_write_md5
     let bin_read_t = Read.bin_read_md5
 
-    let __bin_read_t__ _buf ~pos_ref _vdigest =
+    let __bin_read_t__ ~ctx:_ _buf ~pos_ref _vdigest =
       Common.raise_variant_wrong_type "Shape.Md5.t" !pos_ref
     ;;
 

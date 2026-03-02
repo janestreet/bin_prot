@@ -85,7 +85,7 @@ let unsafe_get16le_signed buf pos =
   if x > 32767 then x - 65536 else x
 ;;
 
-let bin_read_unit buf ~pos_ref =
+let bin_read_unit ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   if unsafe_get buf pos = '\000'
@@ -93,7 +93,7 @@ let bin_read_unit buf ~pos_ref =
   else raise_read_error ReadError.Unit_code pos
 ;;
 
-let bin_read_bool buf ~pos_ref =
+let bin_read_bool ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -229,7 +229,7 @@ let safe_bin_read_nat0_64 buf ~pos_ref ~pos =
   else raise_read_error ReadError.Nat0_overflow !pos_ref
 ;;
 
-let bin_read_nat0 buf ~pos_ref =
+let bin_read_nat0 ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -249,9 +249,9 @@ let bin_read_nat0 buf ~pos_ref =
     raise_read_error ReadError.Nat0_code pos
 [@@ocamlformat "disable"]
 
-let bin_read_bytes buf ~pos_ref =
+let bin_read_bytes ~ctx:_ buf ~pos_ref =
   let start_pos = !pos_ref in
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   if len > Sys.max_string_length then raise_read_error ReadError.String_too_long start_pos;
   let pos = !pos_ref in
   let next = pos + len in
@@ -262,19 +262,19 @@ let bin_read_bytes buf ~pos_ref =
   str
 ;;
 
-let bin_read_string buf ~pos_ref =
-  let str = bin_read_bytes buf ~pos_ref in
+let bin_read_string ~ctx:_ buf ~pos_ref =
+  let str = bin_read_bytes ~ctx:() buf ~pos_ref in
   Bytes.unsafe_to_string str
 ;;
 
-let bin_read_char buf ~pos_ref =
+let bin_read_char ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   pos_ref := pos + 1;
   unsafe_get buf pos
 ;;
 
-let bin_read_int buf ~pos_ref =
+let bin_read_int ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -296,7 +296,7 @@ let bin_read_int buf ~pos_ref =
     raise_read_error ReadError.Int_code pos
 [@@ocamlformat "disable"]
 
-let bin_read_float buf ~pos_ref =
+let bin_read_float ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -306,7 +306,7 @@ let bin_read_float buf ~pos_ref =
   Int64.float_of_bits (unsafe_get64le buf pos)
 ;;
 
-let bin_read_int32 buf ~pos_ref =
+let bin_read_int32 ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -323,7 +323,7 @@ let bin_read_int32 buf ~pos_ref =
     raise_read_error ReadError.Int32_code pos
 [@@ocamlformat "disable"]
 
-let bin_read_int64 buf ~pos_ref =
+let bin_read_int64 ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -342,7 +342,7 @@ let bin_read_int64 buf ~pos_ref =
     raise_read_error ReadError.Int64_code pos
 [@@ocamlformat "disable"]
 
-let bin_read_nativeint buf ~pos_ref =
+let bin_read_nativeint ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -361,17 +361,17 @@ let bin_read_nativeint buf ~pos_ref =
     raise_read_error ReadError.Nativeint_code pos
 [@@ocamlformat "disable"]
 
-let bin_read_ref bin_read_el buf ~pos_ref =
-  let el = bin_read_el buf ~pos_ref in
+let bin_read_ref bin_read_el ~ctx buf ~pos_ref =
+  let el = bin_read_el ~ctx buf ~pos_ref in
   ref el
 ;;
 
-let bin_read_lazy bin_read_el buf ~pos_ref =
-  let el = bin_read_el buf ~pos_ref in
+let bin_read_lazy bin_read_el ~ctx buf ~pos_ref =
+  let el = bin_read_el ~ctx buf ~pos_ref in
   Lazy.from_val el
 ;;
 
-let bin_read_option bin_read_el buf ~pos_ref =
+let bin_read_option bin_read_el ~ctx buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   match unsafe_get buf pos with
@@ -380,40 +380,40 @@ let bin_read_option bin_read_el buf ~pos_ref =
     None
   | '\001' ->
     pos_ref := pos + 1;
-    let el = bin_read_el buf ~pos_ref in
+    let el = bin_read_el ~ctx buf ~pos_ref in
     Some el
   | _ -> raise_read_error ReadError.Option_code pos
 ;;
 
-let bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
+let bin_read_pair bin_read_a bin_read_b ~ctx buf ~pos_ref =
+  let a = bin_read_a ~ctx buf ~pos_ref in
+  let b = bin_read_b ~ctx buf ~pos_ref in
   a, b
 ;;
 
-let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
-  let a = bin_read_a buf ~pos_ref in
-  let b = bin_read_b buf ~pos_ref in
-  let c = bin_read_c buf ~pos_ref in
+let bin_read_triple bin_read_a bin_read_b bin_read_c ~ctx buf ~pos_ref =
+  let a = bin_read_a ~ctx buf ~pos_ref in
+  let b = bin_read_b ~ctx buf ~pos_ref in
+  let c = bin_read_c ~ctx buf ~pos_ref in
   a, b, c
 ;;
 
-let bin_read_n_rev_list bin_read_el buf ~pos_ref len =
+let bin_read_n_rev_list bin_read_el ~ctx buf ~pos_ref len =
   let rec loop n acc =
-    if n = 0 then acc else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)
+    if n = 0 then acc else loop (n - 1) (bin_read_el ~ctx buf ~pos_ref :: acc)
   in
   loop len []
 ;;
 
-let bin_read_list_with_max_len ~max_len bin_read_el buf ~pos_ref =
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_list_with_max_len ~max_len bin_read_el ~ctx buf ~pos_ref =
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   if len > max_len then raise_read_error (List_too_long { len; max_len }) !pos_ref;
-  let rev_lst = bin_read_n_rev_list bin_read_el buf ~pos_ref len in
+  let rev_lst = bin_read_n_rev_list bin_read_el ~ctx buf ~pos_ref len in
   List.rev rev_lst
 ;;
 
-let bin_read_list bin_read_el buf ~pos_ref =
-  bin_read_list_with_max_len ~max_len:max_int bin_read_el buf ~pos_ref
+let bin_read_list bin_read_el ~ctx buf ~pos_ref =
+  bin_read_list_with_max_len ~ctx ~max_len:max_int bin_read_el buf ~pos_ref
 ;;
 
 let dummy_float_buf = create_buf 8
@@ -423,9 +423,9 @@ let max_float_array_length =
   if arch_sixtyfour then Sys.max_array_length else Sys.max_array_length / 2
 ;;
 
-let[@inline always] bin_read_float_array_gen ~create ~blit buf ~pos_ref =
+let[@inline always] bin_read_float_array_gen ~ctx:_ ~create ~blit buf ~pos_ref =
   let pos = !pos_ref in
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   if len > max_float_array_length then raise_read_error ReadError.Array_too_long pos;
   let size = len * 8 in
   let pos = !pos_ref in
@@ -437,28 +437,30 @@ let[@inline always] bin_read_float_array_gen ~create ~blit buf ~pos_ref =
   arr
 ;;
 
-let bin_read_floatarray buf ~pos_ref =
+let bin_read_floatarray ~ctx:_ buf ~pos_ref =
   bin_read_float_array_gen
+    ~ctx:()
     ~create:Float.Array.create
     ~blit:unsafe_blit_buf_floatarray
     buf
     ~pos_ref
 ;;
 
-let bin_read_float_array buf ~pos_ref =
+let bin_read_float_array ~ctx:_ buf ~pos_ref =
   bin_read_float_array_gen
+    ~ctx:()
     ~create:Array.create_float
     ~blit:unsafe_blit_buf_float_array
     buf
     ~pos_ref
 ;;
 
-let bin_read_array (type a) bin_read_el buf ~pos_ref =
-  if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
-  then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
+let bin_read_array (type a) bin_read_el ~ctx buf ~pos_ref =
+  if (Obj.magic (bin_read_el : (a, _) reader) : (float, _) reader) == bin_read_float
+  then (Obj.magic (bin_read_float_array ~ctx:() buf ~pos_ref : float array) : a array)
   else (
     let start_pos = !pos_ref in
-    let len = (bin_read_nat0 buf ~pos_ref :> int) in
+    let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
     if len = 0
     then [||]
     else (
@@ -470,7 +472,7 @@ let bin_read_array (type a) bin_read_el buf ~pos_ref =
       then (
         let maybe_float =
           try
-            let el = bin_read_el dummy_float_buf ~pos_ref:(ref 0) in
+            let el = bin_read_el ~ctx dummy_float_buf ~pos_ref:(ref 0) in
             Some el
           with
           | _ -> None
@@ -482,20 +484,20 @@ let bin_read_array (type a) bin_read_el buf ~pos_ref =
         | Some el ->
           if Obj.tag (Obj.repr el) = Obj.double_tag || len > Sys.max_array_length
           then raise_read_error ReadError.Array_too_long start_pos);
-      let first = bin_read_el buf ~pos_ref in
+      let first = bin_read_el ~ctx buf ~pos_ref in
       let res = Array.make len first in
       for i = 1 to len - 1 do
-        let el = bin_read_el buf ~pos_ref in
+        let el = bin_read_el ~ctx buf ~pos_ref in
         Array.unsafe_set res i el
       done;
       res))
 ;;
 
-let bin_read_hashtbl bin_read_key bin_read_val buf ~pos_ref =
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_hashtbl bin_read_key bin_read_val ~ctx buf ~pos_ref =
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let htbl = Hashtbl.create len in
-  let read_kv_pair = bin_read_pair bin_read_key bin_read_val in
-  let els = bin_read_n_rev_list read_kv_pair buf ~pos_ref len in
+  let read_kv_pair ~ctx = bin_read_pair ~ctx bin_read_key bin_read_val in
+  let els = bin_read_n_rev_list ~ctx read_kv_pair buf ~pos_ref len in
   copy_htbl_list htbl els
 ;;
 
@@ -504,8 +506,8 @@ external buf_of_vec64 : vec64 -> buf = "%identity"
 external buf_of_mat32 : mat32 -> buf = "%identity"
 external buf_of_mat64 : mat64 -> buf = "%identity"
 
-let bin_read_float32_vec buf ~pos_ref =
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_float32_vec ~ctx:_ buf ~pos_ref =
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let size = len * 4 in
   let pos = !pos_ref in
   let next = pos + size in
@@ -516,8 +518,8 @@ let bin_read_float32_vec buf ~pos_ref =
   vec
 ;;
 
-let bin_read_float64_vec buf ~pos_ref =
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_float64_vec ~ctx:_ buf ~pos_ref =
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let size = len * 8 in
   let pos = !pos_ref in
   let next = pos + size in
@@ -530,9 +532,9 @@ let bin_read_float64_vec buf ~pos_ref =
 
 let bin_read_vec = bin_read_float64_vec
 
-let bin_read_float32_mat buf ~pos_ref =
-  let len1 = (bin_read_nat0 buf ~pos_ref :> int) in
-  let len2 = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_float32_mat ~ctx:_ buf ~pos_ref =
+  let len1 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
+  let len2 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let size = len1 * len2 * 4 in
   let pos = !pos_ref in
   let next = pos + size in
@@ -543,9 +545,9 @@ let bin_read_float32_mat buf ~pos_ref =
   mat
 ;;
 
-let bin_read_float64_mat buf ~pos_ref =
-  let len1 = (bin_read_nat0 buf ~pos_ref :> int) in
-  let len2 = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_float64_mat ~ctx buf ~pos_ref =
+  let len1 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
+  let len2 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let size = len1 * len2 * 8 in
   let pos = !pos_ref in
   let next = pos + size in
@@ -558,8 +560,8 @@ let bin_read_float64_mat buf ~pos_ref =
 
 let bin_read_mat = bin_read_float64_mat
 
-let bin_read_bigstring buf ~pos_ref =
-  let len = (bin_read_nat0 buf ~pos_ref :> int) in
+let bin_read_bigstring ~ctx:_ buf ~pos_ref =
+  let len = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let pos = !pos_ref in
   let next = pos + len in
   check_next buf next;
@@ -569,7 +571,7 @@ let bin_read_bigstring buf ~pos_ref =
   str
 ;;
 
-let bin_read_variant_int buf ~pos_ref =
+let bin_read_variant_int ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
@@ -584,14 +586,14 @@ let bin_read_variant_int buf ~pos_ref =
     Int32.to_int (Int32.shift_right n 1))
 ;;
 
-let bin_read_int_8bit buf ~pos_ref =
+let bin_read_int_8bit ~ctx:_ buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
   pos_ref := pos + 1;
   unsafe_get8 buf pos
 ;;
 
-let bin_read_int_16bit buf ~pos_ref =
+let bin_read_int_16bit ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 2 in
@@ -600,7 +602,7 @@ let bin_read_int_16bit buf ~pos_ref =
   unsafe_get16le_unsigned buf pos
 ;;
 
-let bin_read_int_32bit buf ~pos_ref =
+let bin_read_int_32bit ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
@@ -610,7 +612,7 @@ let bin_read_int_32bit buf ~pos_ref =
   safe_int_of_int32 pos n
 ;;
 
-let bin_read_int_64bit buf ~pos_ref =
+let bin_read_int_64bit ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -620,7 +622,7 @@ let bin_read_int_64bit buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let bin_read_int64_bits buf ~pos_ref =
+let bin_read_int64_bits ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -629,7 +631,7 @@ let bin_read_int64_bits buf ~pos_ref =
   unsafe_get64le buf pos
 ;;
 
-let bin_read_network16_int buf ~pos_ref =
+let bin_read_network16_int ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 2 in
@@ -638,7 +640,7 @@ let bin_read_network16_int buf ~pos_ref =
   unsafe_get16be_unsigned buf pos
 ;;
 
-let bin_read_network32_int buf ~pos_ref =
+let bin_read_network32_int ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
@@ -648,7 +650,7 @@ let bin_read_network32_int buf ~pos_ref =
   safe_int_of_int32 pos n
 ;;
 
-let bin_read_network32_int32 buf ~pos_ref =
+let bin_read_network32_int32 ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
@@ -657,7 +659,7 @@ let bin_read_network32_int32 buf ~pos_ref =
   unsafe_get32be buf pos
 ;;
 
-let bin_read_network64_int buf ~pos_ref =
+let bin_read_network64_int ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -667,7 +669,7 @@ let bin_read_network64_int buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let bin_read_network64_int64 buf ~pos_ref =
+let bin_read_network64_int64 ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
@@ -688,7 +690,7 @@ external unsafe_bytes_set64 : bytes -> int -> int64 -> unit = "%caml_bytes_set64
 
 [%%endif]
 
-let bin_read_md5 buf ~pos_ref =
+let bin_read_md5 ~ctx:_ buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 16 in

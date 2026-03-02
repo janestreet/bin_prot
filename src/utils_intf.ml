@@ -77,7 +77,7 @@ module type Make_iterable_binable_spec = sig
   val init : len:int -> next:(unit -> el) -> t
   val bin_size_el : el Size.sizer
   val bin_write_el : el Write.writer
-  val bin_read_el : el Read.reader
+  val bin_read_el : (el, 'ctx) Read.reader
   val bin_shape_el : Shape.t
 end
 
@@ -92,7 +92,7 @@ module type Make_iterable_binable1_spec = sig
   val init : len:int -> next:(unit -> 'a el) -> 'a t
   val bin_size_el : ('a, 'a el) Size.sizer1
   val bin_write_el : ('a, 'a el) Write.writer1
-  val bin_read_el : ('a, 'a el) Read.reader1
+  val bin_read_el : ('a, 'a el, 'ctx) Read.reader1
   val bin_shape_el : Shape.t -> Shape.t
 end
 
@@ -107,7 +107,7 @@ module type Make_iterable_binable2_spec = sig
   val init : len:int -> next:(unit -> ('a, 'b) el) -> ('a, 'b) t
   val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
   val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
-  val bin_read_el : ('a, 'b, ('a, 'b) el) Read.reader2
+  val bin_read_el : ('a, 'b, ('a, 'b) el, 'ctx) Read.reader2
   val bin_shape_el : Shape.t -> Shape.t -> Shape.t
 end
 
@@ -122,7 +122,7 @@ module type Make_iterable_binable3_spec = sig
   val init : len:int -> next:(unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
   val bin_size_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3
   val bin_write_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3
-  val bin_read_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Read.reader3
+  val bin_read_el : ('a, 'b, 'c, ('a, 'b, 'c) el, 'ctx) Read.reader3
   val bin_shape_el : Shape.t -> Shape.t -> Shape.t -> Shape.t
 end
 
@@ -143,7 +143,7 @@ module type Utils = sig
       read to get the size without having to peek into the payload. *)
   val size_header_length : int
 
-  val bin_read_size_header : int Read.reader
+  val bin_read_size_header : (int, 'ctx) Read.reader
 
   (** [bin_read_size_header] and [bin_write_size_header] are bin-prot serializers for the
       size header described above. *)
@@ -181,7 +181,8 @@ module type Utils = sig
   val bin_read_stream
     :  ?max_size:int
     -> read:(buf -> pos:int -> len:int -> unit)
-    -> 'a reader
+    -> ('a, 'ctx) reader
+    -> ctx:'ctx
     -> 'a
 
   (** Conversion of binable types *)

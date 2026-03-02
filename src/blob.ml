@@ -18,10 +18,10 @@ module T = struct
     end_a
   ;;
 
-  let bin_read_t bin_read_a buf ~pos_ref =
-    let expected_size = Utils.bin_read_size_header buf ~pos_ref in
+  let bin_read_t bin_read_a ~ctx buf ~pos_ref =
+    let expected_size = Utils.bin_read_size_header ~ctx:() buf ~pos_ref in
     let start_a = !pos_ref in
-    let a = bin_read_a buf ~pos_ref in
+    let a = bin_read_a ~ctx buf ~pos_ref in
     let end_a = !pos_ref in
     if end_a - start_a <> expected_size
     then
@@ -33,7 +33,7 @@ module T = struct
     a
   ;;
 
-  let __bin_read_t__ _ _ ~pos_ref = raise_variant_wrong_type "Bin_prot.Blob.t" !pos_ref
+  let __bin_read_t__ _ ~ctx:_ _ ~pos_ref = raise_variant_wrong_type "Bin_prot.Blob.t" !pos_ref
 end
 
 type 'a id = 'a
@@ -74,15 +74,15 @@ module Opaque = struct
         pos + size
       ;;
 
-      let bin_read_t buf ~pos_ref =
-        let size = Utils.bin_read_size_header buf ~pos_ref in
+      let bin_read_t ~ctx:_ buf ~pos_ref =
+        let size = Utils.bin_read_size_header ~ctx:() buf ~pos_ref in
         let t = create_buf size in
         blit_buf ~src:buf ~src_pos:!pos_ref ~dst:t ~dst_pos:0 size;
         pos_ref := !pos_ref + size;
         t
       ;;
 
-      let __bin_read_t__ _ ~pos_ref =
+      let __bin_read_t__ ~ctx:_ _ ~pos_ref =
         raise_variant_wrong_type "Bin_prot.Blob.Opaque.t" !pos_ref
       ;;
     end
@@ -97,7 +97,7 @@ module Opaque = struct
     let compare = (Stdlib.compare : buf -> buf -> int)
 
     let sexp_of_t t =
-      Ppx_sexp_conv_lib.Sexp.Atom (of_opaque_exn t Type_class.bin_reader_string)
+      Ppx_sexp_conv_lib.Sexp.Atom (of_opaque_exn t Type_class.bin_reader_string ~ctx:())
     ;;
   end
 
@@ -121,14 +121,14 @@ module Opaque = struct
         Bytes.unsafe_to_string str
       ;;
 
-      let bin_read_t buf ~pos_ref =
-        let len = Utils.bin_read_size_header buf ~pos_ref in
+      let bin_read_t ~ctx:_ buf ~pos_ref =
+        let len = Utils.bin_read_size_header ~ctx:() buf ~pos_ref in
         let t = string_of_bigstring buf ~pos:!pos_ref ~len in
         pos_ref := !pos_ref + len;
         t
       ;;
 
-      let __bin_read_t__ _ ~pos_ref =
+      let __bin_read_t__ ~ctx:_ _ ~pos_ref =
         raise_variant_wrong_type "Bin_prot.Blob.Opaque.t" !pos_ref
       ;;
     end
@@ -144,11 +144,11 @@ module Opaque = struct
       string_of_bigstring buf ~pos ~len
     ;;
 
-    let of_opaque_exn ~buf (t : t) bin_reader_v =
+    let of_opaque_exn ~buf (t : t) bin_reader_v ~ctx =
       let len = String.length t in
       Common.blit_string_buf t buf ~len;
       let pos_ref = ref 0 in
-      let res = bin_reader_v.Type_class.read buf ~pos_ref in
+      let res = bin_reader_v.Type_class.read ~ctx buf ~pos_ref in
       if !pos_ref <> len
       then (
         let error =
@@ -175,13 +175,13 @@ module Ignored = struct
 
   let bin_size_t size = Utils.size_header_length + size
 
-  let bin_read_t buf ~pos_ref =
-    let size = Utils.bin_read_size_header buf ~pos_ref in
+  let bin_read_t ~ctx buf ~pos_ref =
+    let size = Utils.bin_read_size_header ~ctx:() buf ~pos_ref in
     pos_ref := !pos_ref + size;
     size
   ;;
 
-  let __bin_read_t__ _ ~pos_ref =
+  let __bin_read_t__ ~ctx:_ _ ~pos_ref =
     raise_variant_wrong_type "Bin_prot.Blob.Ignored.t" !pos_ref
   ;;
 

@@ -65,7 +65,7 @@ module Opaque : sig
     include Binable.S with type t := t
 
     val to_opaque : 'a -> 'a Type_class.writer -> t
-    val of_opaque_exn : t -> 'a Type_class.reader -> 'a
+    val of_opaque_exn : t -> ('a, 'ctx) Type_class.reader -> ctx:'ctx -> 'a
   end
 
   module String : sig
@@ -94,7 +94,7 @@ module Opaque : sig
     val length : t -> int
 
     val to_opaque : buf:Common.buf -> 'a -> 'a Type_class.writer -> t
-    val of_opaque_exn : buf:Common.buf -> t -> 'a Type_class.reader -> 'a
+    val of_opaque_exn : buf:Common.buf -> t -> ('a, 'ctx) Type_class.reader -> ctx:'ctx -> 'a
   end
 end
 
@@ -114,7 +114,7 @@ module Ignored : sig
   type t
 
   val bin_size_t : t Size.sizer
-  val bin_read_t : t Read.reader
-  val __bin_read_t__ : (int -> t) Read.reader
-  val bin_reader_t : t Type_class.reader
+  val bin_read_t : (t, 'ctx) Read.reader
+  val __bin_read_t__ : (int -> t, 'ctx) Read.reader
+  val bin_reader_t : (t, 'ctx) Type_class.reader
 end
