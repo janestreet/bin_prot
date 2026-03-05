@@ -44,9 +44,9 @@ let check_write_bounds_checks buf write arg =
 
 let check_read_bounds_checks buf read =
   require_does_raise [%here] out_of_bounds (fun () ->
-    ignore (read buf ~pos_ref:(ref ~-1) : _));
+    ignore (read ~ctx:() buf ~pos_ref:(ref ~-1) : _));
   require_does_raise [%here] Buffer_short (fun () ->
-    ignore (read buf ~pos_ref:(ref (Bigstring.length buf)) : _))
+    ignore (read ~ctx:() buf ~pos_ref:(ref (Bigstring.length buf)) : _))
 ;;
 
 let check_write_result name buf pos write arg exp_len =
@@ -65,7 +65,7 @@ let check_read_result m name buf pos read exp_ret exp_len =
     [%here]
     m
     ~message:(name ^ " returned wrong result")
-    (read buf ~pos_ref)
+    (read ~ctx:() buf ~pos_ref)
     exp_ret;
   Expect_test_helpers_base.require_equal
     [%here]
@@ -95,13 +95,13 @@ let check_all_args m tp_name read write buf args =
         [%here]
         m
         ~message:(read_name_arg ^ ": read near bound returned wrong result")
-        (read buf ~pos_ref:(ref (buf_len - arg_len)))
+        (read ~ctx:() buf ~pos_ref:(ref (buf_len - arg_len)))
         arg);
     let small_buf = Array1.sub buf 0 (buf_len - 1) in
     require_does_raise [%here] Buffer_short (fun () ->
       write small_buf ~pos:(buf_len - arg_len) arg);
     require_does_raise [%here] Buffer_short (fun () ->
-      read small_buf ~pos_ref:(ref (buf_len - arg_len)))
+      read ~ctx:() small_buf ~pos_ref:(ref (buf_len - arg_len)))
   in
   List.iter ~f:act args
 ;;
@@ -218,19 +218,19 @@ let%expect_test ("string" [@tags "no-js"]) =
     require_does_raise
       [%here]
       (Read_error (String_too_long, 0))
-      (fun () -> Read.bin_read_string bad_buf ~pos_ref:(ref 0));
+      (fun () -> Read.bin_read_string ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\253\251\255\255\000" in
     require_does_raise [%here] Buffer_short (fun () ->
-      Read.bin_read_string bad_buf ~pos_ref:(ref 0)))
+      Read.bin_read_string ~ctx:() bad_buf ~pos_ref:(ref 0)))
   else (
     let bad_buf = Bigstring.of_string "\252\248\255\255\255\255\255\255\001" in
     require_does_raise
       [%here]
       (Read_error (String_too_long, 0))
-      (fun () -> Read.bin_read_string bad_buf ~pos_ref:(ref 0));
+      (fun () -> Read.bin_read_string ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\252\247\255\255\255\255\255\255\001" in
     require_does_raise [%here] Buffer_short (fun () ->
-      Read.bin_read_string bad_buf ~pos_ref:(ref 0)))
+      Read.bin_read_string ~ctx:() bad_buf ~pos_ref:(ref 0)))
 ;;
 
 let%expect_test "char" =
@@ -299,30 +299,30 @@ let%expect_test ("int" [@tags "no-js"]) =
   require_does_raise
     [%here]
     (Read_error (Int_code, 0))
-    (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0));
+    (fun () -> Read.bin_read_int ~ctx:() bad_buf ~pos_ref:(ref 0));
   if Core.Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
     require_does_raise
       [%here]
       (Read_error (Int_overflow, 0))
-      (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0));
+      (fun () -> Read.bin_read_int ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\253\255\255\255\191" in
     require_does_raise
       [%here]
       (Read_error (Int_overflow, 0))
-      (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0)))
+      (fun () -> Read.bin_read_int ~ctx:() bad_buf ~pos_ref:(ref 0)))
   else (
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
     require_does_raise
       [%here]
       (Read_error (Int_overflow, 0))
-      (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0));
+      (fun () -> Read.bin_read_int ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\191" in
     require_does_raise
       [%here]
       (Read_error (Int_overflow, 0))
-      (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0)))
+      (fun () -> Read.bin_read_int ~ctx:() bad_buf ~pos_ref:(ref 0)))
 ;;
 
 let%expect_test ("nat0" [@tags "no-js"]) =
@@ -373,20 +373,20 @@ let%expect_test ("nat0" [@tags "no-js"]) =
   require_does_raise
     [%here]
     (Read_error (Nat0_code, 0))
-    (fun () -> Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0));
+    (fun () -> Read.bin_read_nat0 ~ctx:() bad_buf ~pos_ref:(ref 0));
   if Core.Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\253\255\255\255\064" in
     require_does_raise
       [%here]
       (Read_error (Nat0_overflow, 0))
-      (fun () -> Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0)))
+      (fun () -> Read.bin_read_nat0 ~ctx:() bad_buf ~pos_ref:(ref 0)))
   else (
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\064" in
     require_does_raise
       [%here]
       (Read_error (Nat0_overflow, 0))
-      (fun () -> Read.bin_read_nat0 bad_buf ~pos_ref:(ref 0)))
+      (fun () -> Read.bin_read_nat0 ~ctx:() bad_buf ~pos_ref:(ref 0)))
 ;;
 
 let%expect_test "float" =
@@ -453,7 +453,7 @@ let%expect_test "int32" =
   require_does_raise
     [%here]
     (Read_error (Int32_code, 0))
-    (fun () -> Read.bin_read_int32 bad_buf ~pos_ref:(ref 0))
+    (fun () -> Read.bin_read_int32 ~ctx:() bad_buf ~pos_ref:(ref 0))
 ;;
 
 let%expect_test "int64" =
@@ -503,7 +503,7 @@ let%expect_test "int64" =
   require_does_raise
     [%here]
     (Read_error (Int64_code, 0))
-    (fun () -> Read.bin_read_int64 bad_buf ~pos_ref:(ref 0))
+    (fun () -> Read.bin_read_int64 ~ctx:() bad_buf ~pos_ref:(ref 0))
 ;;
 
 let%expect_test "nativeint" =
@@ -560,14 +560,14 @@ let%expect_test "nativeint" =
   require_does_raise
     [%here]
     (Read_error (Nativeint_code, 0))
-    (fun () -> Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0));
+    (fun () -> Read.bin_read_nativeint ~ctx:() bad_buf ~pos_ref:(ref 0));
   if Core.Sys.word_size_in_bits = 32
   then (
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\255\255" in
     require_does_raise
       [%here]
       (Read_error (Nativeint_code, 0))
-      (fun () -> Read.bin_read_nativeint bad_buf ~pos_ref:(ref 0)))
+      (fun () -> Read.bin_read_nativeint ~ctx:() bad_buf ~pos_ref:(ref 0)))
 ;;
 
 let%expect_test "ref" =
@@ -659,19 +659,19 @@ let%expect_test ("array" [@tags "no-js"]) =
     require_does_raise
       [%here]
       (Read_error (Array_too_long, 0))
-      (fun () -> bin_read_int_array bad_buf ~pos_ref:(ref 0));
+      (fun () -> bin_read_int_array ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\253\255\255\063\000" in
     require_does_raise [%here] Buffer_short (fun () ->
-      bin_read_int_array bad_buf ~pos_ref:(ref 0)))
+      bin_read_int_array ~ctx:() bad_buf ~pos_ref:(ref 0)))
   else (
     let bad_buf = Bigstring.of_string "\252\000\000\000\000\000\000\064\000" in
     require_does_raise
       [%here]
       (Read_error (Array_too_long, 0))
-      (fun () -> bin_read_int_array bad_buf ~pos_ref:(ref 0));
+      (fun () -> bin_read_int_array ~ctx:() bad_buf ~pos_ref:(ref 0));
     let bad_buf = Bigstring.of_string "\252\255\255\255\255\255\255\063\000" in
     require_does_raise [%here] Buffer_short (fun () ->
-      bin_read_int_array bad_buf ~pos_ref:(ref 0)))
+      bin_read_int_array ~ctx:() bad_buf ~pos_ref:(ref 0)))
 ;;
 
 let%expect_test "hashtbl" =
@@ -902,7 +902,7 @@ let%expect_test "variant_tag" =
   require_does_raise
     [%here]
     (Read_error (Variant_tag, 0))
-    (fun () -> Read.bin_read_variant_int bad_buf ~pos_ref:(ref 0))
+    (fun () -> Read.bin_read_variant_int ~ctx:() bad_buf ~pos_ref:(ref 0))
 ;;
 
 let%expect_test "int64_bits" =
@@ -945,14 +945,14 @@ let%expect_test "int_64bit" =
   require_does_raise
     [%here]
     (Read_error (Int_overflow, 0))
-    (fun () -> Read.bin_read_int_64bit bad_buf_max ~pos_ref:(ref 0));
+    (fun () -> Read.bin_read_int_64bit ~ctx:() bad_buf_max ~pos_ref:(ref 0));
   let bad_buf_min =
     bin_dump bin_int64_bits.writer (Int64.pred (Int64.of_int Int.min_value))
   in
   require_does_raise
     [%here]
     (Read_error (Int_overflow, 0))
-    (fun () -> Read.bin_read_int_64bit bad_buf_min ~pos_ref:(ref 0))
+    (fun () -> Read.bin_read_int_64bit ~ctx:() bad_buf_min ~pos_ref:(ref 0))
 ;;
 
 let%expect_test "network16_int" =

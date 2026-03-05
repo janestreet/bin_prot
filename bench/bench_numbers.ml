@@ -148,6 +148,7 @@ let%bench_module "write+read numbers" =
       for i = 0 to 255 do
         ign @@ bin_write_char buf ~pos:0 (Char.unsafe_chr i);
         bin_read_char
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -161,6 +162,7 @@ let%bench_module "write+read numbers" =
         let n = 1 lsl bit in
         ign @@ bin_write_int buf ~pos:0 n;
         bin_read_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -168,6 +170,7 @@ let%bench_module "write+read numbers" =
         |> ign_int;
         ign @@ bin_write_int buf ~pos:0 (-n);
         bin_read_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -181,6 +184,7 @@ let%bench_module "write+read numbers" =
         let n = Nat0.unsafe_of_int (1 lsl bit) in
         ign @@ bin_write_nat0 buf ~pos:0 n;
         bin_read_nat0
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -193,6 +197,7 @@ let%bench_module "write+read numbers" =
       for i = 0 to 10 do
         ign @@ bin_write_float buf ~pos:0 (float i);
         bin_read_float
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -205,6 +210,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 31 do
         ign @@ bin_write_int32 buf ~pos:0 (Int32.shift_left 1l bit);
         bin_read_int32
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -213,6 +219,7 @@ let%bench_module "write+read numbers" =
         |> ign_int;
         ign @@ bin_write_int32 buf ~pos:0 (Int32.neg (Int32.shift_left 1l bit));
         bin_read_int32
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -226,6 +233,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 63 do
         ign @@ bin_write_int64 buf ~pos:0 (Int64.shift_left 1L bit);
         bin_read_int64
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -234,6 +242,7 @@ let%bench_module "write+read numbers" =
         |> ign_int;
         ign @@ bin_write_int64 buf ~pos:0 (Int64.neg (Int64.shift_left 1L bit));
         bin_read_int64
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -247,6 +256,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to Sys.word_size - 1 do
         ign @@ bin_write_nativeint buf ~pos:0 (Nativeint.shift_left 1n bit);
         bin_read_nativeint
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -256,6 +266,7 @@ let%bench_module "write+read numbers" =
         ign
         @@ bin_write_nativeint buf ~pos:0 (Nativeint.neg (Nativeint.shift_left 1n bit));
         bin_read_nativeint
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -269,6 +280,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to Sys.word_size - 1 do
         ign @@ bin_write_variant_int buf ~pos:0 (1 lsl bit);
         bin_read_variant_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -281,6 +293,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 7 do
         ign @@ bin_write_int_8bit buf ~pos:0 (1 lsl bit);
         bin_read_int_8bit
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -293,6 +306,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 15 do
         ign @@ bin_write_int_16bit buf ~pos:0 (1 lsl bit);
         bin_read_int_16bit
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -305,6 +319,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 31 do
         ign @@ bin_write_int_32bit buf ~pos:0 (1 lsl bit);
         bin_read_int_32bit
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -317,6 +332,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 63 do
         ign @@ bin_write_int_64bit buf ~pos:0 (1 lsl bit);
         bin_read_int_64bit
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -329,6 +345,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 63 do
         ign @@ bin_write_int64_bits buf ~pos:0 (Int64.shift_left 1L bit);
         bin_read_int64_bits
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -342,6 +359,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 15 do
         ign @@ bin_write_network16_int buf ~pos:0 (1 lsl bit);
         bin_read_network16_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -354,6 +372,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 31 do
         ign @@ bin_write_network32_int buf ~pos:0 (1 lsl bit);
         bin_read_network32_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -366,6 +385,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 63 do
         ign @@ bin_write_network64_int buf ~pos:0 (1 lsl bit);
         bin_read_network64_int
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -378,6 +398,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 31 do
         ign @@ bin_write_network32_int32 buf ~pos:0 (Int32.shift_left 1l bit);
         bin_read_network32_int32
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;
@@ -391,6 +412,7 @@ let%bench_module "write+read numbers" =
       for bit = 0 to 63 do
         ign @@ bin_write_network64_int64 buf ~pos:0 (Int64.shift_left 1L bit);
         bin_read_network64_int64
+          ~ctx:()
           buf
           ~pos_ref:
             (pos_ref := 0;

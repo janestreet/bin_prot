@@ -39,7 +39,7 @@ type 'a to_test =
   { name : string
   ; writer : 'a Write.writer
   ; writer_local : 'a Write.writer_local
-  ; reader : 'a Read.reader
+  ; reader : ('a, unit) Read.reader
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a
   ; min : 'a
@@ -362,7 +362,7 @@ let gen_tests (T t) =
       if String.( <> ) s s_local
       then printf ", write_local output (%s) differs from write output (%s)" s_local s;
       let pos_ref = ref 0 in
-      let n' = t.reader buf ~pos_ref |> t.to_int64 in
+      let n' = t.reader ~ctx:() buf ~pos_ref |> t.to_int64 in
       let len' = !pos_ref in
       if len < t.lo_bound || len > t.hi_bound
       then printf ", bin_size outside of range %d..%d: %d" t.lo_bound t.hi_bound len;

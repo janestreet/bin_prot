@@ -20,7 +20,7 @@ module Write = Bin_prot.Write
 type 'a to_test =
   { writer : 'a Write.writer
   ; writer_local : 'a Write.writer_local option
-  ; reader : 'a Read.reader
+  ; reader : ('a, unit) Read.reader
   ; values : 'a list
   ; equal : 'a -> 'a -> bool
   ; sexp_of : 'a -> Sexp.t (* Bounds on the bin_protted size *)
@@ -236,9 +236,11 @@ module Tests = struct
     { writer = Write.bin_write_floatarray
     ; writer_local = Some Write.bin_write_floatarray__local
     ; reader = Read.bin_read_floatarray
-    ; values = [ Float_array.empty; Float_array.create ~len:1 0.0 ]
-    ; equal = Float_array.equal Float.equal
-    ; sexp_of = [%sexp_of: Float_array.t]
+    ; values = [ Stdlib.Float.Array.create 0; Stdlib.Float.Array.make 1 0.0 ]
+    ; equal = Stdlib.Float.Array.equal Float.equal
+    ; sexp_of =
+        (fun a ->
+          Sexp.List (Stdlib.Float.Array.to_list a |> List.map ~f:(fun f -> Sexp.Atom (Float.to_string f))))
     ; hi_bound = None
     ; lo_bound = Minimum.bin_size_floatarray
     }
@@ -593,7 +595,7 @@ let gen_tests t =
       printf !"%s -> %{Sexp}" (to_hex s hex_size) (t.sexp_of v);
       Bigstring.From_string.blito ~src:s ~dst:buf ();
       let pos_ref = ref 0 in
-      let v' = t.reader buf ~pos_ref in
+      let v' = t.reader ~ctx:() buf ~pos_ref in
       let len' = !pos_ref in
       let hi_bound = Option.value t.hi_bound ~default:Int.max_value in
       if len < t.lo_bound || len > hi_bound
@@ -654,11 +656,7 @@ let%expect_test "Non-integer bin_prot size tests" =
     00 00 00 00 00 00 00 00 -> 0
     |}];
   gen_tests Tests.float_nan;
-  Expect_test_patterns.require_match
-    [%here]
-    {|
-    7f f{8,0} 00 00 00 00 00 01 -> NAN (glob)
-    |};
+  [%expect {| 7f f8 00 00 00 00 00 01 -> NAN |}];
   gen_tests Tests.vec;
   [%expect
     {|
@@ -702,7 +700,7 @@ let%expect_test "Non-integer bin_prot size tests" =
   [%expect
     {|
     .. .. .. .. .. .. .. .. 00 -> ()
-    00 00 00 00 00 00 00 00 01 -> (0)
+    00 00 00 00 00 00 00 00 01 -> (0.)
     |}];
   gen_tests Tests.ref;
   [%expect

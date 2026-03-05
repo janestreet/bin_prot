@@ -545,7 +545,7 @@ let bin_read_float32_mat ~ctx:_ buf ~pos_ref =
   mat
 ;;
 
-let bin_read_float64_mat ~ctx buf ~pos_ref =
+let bin_read_float64_mat ~ctx:_ buf ~pos_ref =
   let len1 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let len2 = (bin_read_nat0 ~ctx:() buf ~pos_ref :> int) in
   let size = len1 * len2 * 8 in

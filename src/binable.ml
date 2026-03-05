@@ -6,7 +6,6 @@
    implementing this interface *)
 module type S_only_functions = sig
   type t
-
   val bin_size_t : t Size.sizer
   val bin_write_t : t Write.writer
   val bin_read_t : (t, 'ctx) Read.reader
@@ -169,6 +168,80 @@ module Minimal = struct
     val bin_write_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
     val bin_read_t : ('a, 'b, 'c, ('a, 'b, 'c) t, 'ctx) Read.reader3
     val __bin_read_t__ : ('a, 'b, 'c, int -> ('a, 'b, 'c) t, 'ctx) Read.reader3
+  end
+
+  module type S_local3 = sig
+    include S3
+
+    val bin_size_t__local : ('a, 'b, 'c, ('a, 'b, 'c) t) Size.sizer_local3
+    val bin_write_t__local : ('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer_local3
+  end
+end
+
+module type Ctx = sig
+  type ctx
+end
+
+module MakeMinimal (Ctx: Ctx) = struct
+  module type S = sig
+    type t
+
+    val bin_shape_t : Shape.t
+    val bin_size_t : t Size.sizer
+    val bin_write_t : t Write.writer
+    val bin_read_t : (t, Ctx.ctx) Read.reader
+    val __bin_read_t__ : (int -> t, Ctx.ctx) Read.reader
+  end
+
+  module type S_local = sig
+    include S
+
+    val bin_size_t__local : t Size.sizer_local
+    val bin_write_t__local : t Write.writer_local
+  end
+
+  module type S1 = sig
+    type 'a t
+
+    val bin_shape_t : Shape.t -> Shape.t
+    val bin_size_t : ('a, 'a t) Size.sizer1
+    val bin_write_t : ('a, 'a t) Write.writer1
+    val bin_read_t : ('a, 'a t, Ctx.ctx) Read.reader1
+    val __bin_read_t__ : ('a, int -> 'a t, Ctx.ctx) Read.reader1
+  end
+
+  module type S_local1 = sig
+    include S1
+
+    val bin_size_t__local : ('a, 'a t) Size.sizer_local1
+    val bin_write_t__local : ('a, 'a t) Write.writer_local1
+  end
+
+  module type S2 = sig
+    type ('a, 'b) t
+
+    val bin_shape_t : Shape.t -> Shape.t -> Shape.t
+    val bin_size_t : ('a, 'b, ('a, 'b) t) Size.sizer2
+    val bin_write_t : ('a, 'b, ('a, 'b) t) Write.writer2
+    val bin_read_t : ('a, 'b, ('a, 'b) t, Ctx.ctx) Read.reader2
+    val __bin_read_t__ : ('a, 'b, int -> ('a, 'b) t, Ctx.ctx) Read.reader2
+  end
+
+  module type S_local2 = sig
+    include S2
+
+    val bin_size_t__local : ('a, 'b, ('a, 'b) t) Size.sizer_local2
+    val bin_write_t__local : ('a, 'b, ('a, 'b) t) Write.writer_local2
+  end
+
+  module type S3 = sig
+    type ('a, 'b, 'c) t
+
+    val bin_shape_t : Shape.t -> Shape.t -> Shape.t -> Shape.t
+    val bin_size_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Size.sizer3
+    val bin_write_t : ('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3
+    val bin_read_t : ('a, 'b, 'c, ('a, 'b, 'c) t, Ctx.ctx) Read.reader3
+    val __bin_read_t__ : ('a, 'b, 'c, int -> ('a, 'b, 'c) t, Ctx.ctx) Read.reader3
   end
 
   module type S_local3 = sig

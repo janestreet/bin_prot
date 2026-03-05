@@ -126,6 +126,139 @@ module type Make_iterable_binable3_spec = sig
   val bin_shape_el : Shape.t -> Shape.t -> Shape.t -> Shape.t
 end
 
+module type Make_binable_without_uuid_spec_ctx = sig
+  module Ctx : Binable.Ctx
+  module Binable : Binable.MakeMinimal(Ctx).S
+
+  type t
+
+  val to_binable : t -> Binable.t
+  val of_binable : Binable.t -> t
+end
+
+module type Make_binable1_without_uuid_spec_ctx = sig
+  module Ctx : Binable.Ctx
+  module Binable : Binable.MakeMinimal(Ctx).S1
+
+  type 'a t
+
+  val to_binable : 'a t -> 'a Binable.t
+  val of_binable : 'a Binable.t -> 'a t
+end
+
+module type Make_binable2_without_uuid_spec_ctx = sig
+  module Ctx : Binable.Ctx
+  module Binable : Binable.MakeMinimal(Ctx).S2
+
+  type ('a, 'b) t
+
+  val to_binable : ('a, 'b) t -> ('a, 'b) Binable.t
+  val of_binable : ('a, 'b) Binable.t -> ('a, 'b) t
+end
+
+module type Make_binable3_without_uuid_spec_ctx = sig
+  module Ctx : Binable.Ctx
+  module Binable : Binable.MakeMinimal(Ctx).S3
+
+  type ('a, 'b, 'c) t
+
+  val to_binable : ('a, 'b, 'c) t -> ('a, 'b, 'c) Binable.t
+  val of_binable : ('a, 'b, 'c) Binable.t -> ('a, 'b, 'c) t
+end
+
+module type Make_binable_with_uuid_spec_ctx = sig
+  include Make_binable_without_uuid_spec_ctx
+
+  (** [caller_identity] is necessary to ensure different callers of
+      [Make_binable_with_uuid] are not shape compatible. *)
+  val caller_identity : Shape.Uuid.t
+end
+
+module type Make_binable1_with_uuid_spec_ctx = sig
+  include Make_binable1_without_uuid_spec_ctx
+
+  val caller_identity : Shape.Uuid.t
+end
+
+module type Make_binable2_with_uuid_spec_ctx = sig
+  include Make_binable2_without_uuid_spec_ctx
+
+  val caller_identity : Shape.Uuid.t
+end
+
+module type Make_binable3_with_uuid_spec_ctx = sig
+  include Make_binable3_without_uuid_spec_ctx
+
+  val caller_identity : Shape.Uuid.t
+end
+
+module type Make_iterable_binable_spec_ctx = sig
+  type t
+  type ctx
+  type el
+
+  (** [caller_identity] is necessary to ensure different callers of
+      [Make_iterable_binable] are not shape compatible. *)
+  val caller_identity : Shape.Uuid.t
+
+  val module_name : string option
+  val length : t -> int
+  val iter : t -> f:(el -> unit) -> unit
+  val init : len:int -> next:(unit -> el) -> t
+  val bin_size_el : el Size.sizer
+  val bin_write_el : el Write.writer
+  val bin_read_el : (el, 'ctx) Read.reader
+  val bin_shape_el : Shape.t
+end
+
+module type Make_iterable_binable1_spec_ctx = sig
+  type 'a t
+  type ctx
+  type 'a el
+
+  val caller_identity : Shape.Uuid.t
+  val module_name : string option
+  val length : 'a t -> int
+  val iter : 'a t -> f:('a el -> unit) -> unit
+  val init : len:int -> next:(unit -> 'a el) -> 'a t
+  val bin_size_el : ('a, 'a el) Size.sizer1
+  val bin_write_el : ('a, 'a el) Write.writer1
+  val bin_read_el : ('a, 'a el, 'ctx) Read.reader1
+  val bin_shape_el : Shape.t -> Shape.t
+end
+
+module type Make_iterable_binable2_spec_ctx = sig
+  type ('a, 'b) t
+  type ctx
+  type ('a, 'b) el
+
+  val caller_identity : Shape.Uuid.t
+  val module_name : string option
+  val length : ('a, 'b) t -> int
+  val iter : ('a, 'b) t -> f:(('a, 'b) el -> unit) -> unit
+  val init : len:int -> next:(unit -> ('a, 'b) el) -> ('a, 'b) t
+  val bin_size_el : ('a, 'b, ('a, 'b) el) Size.sizer2
+  val bin_write_el : ('a, 'b, ('a, 'b) el) Write.writer2
+  val bin_read_el : ('a, 'b, ('a, 'b) el, 'ctx) Read.reader2
+  val bin_shape_el : Shape.t -> Shape.t -> Shape.t
+end
+
+module type Make_iterable_binable3_spec_ctx = sig
+  type ('a, 'b, 'c) t
+  type ctx
+  type ('a, 'b, 'c) el
+
+  val caller_identity : Shape.Uuid.t
+  val module_name : string option
+  val length : ('a, 'b, 'c) t -> int
+  val iter : ('a, 'b, 'c) t -> f:(('a, 'b, 'c) el -> unit) -> unit
+  val init : len:int -> next:(unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
+  val bin_size_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3
+  val bin_write_el : ('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3
+  val bin_read_el : ('a, 'b, 'c, ('a, 'b, 'c) el, 'ctx) Read.reader3
+  val bin_shape_el : Shape.t -> Shape.t -> Shape.t -> Shape.t
+end
+
 (** Utility functions for user convenience *)
 module type Utils = sig
   (** [size_header_length] is the standard number of bytes allocated for the size header
@@ -207,6 +340,17 @@ module type Utils = sig
   module Make_binable3_with_uuid (Bin_spec : Make_binable3_with_uuid_spec) :
     Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
 
+  module Make_binable_with_uuid_ctx (Bin_spec : Make_binable_with_uuid_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec.Ctx).S with type t := Bin_spec.t
+
+  module Make_binable1_with_uuid_ctx (Bin_spec : Make_binable1_with_uuid_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec.Ctx).S1 with type 'a t := 'a Bin_spec.t
+
+  module Make_binable2_with_uuid_ctx (Bin_spec : Make_binable2_with_uuid_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec.Ctx).S2 with type ('a, 'b) t := ('a, 'b) Bin_spec.t
+
+  module Make_binable3_with_uuid_ctx (Bin_spec : Make_binable3_with_uuid_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec.Ctx).S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
   module type Make_binable_without_uuid_spec = Make_binable_without_uuid_spec
   module type Make_binable1_without_uuid_spec = Make_binable1_without_uuid_spec
   module type Make_binable2_without_uuid_spec = Make_binable2_without_uuid_spec
@@ -246,4 +390,17 @@ module type Utils = sig
 
   module Make_iterable_binable3 (Iterable_spec : Make_iterable_binable3_spec) :
     Binable.S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Iterable_spec.t
+(*
+  module Make_iterable_binable_ctx (Iterable_spec : Make_iterable_binable_spec) :
+    Binable.MakeMinimal(Bin_spec).S with type t := Iterable_spec.t
+
+  module Make_iterable_binable1_ctx (Iterable_spec : Make_iterable_binable1_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec).S1 with type 'a t := 'a Iterable_spec.t
+
+  module Make_iterable_binable2_ctx (Iterable_spec : Make_iterable_binable2_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec).S2 with type ('a, 'b) t := ('a, 'b) Iterable_spec.t
+
+  module Make_iterable_binable3_ctx (Iterable_spec : Make_iterable_binable3_spec_ctx) :
+    Binable.MakeMinimal(Bin_spec).S3 with type ('a, 'b, 'c) t := ('a, 'b, 'c) Iterable_spec.t
+*)
 end

@@ -175,7 +175,7 @@ module Ignored = struct
 
   let bin_size_t size = Utils.size_header_length + size
 
-  let bin_read_t ~ctx buf ~pos_ref =
+  let bin_read_t ~ctx:_ buf ~pos_ref =
     let size = Utils.bin_read_size_header ~ctx:() buf ~pos_ref in
     pos_ref := !pos_ref + size;
     size

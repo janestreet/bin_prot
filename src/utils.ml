@@ -278,6 +278,94 @@ module Make_binable_with_uuid (S : Make_binable_with_uuid_spec) = Make_binable_g
   let maybe_caller_identity = Some S.caller_identity
 end)
 
+module Make_binable_with_uuid_ctx (S : Make_binable_with_uuid_spec_ctx) = struct
+  module B = S.Binable
+
+  type t = S.t [@@warning "-34"]
+
+  let bin_shape_t = Shape.annotate S.caller_identity B.bin_shape_t
+  let bin_size_t t = B.bin_size_t (S.to_binable t)
+  let bin_write_t buf ~pos t = B.bin_write_t buf ~pos (S.to_binable t)
+  let bin_read_t ~ctx buf ~pos_ref = S.of_binable (B.bin_read_t ~ctx buf ~pos_ref)
+  let __bin_read_t__ ~ctx buf ~pos_ref n = S.of_binable (B.__bin_read_t__ ~ctx buf ~pos_ref n)
+end
+
+module Make_binable1_with_uuid_ctx (S : Make_binable1_with_uuid_spec_ctx) = struct
+  module B = S.Binable
+
+  type 'a t = 'a S.t [@@warning "-34"]
+
+  let bin_shape_t bin_shape_el =
+    Shape.annotate S.caller_identity (B.bin_shape_t bin_shape_el)
+  ;;
+
+  let bin_size_t bin_size_el t = B.bin_size_t bin_size_el (S.to_binable t)
+
+  let bin_write_t bin_write_el buf ~pos t =
+    B.bin_write_t bin_write_el buf ~pos (S.to_binable t)
+  ;;
+
+  let bin_read_t bin_read_el ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el ~ctx buf ~pos_ref)
+  ;;
+
+  let __bin_read_t__ bin_read_el ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el ~ctx buf ~pos_ref n)
+  ;;
+end
+
+module Make_binable2_with_uuid_ctx (S : Make_binable2_with_uuid_spec_ctx) = struct
+  module B = S.Binable
+
+  type ('a, 'b) t = ('a, 'b) S.t [@@warning "-34"]
+
+  let bin_shape_t bin_shape_el1 bin_shape_el2 =
+    Shape.annotate S.caller_identity (B.bin_shape_t bin_shape_el1 bin_shape_el2)
+  ;;
+
+  let bin_size_t bin_size_el1 bin_size_el2 t =
+    B.bin_size_t bin_size_el1 bin_size_el2 (S.to_binable t)
+  ;;
+
+  let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
+    B.bin_write_t bin_write_el1 bin_write_el2 buf ~pos (S.to_binable t)
+  ;;
+
+  let bin_read_t bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref)
+  ;;
+
+  let __bin_read_t__ bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 ~ctx buf ~pos_ref n)
+  ;;
+end
+
+module Make_binable3_with_uuid_ctx (S : Make_binable3_with_uuid_spec_ctx) = struct
+  module B = S.Binable
+
+  type ('a, 'b, 'c) t = ('a, 'b, 'c) S.t [@@warning "-34"]
+
+  let bin_shape_t bin_shape_el1 bin_shape_el2 bin_shape_el3 =
+    Shape.annotate S.caller_identity (B.bin_shape_t bin_shape_el1 bin_shape_el2 bin_shape_el3)
+  ;;
+
+  let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
+    B.bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 (S.to_binable t)
+  ;;
+
+  let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
+    B.bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos (S.to_binable t)
+  ;;
+
+  let bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref =
+    S.of_binable (B.bin_read_t bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref)
+  ;;
+
+  let __bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref n =
+    S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 ~ctx buf ~pos_ref n)
+  ;;
+end
+
 module Make_binable1_with_uuid (S : Make_binable1_with_uuid_spec) =
 Make_binable1_gen (struct
   include S

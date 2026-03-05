@@ -19,7 +19,7 @@ let bin_read_from_string bin_reader str =
   let len = String.length str in
   Bin_prot.Common.blit_string_buf str buf ~len;
   let pos_ref = ref 0 in
-  let a = bin_reader.Type_class.read buf ~pos_ref in
+  let a = bin_reader.Type_class.read ~ctx:() buf ~pos_ref in
   assert (Int.( = ) !pos_ref len);
   a
 ;;
@@ -28,7 +28,7 @@ let print_bin_dump tag bin_a a =
   printf "%s : %s\n" tag (bin_dump_to_string bin_a a |> String.escaped)
 ;;
 
-let run_stability_test (bin_a : 'a Type_class.t) equal a : unit =
+let run_stability_test (bin_a : ('a, _) Type_class.t) equal a : unit =
   print_bin_dump "bin dump" bin_a a;
   print_bin_dump "bin dump (blob)" (Blob.bin_t bin_a) a;
   let buf = Lazy.force buf in
@@ -99,7 +99,7 @@ let%test_module _ =
 
     let convert bin_writer bin_reader value =
       let buffer = Bin_prot.Utils.bin_dump bin_writer value in
-      bin_reader.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0)
+      bin_reader.Bin_prot.Type_class.read ~ctx:() buffer ~pos_ref:(ref 0)
     ;;
 
     let roundtrip { Bin_prot.Type_class.reader; writer; shape = _ } value =
@@ -144,7 +144,7 @@ let%test_module _ =
 
     let%test_unit "Dropped" =
       let buffer = Bin_prot.Utils.bin_dump Known.bin_writer_t Known.value in
-      let value = Dropped.bin_reader_t.Bin_prot.Type_class.read buffer ~pos_ref:(ref 0) in
+      let value = Dropped.bin_reader_t.Bin_prot.Type_class.read ~ctx:() buffer ~pos_ref:(ref 0) in
       let ignored = value.mystery in
       (* The value deserialized with [Dropped] agrees with the value serialized by
          [Known], except for the ignored bit. *)
