@@ -176,8 +176,8 @@ let bin_size_option bin_size_el = function
 ;;
 
 let bin_size_or_null bin_size_el = function
-  | Base.Or_null.Null -> 1
-  | Base.Or_null.This v -> 1 + bin_size_el v
+  | Null -> 1
+  | This v -> 1 + bin_size_el v
 ;;
 
 let bin_size_pair bin_size_a bin_size_b (a, b) = bin_size_a a + bin_size_b b

@@ -244,8 +244,8 @@ let bin_write_option bin_write_el buf ~pos = function
 ;;
 
 let bin_write_or_null bin_write_el buf ~pos = function
-  | Base.Or_null.Null -> bin_write_bool buf ~pos false
-  | Base.Or_null.This v ->
+  | Null -> bin_write_bool buf ~pos false
+  | This v ->
     let next = bin_write_bool buf ~pos true in
     bin_write_el buf ~pos:next v
 ;;

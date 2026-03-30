@@ -471,7 +471,7 @@ let bin_read_option bin_read_el buf ~pos_ref =
 
 let bin_read_or_null bin_read_el buf ~pos_ref =
   (bin_read_option_like [@alloc a])
-    ~none:Base.Or_null.Null
+    ~none:Null
     ~some:(Base.Or_null.this [@mode m])
     ~read_error:Or_null_code
     bin_read_el
@@ -882,6 +882,7 @@ let unsafe_bin_read_md5 buf pos =
    (Md5_lib.unsafe_of_binary [@mode m])
      (Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res))
   [@exclave_if_stack a]
+[@@zero_alloc_if_stack a opt]
 ;;
 
 let bin_read_md5 buf ~pos_ref =
@@ -891,6 +892,7 @@ let bin_read_md5 buf ~pos_ref =
   check_next buf next;
   pos_ref := next;
   (unsafe_bin_read_md5 [@alloc a]) buf pos [@exclave_if_stack a]
+[@@zero_alloc_if_stack a opt]
 ;;]
 
 (* Local readers *)
