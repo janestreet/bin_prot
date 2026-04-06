@@ -7,6 +7,11 @@ open Bigarray
 (** Same purpose as [Base.Nothing.t] *)
 type nothing = |
 
+(** Re-export the [This] and [Null] constructors. *)
+include module type of struct
+  include Base.Or_null.Export
+end
+
 (** {2 Buffers} *)
 
 (** Position within buffers *)

@@ -143,11 +143,15 @@ struct
         [@@@mode.default m = (global, m)]
 
         let bin_size_t t =
-          (B.bin_size_t [@mode m]) ((S.to_binable [@mode m]) t) [@nontail]
+          (B.bin_size_t [@inlined hint] [@mode m])
+            ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
         ;;
 
         let bin_write_t buf ~pos t =
-          (B.bin_write_t [@mode m]) buf ~pos ((S.to_binable [@mode m]) t) [@nontail]
+          (B.bin_write_t [@inlined hint] [@mode m])
+            buf
+            ~pos
+            ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
         ;;
       end
 
@@ -174,15 +178,17 @@ struct
     [@@@mode.default m = (global, m)]
 
     let bin_size_t bin_size_el t =
-      (B.bin_size_t [@mode m]) bin_size_el ((S.to_binable [@mode m]) t) [@nontail]
+      (B.bin_size_t [@inlined hint] [@mode m])
+        bin_size_el
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el buf ~pos t =
-      (B.bin_write_t [@mode m])
+      (B.bin_write_t [@inlined hint] [@mode m])
         bin_write_el
         buf
         ~pos
-        ((S.to_binable [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
   end
 
@@ -236,19 +242,19 @@ struct
     [@@@mode.default m = (global, m)]
 
     let bin_size_t bin_size_el1 bin_size_el2 t =
-      (B.bin_size_t [@mode m])
+      (B.bin_size_t [@inlined hint] [@mode m])
         bin_size_el1
         bin_size_el2
-        ((S.to_binable [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
-      (B.bin_write_t [@mode m])
+      (B.bin_write_t [@inlined hint] [@mode m])
         bin_write_el1
         bin_write_el2
         buf
         ~pos
-        ((S.to_binable [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
   end
 
@@ -304,21 +310,21 @@ struct
     [@@@mode.default m = (global, m)]
 
     let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
-      (B.bin_size_t [@mode m])
+      (B.bin_size_t [@inlined hint] [@mode m])
         bin_size_el1
         bin_size_el2
         bin_size_el3
-        ((S.to_binable [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
-      (B.bin_write_t [@mode m])
+      (B.bin_write_t [@inlined hint] [@mode m])
         bin_write_el1
         bin_write_el2
         bin_write_el3
         buf
         ~pos
-        ((S.to_binable [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
     ;;
   end
 

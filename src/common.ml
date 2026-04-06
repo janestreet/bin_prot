@@ -5,6 +5,9 @@ open Printf
 open Bigarray
 
 type nothing = |
+
+include Or_null.Export
+
 type pos = int [@@deriving sexp_of]
 
 (* Errors and exceptions *)
