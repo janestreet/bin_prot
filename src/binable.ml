@@ -37,7 +37,7 @@ module type S = sig
   val bin_t : t Type_class.t
 end
 
-[@@@kind.default ka = (value, any)]
+[@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
 
 module type S1 = sig
   type 'a t
@@ -58,7 +58,7 @@ module type S1 = sig
   val bin_t : 'a. ('a, 'a t) Type_class.S1.t
 end
 
-[@@@kind.default kb = (value, any)]
+[@@@kind.default.explicit_plus_unmangled kb = (value, any)]
 
 module type S2 = sig
   type ('a, 'b) t
@@ -79,7 +79,7 @@ module type S2 = sig
   val bin_t : 'a 'b. ('a, 'b, ('a, 'b) t) Type_class.S2.t
 end
 
-[@@@kind.default kc = (value, any)]
+[@@@kind.default.explicit_plus_unmangled kc = (value, any)]
 
 module type S3 = sig
   type ('a, 'b, 'c) t
@@ -120,7 +120,7 @@ module Minimal = struct
     val __bin_read_t__ : t Read.vtag_reader
   end
 
-  [@@@kind.default ka = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
 
   module type S1 = sig
     type 'a t
@@ -138,7 +138,7 @@ module Minimal = struct
     val __bin_read_t__ : 'a. ('a, 'a t) Read.vtag_reader1
   end
 
-  [@@@kind.default kb = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kb = (value, any)]
 
   module type S2 = sig
     type ('a, 'b) t
@@ -156,7 +156,7 @@ module Minimal = struct
     val __bin_read_t__ : 'a 'b. ('a, 'b, ('a, 'b) t) Read.vtag_reader2
   end
 
-  [@@@kind.default kc = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kc = (value, any)]
 
   module type S3 = sig
     type ('a, 'b, 'c) t

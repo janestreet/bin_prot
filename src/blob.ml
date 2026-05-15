@@ -41,7 +41,11 @@ type 'a id = 'a
 include T
 
 include%template
-  Utils.Make_binable1_without_uuid [@modality portable] [@alert "-legacy"] (struct
+  Utils.Make_binable1_without_uuid
+    [@kind.explicit value_or_null]
+    [@modality portable]
+    [@alert "-legacy"]
+    (struct
     module Binable = T
 
     type 'a t = 'a T.t

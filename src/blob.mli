@@ -49,7 +49,7 @@ type 'a id = 'a
 
 type 'a t = 'a [@@deriving compare ~localize, sexp_of]
 
-include Binable.S1 with type 'a t := 'a id
+include%template Binable.S1 [@kind.explicit value_or_null] with type 'a t := 'a id
 
 (** An [Opaque.Bigstring.t] or [Opaque.String.t] is an arbitrary piece of bin-prot. The
     bin-prot (de-)serializers simply read/write the data, prefixed with its size.
@@ -97,8 +97,8 @@ module Opaque : sig
         - degraded performance (having to read through the buffer just to fail at the end) *)
     val length : t -> int
 
-    val to_opaque : buf:Common.buf -> 'a -> 'a Type_class.writer -> t
-    val of_opaque_exn : buf:Common.buf -> t -> 'a Type_class.reader -> 'a
+    val to_opaque : 'a. buf:Common.buf -> 'a -> 'a Type_class.writer -> t
+    val of_opaque_exn : 'a. buf:Common.buf -> t -> 'a Type_class.reader -> 'a
   end
 end
 

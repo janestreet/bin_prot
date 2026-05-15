@@ -34,7 +34,8 @@ module Sorted_table : sig
   val expose : 'a t -> (string * 'a) list
   val map : 'a t -> f:('a -> 'b) -> 'b t
 end = struct
-  type 'a t = { sorted : (string * 'a) list } [@@deriving compare ~localize, sexp]
+  type 'a t = { sorted : (string * 'a) list }
+  [@@unboxed] [@@deriving compare ~localize, sexp]
 
   let merge_check_adjacent_dups
     :  eq:('a -> 'a -> bool) -> (string * 'a) list
@@ -132,7 +133,7 @@ module Canonical_exp_constructor = struct
     | Unboxed_tuple xs -> Unboxed_tuple (List.map ~f xs)
     | Record l -> Record (List.map l ~f:(fun (s, x) -> s, f x))
     | Variant l -> Variant (List.map l ~f:(fun (s, xs) -> s, List.map ~f xs))
-    | Poly_variant t -> Poly_variant (Sorted_table.map t ~f:(Option.map ~f))
+    | Poly_variant t -> Poly_variant (Sorted_table.map t ~f:(fun x -> Option.map ~f x))
     | Application (x, l) -> Application (f x, List.map ~f l)
     | Rec_app (t, l) -> Rec_app (t, List.map ~f l)
     | Var v -> Var v
@@ -323,7 +324,8 @@ module Canonical_full = struct
   module CD = Create_digest
 
   module Exp1 = struct
-    type t0 = Exp of t0 Canonical_exp_constructor.t [@@deriving compare ~localize, sexp]
+    type t0 = Exp of t0 Canonical_exp_constructor.t
+    [@@deriving compare ~localize, sexp] [@@unboxed]
 
     let equal_t0 x y = compare_t0 x y = 0
 
@@ -784,6 +786,7 @@ module For_typerep = struct
 end
 
 module Expert = struct
+  module Create_digest = Create_digest
   module Sorted_table = Sorted_table
   module Canonical_exp_constructor = Canonical_exp_constructor
   module Canonical = Canonical

@@ -371,11 +371,6 @@ external buf_of_array2
   -> (buf[@local_opt])
   = "%identity"
 
-module Bigarray = struct
-  include Bigarray
-  include Local_bigarray
-end
-
 let bin_write_bigarray1
   (type k)
   ~(kind : (_, k) Stdlib.Bigarray.kind)

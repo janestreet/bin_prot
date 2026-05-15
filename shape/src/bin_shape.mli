@@ -31,7 +31,7 @@ end
 
 (** [Uuid.t] is used by [basetype] and [annotate]. *)
 module Uuid : sig
-  type t
+  type t [@@deriving equal ~localize]
 
   (** [of_string s] returns a [Uuid.t] wrapping [s]. There are currently no requirements
       of the format of [s] although it is common to use string in `uuid' format:
@@ -130,15 +130,21 @@ module Expert : sig
       | Rec_app of int * 'a list
       | Var of int
     [@@deriving compare ~localize, sexp_of]
+
+    val map : 'a t -> f:('a -> 'b) -> 'b t
   end
 
   module Canonical : sig
     module Exp1 : sig
       type t0 = Exp of t0 Canonical_exp_constructor.t
-      [@@deriving compare ~localize, sexp_of]
+      [@@unboxed] [@@deriving compare ~localize, sexp_of]
     end
 
     type t = Exp1.t0 [@@deriving compare ~localize, sexp_of]
+  end
+
+  module Create_digest : sig
+    val digest_layer : Digest.t Canonical_exp_constructor.t -> Digest.t
   end
 end
 

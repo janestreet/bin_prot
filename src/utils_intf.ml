@@ -23,10 +23,10 @@ module Definitions = struct
     val caller_identity : Shape.Uuid.t
   end
 
-  [@@@kind.default ka = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
 
   module type Make_binable1_without_uuid_spec = sig
-    module Binable : Binable.Minimal.S1 [@kind ka] [@mode m]
+    module Binable : Binable.Minimal.S1 [@kind.explicit ka] [@mode m]
 
     type 'a t
 
@@ -35,15 +35,15 @@ module Definitions = struct
   end
 
   module type Make_binable1_with_uuid_spec = sig
-    include Make_binable1_without_uuid_spec [@kind ka] [@mode m]
+    include Make_binable1_without_uuid_spec [@kind.explicit ka] [@mode m]
 
     val caller_identity : Shape.Uuid.t
   end
 
-  [@@@kind.default kb = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kb = (value, any)]
 
   module type Make_binable2_without_uuid_spec = sig
-    module Binable : Binable.Minimal.S2 [@kind ka kb] [@mode m]
+    module Binable : Binable.Minimal.S2 [@kind.explicit ka kb] [@mode m]
 
     type ('a, 'b) t
 
@@ -52,15 +52,15 @@ module Definitions = struct
   end
 
   module type Make_binable2_with_uuid_spec = sig
-    include Make_binable2_without_uuid_spec [@kind ka kb] [@mode m]
+    include Make_binable2_without_uuid_spec [@kind.explicit ka kb] [@mode m]
 
     val caller_identity : Shape.Uuid.t
   end
 
-  [@@@kind.default kc = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kc = (value, any)]
 
   module type Make_binable3_without_uuid_spec = sig
-    module Binable : Binable.Minimal.S3 [@kind ka kb kc] [@mode m]
+    module Binable : Binable.Minimal.S3 [@kind.explicit_plus_unmangled ka kb kc] [@mode m]
 
     type ('a, 'b, 'c) t
 
@@ -71,7 +71,7 @@ module Definitions = struct
   end
 
   module type Make_binable3_with_uuid_spec = sig
-    include Make_binable3_without_uuid_spec [@kind ka kb kc] [@mode m]
+    include Make_binable3_without_uuid_spec [@kind.explicit ka kb kc] [@mode m]
 
     val caller_identity : Shape.Uuid.t
   end
@@ -251,46 +251,50 @@ module type Utils = sig
     [@mode m]) : Binable.S [@mode m] with type t := Bin_spec.t
   [@@alert legacy "Use [Make_binable_with_uuid] if possible."]
 
-  [@@@kind.default ka = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
 
   module%template.portable Make_binable1_with_uuid
       (Bin_spec : Make_binable1_with_uuid_spec
-    [@kind ka] [@mode m]) :
-    Binable.S1 [@kind ka] [@mode m] with type 'a t := 'a Bin_spec.t
+    [@kind.explicit ka] [@mode m]) :
+    Binable.S1 [@kind.explicit ka] [@mode m] with type 'a t := 'a Bin_spec.t
 
   module%template.portable Make_binable1_without_uuid
       (Bin_spec : Make_binable1_without_uuid_spec
-    [@kind ka] [@mode m]) :
-    Binable.S1 [@kind ka] [@mode m] with type 'a t := 'a Bin_spec.t
+    [@kind.explicit ka] [@mode m]) :
+    Binable.S1 [@kind.explicit ka] [@mode m] with type 'a t := 'a Bin_spec.t
   [@@alert legacy "Use [Make_binable1_with_uuid] if possible."]
 
-  [@@@kind.default kb = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kb = (value, any)]
 
   module%template.portable Make_binable2_with_uuid
       (Bin_spec : Make_binable2_with_uuid_spec
-    [@kind ka kb] [@mode m]) :
-    Binable.S2 [@kind ka kb] [@mode m] with type ('a, 'b) t := ('a, 'b) Bin_spec.t
+    [@kind.explicit ka kb] [@mode m]) :
+    Binable.S2
+    [@kind.explicit ka kb] [@mode m]
+    with type ('a, 'b) t := ('a, 'b) Bin_spec.t
 
   module%template.portable Make_binable2_without_uuid
       (Bin_spec : Make_binable2_without_uuid_spec
-    [@kind ka kb] [@mode m]) :
-    Binable.S2 [@kind ka kb] [@mode m] with type ('a, 'b) t := ('a, 'b) Bin_spec.t
+    [@kind.explicit ka kb] [@mode m]) :
+    Binable.S2
+    [@kind.explicit ka kb] [@mode m]
+    with type ('a, 'b) t := ('a, 'b) Bin_spec.t
   [@@alert legacy "Use [Make_binable2_with_uuid] if possible."]
 
-  [@@@kind.default kc = (value, any)]
+  [@@@kind.default.explicit_plus_unmangled kc = (value, any)]
 
   module%template.portable Make_binable3_with_uuid
       (Bin_spec : Make_binable3_with_uuid_spec
-    [@kind ka kb kc] [@mode m]) :
+    [@kind.explicit ka kb kc] [@mode m]) :
     Binable.S3
-    [@kind ka kb kc] [@mode m]
+    [@kind.explicit ka kb kc] [@mode m]
     with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
 
   module%template.portable Make_binable3_without_uuid
       (Bin_spec : Make_binable3_without_uuid_spec
-    [@kind ka kb kc] [@mode m]) :
+    [@kind.explicit ka kb kc] [@mode m]) :
     Binable.S3
-    [@kind ka kb kc] [@mode m]
+    [@kind.explicit ka kb kc] [@mode m]
     with type ('a, 'b, 'c) t := ('a, 'b, 'c) Bin_spec.t
   [@@alert legacy "Use [Make_binable3_with_uuid] if possible."]]
 
