@@ -7,41 +7,41 @@ open Common
 include Write_intf.Definitions
 
 external unsafe_set
-  :  local_ buf
+  :  buf @ local write
   -> int
-  -> local_ char
+  -> char
   -> unit
   @@ portable
   = "%caml_ba_unsafe_set_1"
 
 external unsafe_set8
-  :  local_ buf
+  :  buf @ local write
   -> int
-  -> local_ int
+  -> int
   -> unit
   @@ portable
   = "%caml_ba_unsafe_set_1"
 
 external unsafe_set16
-  :  local_ buf
+  :  buf @ local write
   -> int
-  -> local_ int
+  -> int
   -> unit
   @@ portable
   = "%caml_bigstring_set16u"
 
 external unsafe_set32
-  :  local_ buf
+  :  buf @ local write
   -> int
-  -> local_ int32
+  -> int32 @ local
   -> unit
   @@ portable
   = "%caml_bigstring_set32u"
 
 external unsafe_set64
-  :  local_ buf
+  :  buf @ local write
   -> int
-  -> local_ int64
+  -> int64 @ local
   -> unit
   @@ portable
   = "%caml_bigstring_set64u"
@@ -322,7 +322,7 @@ let[@inline always] bin_write_float_array_gen ~length ~blit buf ~pos a =
 ;;
 
 external float_array_length
-  :  local_ Float.Array.t
+  :  Float.Array.t @ immutable local
   -> int
   @@ portable
   = "%floatarray_length"
@@ -412,11 +412,6 @@ external buf_of_array2
   -> (buf[@local_opt])
   @@ portable
   = "%identity"
-
-module Bigarray = struct
-  include Bigarray
-  include Local_bigarray
-end
 
 let bin_write_bigarray1
   (type k)

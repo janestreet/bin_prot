@@ -1,8 +1,8 @@
 (library
  (name bin_prot_test)
- (libraries base base_bigstring bin_prot
-   expect_test_helpers_core.expect_test_helpers_base expect_test_patterns
-   float_array base.md5 re sexplib splittable_random stdio)
+ (libraries base base_bigstring bin_prot expect_test_helpers_base
+   expect_test_patterns float_array base.md5 re sexplib splittable_random
+   stdio)
  (preprocess
   (pps ppx_jane)))
 

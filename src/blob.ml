@@ -1,7 +1,7 @@
 open Common
 
 module T = struct
-  type 'a t = 'a [@@deriving compare ~localize, sexp_of]
+  type ('a : value_or_null) t = 'a [@@deriving compare ~localize, sexp_of]
 
   let bin_shape_t t =
     Shape.(basetype (Uuid.of_string "85a2557e-490a-11e6-98ac-4b8953d525fe") [ t ])
@@ -36,15 +36,19 @@ module T = struct
   let __bin_read_t__ _ _ ~pos_ref = raise_variant_wrong_type "Bin_prot.Blob.t" !pos_ref
 end
 
-type 'a id = 'a
+type ('a : value_or_null) id = 'a
 
 include T
 
 include%template
-  Utils.Make_binable1_without_uuid [@modality portable] [@alert "-legacy"] (struct
+  Utils.Make_binable1_without_uuid
+    [@kind.explicit value_or_null]
+    [@modality portable]
+    [@alert "-legacy"]
+    (struct
     module Binable = T
 
-    type 'a t = 'a T.t
+    type ('a : value_or_null) t = 'a T.t
 
     let of_binable t = t
     let to_binable t = t

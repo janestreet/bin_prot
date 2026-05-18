@@ -202,7 +202,7 @@ let bin_size_len len =
 ;;
 
 external float_array_length
-  :  local_ Float.Array.t
+  :  Float.Array.t @ immutable local
   -> int
   @@ portable
   = "%floatarray_length"
@@ -267,19 +267,19 @@ let bin_size_iarray (type a : value_or_null mod separable) bin_size_el ar =
 ;;]
 
 external array1_dim
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array1.t
+  :  ('a, 'b, 'c) Stdlib.Bigarray.Array1.t @ immutable local
   -> int
   @@ portable
   = "%caml_ba_dim_1"
 
 external array2_dim1
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  :  ('a, 'b, 'c) Stdlib.Bigarray.Array2.t @ immutable local
   -> int
   @@ portable
   = "%caml_ba_dim_1"
 
 external array2_dim2
-  :  local_ ('a, 'b, 'c) Stdlib.Bigarray.Array2.t
+  :  ('a, 'b, 'c) Stdlib.Bigarray.Array2.t @ immutable local
   -> int
   @@ portable
   = "%caml_ba_dim_2"

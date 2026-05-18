@@ -44,14 +44,15 @@
     Whereas [opaque_event]s roundtrip, [ignored_event]s actually drop the bytes
     representing [details] when deserializing, and therefore do not roundtrip. *)
 
-type 'a id = 'a
+type ('a : value_or_null) id = 'a
 
 (*_ This type synonym is introduced because older versions of OCaml do not support
     destructive substitutions with `type 'a t1 = t2`. *)
 
-type 'a t = 'a [@@deriving compare ~localize, sexp_of]
+type ('a : value_or_null) t = 'a [@@deriving compare ~localize, sexp_of]
 
-include Binable.S1 with type 'a t := 'a id
+include%template
+  Binable.S1 [@kind.explicit value_or_null] with type ('a : value_or_null) t := 'a id
 
 (** An [Opaque.Bigstring.t] or [Opaque.String.t] is an arbitrary piece of bin-prot. The
     bin-prot (de-)serializers simply read/write the data, prefixed with its size.
@@ -99,8 +100,13 @@ module Opaque : sig
         - degraded performance (having to read through the buffer just to fail at the end) *)
     val length : t -> int
 
-    val to_opaque : buf:Common.buf -> 'a -> 'a Type_class.writer -> t
-    val of_opaque_exn : buf:Common.buf -> t -> 'a Type_class.reader -> 'a
+    val to_opaque
+      : ('a : value_or_null).
+      buf:Common.buf -> 'a -> 'a Type_class.writer -> t
+
+    val of_opaque_exn
+      : ('a : value_or_null).
+      buf:Common.buf -> t -> 'a Type_class.reader -> 'a
   end
 end
 
