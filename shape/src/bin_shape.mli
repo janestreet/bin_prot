@@ -41,7 +41,8 @@ module Uuid : sig
       duplicates *)
   val of_string : string -> t
 
-  val to_string : t -> string
+  val%template to_string : t @ m -> string @ m
+  [@@alloc a @ m = (stack @ local, heap @ global)]
 end
 
 (** group of mutually recursive type definitions *)
