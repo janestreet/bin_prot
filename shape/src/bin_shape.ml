@@ -12,8 +12,11 @@ module Uuid : sig
   type t
 
   include%template Identifiable.S [@mode local] with type t := t
+  val%template to_string : t -> string [@@alloc a @ m = (stack @ local, heap @ global)]
 end = struct
   include String
+
+  let%template[@alloc a @ m = stack @ local] to_string (x : t) : string = x
 end
 
 let eval_fail loc fmt =
