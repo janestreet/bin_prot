@@ -1,6 +1,6 @@
 (* WARNING: never accept the corrected output for this file, it must never change! *)
 
-let%expect_test ("32 bit integer (wasm) tests" [@tags "wasm-only"]) =
+let%expect_test ("32 bit integer (wasm) tests" [@tags "wasm-only", "32-bits-only"]) =
   print_newline ();
   Integers_repr.run_tests ();
   [%expect_exact

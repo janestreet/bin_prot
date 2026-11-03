@@ -96,7 +96,11 @@ module%template.portable Of_minimal (S : Binable.Minimal.S [@mode m]) :
   Binable.S [@mode m] with type t := S.t = struct
   include S
 
-  let bin_writer_t = { size = bin_size_t; write = bin_write_t }
+  let bin_writer_t : (_ Type_class.writer[@mode m]) =
+    { size = bin_size_t [@mode m]; write = bin_write_t [@mode m] }
+  [@@mode m = (global, m)]
+  ;;
+
   let bin_reader_t = { read = bin_read_t; vtag_read = __bin_read_t__ }
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
@@ -105,8 +109,13 @@ module%template.portable Of_minimal1 (S : Binable.Minimal.S1 [@mode m]) :
   Binable.S1 [@mode m] with type 'a t := 'a S.t = struct
   include S
 
-  let bin_writer_t bin_writer_a =
-    { size = bin_size_t bin_writer_a.size; write = bin_write_t bin_writer_a.write }
+  let bin_writer_t (bin_writer_a : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size = (bin_size_t [@mode m]) bin_writer_a.size
+    ; write = (bin_write_t [@mode m]) bin_writer_a.write
+    }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader_a =
@@ -125,7 +134,8 @@ end]
 [@@@mode.default m = (global, local)]
 
 module%template.portable
-  [@modality p] Make_binable_gen (S : sig
+  [@modality p]
+  Make_binable_gen (S : sig
     include Make_binable_without_uuid_spec [@mode m]
 
     val maybe_caller_identity : Shape.Uuid.t option
@@ -199,10 +209,13 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer =
-    { size = (fun v -> bin_size_t bin_writer.size v)
-    ; write = (fun buf ~pos v -> bin_write_t bin_writer.write buf ~pos v)
+  let bin_writer_t (bin_writer : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size = (fun v -> (bin_size_t [@mode m]) bin_writer.size v)
+    ; write = (fun buf ~pos v -> (bin_write_t [@mode m]) bin_writer.write buf ~pos v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader =
@@ -265,11 +278,17 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 =
-    { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v)
+  let bin_writer_t
+    (bin_writer1 : (_ Type_class.writer[@mode m]))
+    (bin_writer2 : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size = (fun v -> (bin_size_t [@mode m]) bin_writer1.size bin_writer2.size v)
     ; write =
-        (fun buf ~pos v -> bin_write_t bin_writer1.write bin_writer2.write buf ~pos v)
+        (fun buf ~pos v ->
+          (bin_write_t [@mode m]) bin_writer1.write bin_writer2.write buf ~pos v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 =
@@ -337,12 +356,26 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
-    { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
+  let bin_writer_t
+    (bin_writer1 : (_ Type_class.writer[@mode m]))
+    (bin_writer2 : (_ Type_class.writer[@mode m]))
+    (bin_writer3 : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size =
+        (fun v ->
+          (bin_size_t [@mode m]) bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
-          bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
+          (bin_write_t [@mode m])
+            bin_writer1.write
+            bin_writer2.write
+            bin_writer3.write
+            buf
+            ~pos
+            v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =
@@ -367,7 +400,8 @@ end]
 [@@@mode.default m = (global, local)]
 
 module%template.portable
-  [@modality p] Make_binable_with_uuid
+  [@modality p]
+  Make_binable_with_uuid
     (S : Make_binable_with_uuid_spec
   [@mode m]) =
 Make_binable_gen [@mode m] [@modality p] (struct
@@ -377,7 +411,8 @@ Make_binable_gen [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Make_binable_without_uuid
+  [@modality p]
+  Make_binable_without_uuid
     (S : Make_binable_without_uuid_spec
   [@mode m]) =
 Make_binable_gen [@mode m] [@modality p] (struct
@@ -389,7 +424,8 @@ Make_binable_gen [@mode m] [@modality p] (struct
 [@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
 
 module%template.portable
-  [@modality p] Make_binable1_with_uuid
+  [@modality p]
+  Make_binable1_with_uuid
     (S : Make_binable1_with_uuid_spec
   [@kind.explicit ka] [@mode m]) =
 Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
@@ -399,7 +435,8 @@ Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Make_binable1_without_uuid
+  [@modality p]
+  Make_binable1_without_uuid
     (S : Make_binable1_without_uuid_spec
   [@kind.explicit ka] [@mode m]) =
 Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
@@ -411,7 +448,8 @@ Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
 [@@@kind.default.explicit_plus_unmangled kb = (value, any)]
 
 module%template.portable
-  [@modality p] Make_binable2_with_uuid
+  [@modality p]
+  Make_binable2_with_uuid
     (S : Make_binable2_with_uuid_spec
   [@kind.explicit ka kb] [@mode m]) =
 Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
@@ -421,7 +459,8 @@ Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Make_binable2_without_uuid
+  [@modality p]
+  Make_binable2_without_uuid
     (S : Make_binable2_without_uuid_spec
   [@kind.explicit ka kb] [@mode m]) =
 Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
@@ -433,7 +472,8 @@ Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
 [@@@kind.default.explicit_plus_unmangled kc = (value, any)]
 
 module%template.portable
-  [@modality p] Make_binable3_with_uuid
+  [@modality p]
+  Make_binable3_with_uuid
     (S : Make_binable3_with_uuid_spec
   [@kind.explicit ka kb kc] [@mode m]) =
 Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
@@ -443,7 +483,8 @@ Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
   end)
 
 module%template.portable
-  [@modality p] Make_binable3_without_uuid
+  [@modality p]
+  Make_binable3_without_uuid
     (S : Make_binable3_without_uuid_spec
   [@kind.explicit ka kb kc] [@mode m]) =
 Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
@@ -456,7 +497,8 @@ Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
 [@@@mode.default m = (global, local)]
 
 module%template.portable
-  [@modality p] Make_iterable_binable
+  [@modality p]
+  Make_iterable_binable
     (S : Make_iterable_binable_spec
   [@mode m]) =
 struct
@@ -515,7 +557,13 @@ struct
   ;;
 
   let __bin_read_t__ _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
-  let bin_writer_t = { size = bin_size_t; write = bin_write_t }
+
+  let bin_writer_t =
+    ({ size = bin_size_t [@mode m]; write = bin_write_t [@mode m] }
+     : (_ Type_class.writer[@mode m]))
+  [@@mode m = (global, m)]
+  ;;
+
   let bin_reader_t = { read = bin_read_t; vtag_read = __bin_read_t__ }
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
@@ -580,10 +628,13 @@ struct
 
   let __bin_read_t__ _bin_read_a _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
 
-  let bin_writer_t bin_writer =
-    { size = (fun v -> bin_size_t bin_writer.size v)
-    ; write = (fun buf ~pos v -> bin_write_t bin_writer.write buf ~pos v)
+  let bin_writer_t (bin_writer : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size = (fun v -> (bin_size_t [@mode m]) bin_writer.size v)
+    ; write = (fun buf ~pos v -> (bin_write_t [@mode m]) bin_writer.write buf ~pos v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader =
@@ -662,11 +713,17 @@ struct
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 =
-    { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v)
+  let bin_writer_t
+    (bin_writer1 : (_ Type_class.writer[@mode m]))
+    (bin_writer2 : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size = (fun v -> (bin_size_t [@mode m]) bin_writer1.size bin_writer2.size v)
     ; write =
-        (fun buf ~pos v -> bin_write_t bin_writer1.write bin_writer2.write buf ~pos v)
+        (fun buf ~pos v ->
+          (bin_write_t [@mode m]) bin_writer1.write bin_writer2.write buf ~pos v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 =
@@ -756,12 +813,26 @@ struct
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
-    { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
+  let bin_writer_t
+    (bin_writer1 : (_ Type_class.writer[@mode m]))
+    (bin_writer2 : (_ Type_class.writer[@mode m]))
+    (bin_writer3 : (_ Type_class.writer[@mode m]))
+    : (_ Type_class.writer[@mode m])
+    =
+    { size =
+        (fun v ->
+          (bin_size_t [@mode m]) bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
-          bin_write_t bin_writer1.write bin_writer2.write bin_writer3.write buf ~pos v)
+          (bin_write_t [@mode m])
+            bin_writer1.write
+            bin_writer2.write
+            bin_writer3.write
+            buf
+            ~pos
+            v)
     }
+  [@@mode m = (global, m)]
   ;;
 
   let bin_reader_t bin_reader1 bin_reader2 bin_reader3 =

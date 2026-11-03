@@ -20,14 +20,15 @@ module _ : module type of Bin_prot.Std = struct
   end
 
   open struct
-    type bigstring = Base_bigstring.t [@@deriving equal, sexp_of]
+    type bigstring = Base_bigstring.t [@@deriving equal ~localize, sexp_of]
     type float32_mat = mat32
     type float64_mat = mat64
     type float32_vec = vec32
     type float64_vec = vec64
 
     module type S0 = sig
-      type t : value_or_null [@@deriving bin_io ~localize, equal, sexp_of]
+      type%template t : value_or_null
+      [@@deriving bin_io ~localize, (equal [@mode.explicit global]), sexp_of]
 
       val examples : t list
     end
@@ -69,7 +70,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "unit" =
     test
       (module struct
-        type t = unit [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = unit [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = Unit.all
       end);
@@ -85,7 +86,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "bool" =
     test
       (module struct
-        type t = bool [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = bool [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = Bool.all
       end);
@@ -102,7 +103,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "string" =
     test
       (module struct
-        type t = string [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = string [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ ""; "cat"; "\000\255" ]
       end);
@@ -120,7 +121,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "bytes" =
     test
       (module struct
-        type t = bytes [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = bytes [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ ""; "cat"; "\000\255" ] |> List.map ~f:Bytes.of_string
       end);
@@ -138,7 +139,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "char" =
     test
       (module struct
-        type t = char [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = char [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ '\000'; 'A'; 'z'; '0'; '-'; '\255' ]
       end);
@@ -156,10 +157,12 @@ module _ : module type of Bin_prot.Std = struct
 
   type nonrec int = int [@@deriving bin_io ~localize]
 
-  let%expect_test ("int" [@tags "no-js", "no-wasm"]) =
+  (* This must hold on 64-bit wasm (portable-int mode) exactly as on native: byte-for-byte
+     identical [bin_io] of [int] is the point of that mode. *)
+  let%expect_test ("int" [@tags "64-bits-only"]) =
     test
       (module struct
-        type t = int [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ Int.min_value; Int.minus_one; Int.zero; Int.one; Int.max_value ]
       end);
@@ -177,7 +180,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test ("int" [@tags "js-only", "no-wasm"]) =
     test
       (module struct
-        type t = int [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ Int.min_value; Int.minus_one; Int.zero; Int.one; Int.max_value ]
       end);
@@ -192,10 +195,10 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  let%expect_test ("int" [@tags "wasm-only"]) =
+  let%expect_test ("int" [@tags "wasm-only", "32-bits-only"]) =
     test
       (module struct
-        type t = int [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ Int.min_value; Int.minus_one; Int.zero; Int.one; Int.max_value ]
       end);
@@ -215,7 +218,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "int32" =
     test
       (module struct
-        type t = int32 [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int32 [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ Int32.min_value; Int32.minus_one; Int32.zero; Int32.one; Int32.max_value ]
@@ -237,7 +240,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "int64" =
     test
       (module struct
-        type t = int64 [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ Int64.min_value; Int64.minus_one; Int64.zero; Int64.one; Int64.max_value ]
@@ -256,10 +259,10 @@ module _ : module type of Bin_prot.Std = struct
 
   type nonrec nativeint = nativeint [@@deriving bin_io ~localize]
 
-  let%expect_test ("nativeint" [@tags "no-js", "no-wasm"]) =
+  let%expect_test ("nativeint" [@tags "64-bits-only"]) =
     test
       (module struct
-        type t = nativeint [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = nativeint [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ Nativeint.min_value
@@ -284,7 +287,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test ("nativeint" [@tags "js-only", "no-wasm"]) =
     test
       (module struct
-        type t = nativeint [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = nativeint [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ Nativeint.min_value
@@ -306,10 +309,10 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  let%expect_test ("nativeint" [@tags "wasm-only"]) =
+  let%expect_test ("nativeint" [@tags "wasm-only", "32-bits-only"]) =
     test
       (module struct
-        type t = nativeint [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = nativeint [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ Nativeint.min_value
@@ -336,7 +339,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "bigstring" =
     test
       (module struct
-        type t = bigstring [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = bigstring [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ ""; "cat"; "\000\255" ] |> List.map ~f:Base_bigstring.of_string
       end);
@@ -351,7 +354,7 @@ module _ : module type of Bin_prot.Std = struct
 
   type nonrec float = float [@@deriving bin_io ~localize]
 
-  let%expect_test ("float" [@tags "64-bits-only", "no-js", "no-wasm"]) =
+  let%expect_test ("float" [@tags "64-bits-only"]) =
     test
       (module struct
         type t = float [@@deriving bin_io ~localize, sexp_of]
@@ -464,7 +467,7 @@ module _ : module type of Bin_prot.Std = struct
 
   type nonrec floatarray = floatarray [@@deriving bin_io ~localize]
 
-  let%expect_test ("floatarray" [@tags "no-js", "no-wasm"]) =
+  let%expect_test ("floatarray" [@tags "64-bits-only"]) =
     test
       (module struct
         type t = floatarray [@@deriving bin_io ~localize]
@@ -574,7 +577,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "ref" =
     test
       (module struct
-        type t = int64 ref [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 ref [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ ref Int64.min_value; ref 0L; ref 1L ]
       end);
@@ -612,7 +615,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "list" =
     test
       (module struct
-        type t = int64 list [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 list [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ []; [ Int64.min_value ]; [ 0L; 1L ]; [ 2L; 1_000_000_000L; Int64.max_value ] ]
@@ -628,13 +631,16 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  type nonrec ('a : value_or_null mod separable) array = 'a array
-  [@@deriving bin_io ~localize]
+  [%%template
+  [@@@kind.default k = (value_or_null mod external64, base_or_null)]
+
+  type nonrec ('a : k mod separable) array = ('a array[@kind k])
+  [@@deriving bin_io ~localize]]
 
   let%expect_test "array" =
     test
       (module struct
-        type t = int64 array [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 array [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ [||]
@@ -654,13 +660,75 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
-  type nonrec ('a : value_or_null mod separable) iarray = 'a iarray
-  [@@deriving bin_io ~localize]
+  let%expect_test "array with non-value elements" =
+    test
+      (module struct
+        type t = (Float_u.t array[@kind float64]) [@@deriving bin_io ~localize]
+
+        let equal = (Array.equal [@kind float64]) Float_u.equal
+
+        let sexp_of_t t =
+          (Array.map [@kind float64 value_or_null]) t ~f:Float_u.to_float
+          |> [%sexp_of: float array]
+        ;;
+
+        let examples =
+          [ [||]
+          ; [| #0. |]
+          ; [| #1.; #2.5; Float_u.neg #3.25 |]
+          ; [| Float_u.of_float Float.min_positive_subnormal_value
+             ; Float_u.of_float Float.max_finite_value
+            |]
+          ]
+        ;;
+      end);
+    [%expect
+      {|
+      (digest 7e763d69aa2fe87d11c93bdc877894ea)
+      "\000"
+      "\001\000\000\000\000\000\000\000\000"
+      "\003\000\000\000\000\000\000\240?\000\000\000\000\000\000\004@\000\000\000\000\000\000\n\192"
+      "\002\001\000\000\000\000\000\000\000\255\255\255\255\255\255\239\127"
+      |}];
+    test
+      (module struct
+        type t = (Int64_u.t array[@kind bits64]) [@@deriving bin_io ~localize]
+
+        let equal = (Array.equal [@kind bits64]) Int64_u.equal
+
+        let sexp_of_t t =
+          (Array.map [@kind bits64 value_or_null]) t ~f:Int64_u.to_int64
+          |> [%sexp_of: int64 array]
+        ;;
+
+        let examples = [ [||]; [| #0L |]; [| #1L; #2L; #3L |] ]
+      end);
+    [%expect
+      {|
+      (digest 7579fc9350f09334d3a361f32e2d1f2e)
+      "\000"
+      "\001\000"
+      "\003\001\002\003"
+      |}]
+  ;;
+
+  open struct
+    [%%template
+    [@@@kind.default k = (value_or_null mod external64, base_or_null)]
+
+    type nonrec ('a : k mod separable) iarray = 'a iarray]
+  end
+
+  [%%template
+  [@@@kind.default k = (value_or_null mod external64, base_or_null)]
+
+  type nonrec ('a : k mod separable) iarray = ('a iarray[@kind k])
+  [@@deriving bin_io ~localize]]
 
   let%expect_test "iarray" =
     test
       (module struct
-        type t = int64 iarray [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 iarray [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples =
           [ []; [ Int64.min_value ]; [ 0L; 1L ]; [ 2L; 1_000_000_000L; Int64.max_value ] ]
@@ -677,12 +745,70 @@ module _ : module type of Bin_prot.Std = struct
       |}]
   ;;
 
+  let%expect_test "iarray with non-value elements" =
+    test
+      (module struct
+        type t = (Float_u.t iarray[@kind float64]) [@@deriving bin_io ~localize]
+
+        let equal = (Iarray.equal [@kind float64]) Float_u.equal
+
+        let sexp_of_t t =
+          (Iarray.to_array [@kind float64]) t
+          |> (Array.map [@kind float64 value_or_null]) ~f:Float_u.to_float
+          |> [%sexp_of: float array]
+        ;;
+
+        let examples =
+          [ [||]
+          ; [| #0. |]
+          ; [| #1.; #2.5; Float_u.neg #3.25 |]
+          ; [| Float_u.of_float Float.min_positive_subnormal_value
+             ; Float_u.of_float Float.max_finite_value
+            |]
+          ]
+          |> List.map ~f:(Iarray.of_array [@kind float64])
+        ;;
+      end);
+    [%expect
+      {|
+      (digest 7e763d69aa2fe87d11c93bdc877894ea)
+      "\000"
+      "\001\000\000\000\000\000\000\000\000"
+      "\003\000\000\000\000\000\000\240?\000\000\000\000\000\000\004@\000\000\000\000\000\000\n\192"
+      "\002\001\000\000\000\000\000\000\000\255\255\255\255\255\255\239\127"
+      |}];
+    test
+      (module struct
+        type t = (Int64_u.t iarray[@kind bits64]) [@@deriving bin_io ~localize]
+
+        let equal = (Iarray.equal [@kind bits64]) Int64_u.equal
+
+        let sexp_of_t t =
+          (Iarray.to_array [@kind bits64]) t
+          |> (Array.map [@kind bits64 value_or_null]) ~f:Int64_u.to_int64
+          |> [%sexp_of: int64 array]
+        ;;
+
+        let examples =
+          [ [||]; [| #0L |]; [| #1L; #2L; #3L |] ]
+          |> List.map ~f:(Iarray.of_array [@kind bits64])
+        ;;
+      end);
+    [%expect
+      {|
+      (digest 7579fc9350f09334d3a361f32e2d1f2e)
+      "\000"
+      "\001\000"
+      "\003\001\002\003"
+      |}]
+  ;;
+
   type nonrec ('a : value_or_null) option = 'a option [@@deriving bin_io ~localize]
 
   let%expect_test "option" =
     test
       (module struct
-        type t = int64 option [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 option [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ None; Some Int64.min_value; Some 0L; Some 1L ]
       end);
@@ -701,7 +827,7 @@ module _ : module type of Bin_prot.Std = struct
   let%expect_test "or_null" =
     test
       (module struct
-        type t = int64 or_null [@@deriving bin_io ~localize, equal, sexp_of]
+        type t = int64 or_null [@@deriving bin_io ~localize, equal ~localize, sexp_of]
 
         let examples = [ Null; This Int64.min_value; This 0L; This 1L ]
       end);

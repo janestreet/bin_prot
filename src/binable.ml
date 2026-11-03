@@ -31,8 +31,13 @@ module type S = sig
 
   include S_only_functions [@mode m] with type t := t
 
+  include sig
+    [@@@mode.default m = (global, m)]
+
+    val bin_writer_t : (t Type_class.writer[@mode m])
+  end
+
   val bin_shape_t : Shape.t
-  val bin_writer_t : t Type_class.writer
   val bin_reader_t : t Type_class.reader
   val bin_t : t Type_class.t
 end
@@ -49,11 +54,11 @@ module type S1 = sig
 
     val bin_size_t : ('a : ka). (('a, 'a t) Size.sizer1[@mode m])
     val bin_write_t : ('a : ka). (('a, 'a t) Write.writer1[@mode m])
+    val bin_writer_t : ('a : ka). (('a, 'a t) Type_class.S1.writer[@mode m])
   end
 
   val bin_read_t : ('a : ka). ('a, 'a t) Read.reader1
   val __bin_read_t__ : ('a : ka). ('a, 'a t) Read.vtag_reader1
-  val bin_writer_t : ('a : ka). ('a, 'a t) Type_class.S1.writer
   val bin_reader_t : ('a : ka). ('a, 'a t) Type_class.S1.reader
   val bin_t : ('a : ka). ('a, 'a t) Type_class.S1.t
 end
@@ -70,11 +75,14 @@ module type S2 = sig
 
     val bin_size_t : ('a : ka) ('b : kb). (('a, 'b, ('a, 'b) t) Size.sizer2[@mode m])
     val bin_write_t : ('a : ka) ('b : kb). (('a, 'b, ('a, 'b) t) Write.writer2[@mode m])
+
+    val bin_writer_t
+      : ('a : ka) ('b : kb).
+      (('a, 'b, ('a, 'b) t) Type_class.S2.writer[@mode m])
   end
 
   val bin_read_t : ('a : ka) ('b : kb). ('a, 'b, ('a, 'b) t) Read.reader2
   val __bin_read_t__ : ('a : ka) ('b : kb). ('a, 'b, ('a, 'b) t) Read.vtag_reader2
-  val bin_writer_t : ('a : ka) ('b : kb). ('a, 'b, ('a, 'b) t) Type_class.S2.writer
   val bin_reader_t : ('a : ka) ('b : kb). ('a, 'b, ('a, 'b) t) Type_class.S2.reader
   val bin_t : ('a : ka) ('b : kb). ('a, 'b, ('a, 'b) t) Type_class.S2.t
 end
@@ -96,6 +104,10 @@ module type S3 = sig
     val bin_write_t
       : ('a : ka) ('b : kb) ('c : kc).
       (('a, 'b, 'c, ('a, 'b, 'c) t) Write.writer3[@mode m])
+
+    val bin_writer_t
+      : ('a : ka) ('b : kb) ('c : kc).
+      (('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.writer[@mode m])
   end
 
   val bin_read_t
@@ -105,10 +117,6 @@ module type S3 = sig
   val __bin_read_t__
     : ('a : ka) ('b : kb) ('c : kc).
     ('a, 'b, 'c, ('a, 'b, 'c) t) Read.vtag_reader3
-
-  val bin_writer_t
-    : ('a : ka) ('b : kb) ('c : kc).
-    ('a, 'b, 'c, ('a, 'b, 'c) t) Type_class.S3.writer
 
   val bin_reader_t
     : ('a : ka) ('b : kb) ('c : kc).

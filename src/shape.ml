@@ -46,4 +46,12 @@ let bin_shape_array x = basetype (Uuid.of_string "array") [ x ]
 let bin_shape_lazy x = x
 let bin_shape_pair x y = tuple [ x; y ]
 let bin_shape_triple x y z = tuple [ x; y; z ]
-let bin_shape_iarray = bin_shape_array
+
+[%%template
+let bin_shape_array = bin_shape_array
+[@@kind k = (base_non_value, value_or_null mod external64)]
+;;
+
+let bin_shape_iarray = (bin_shape_array [@kind k])
+[@@kind k = (base_or_null, value_or_null mod external64)]
+;;]

@@ -5,6 +5,7 @@
 
 open Bigarray
 open Common
+open! Basement.Primitives
 include Read_intf.Definitions
 
 external unsafe_get
@@ -45,40 +46,49 @@ external unsafe_get16
 external unsafe_get32
   :  buf @ local read
   -> int
-  -> (int32#[@unboxed])
+  -> (Int32_u.t[@unboxed])
   @@ portable
   = "%caml_bigstring_get32u#"
 
 external unsafe_get64
   :  buf @ local read
   -> int
-  -> (int64#[@unboxed])
+  -> (Int64_u.t[@unboxed])
   @@ portable
   = "%caml_bigstring_get64u#"
 
 external unbox_int32
   :  (int32[@local_opt])
-  -> (int32#[@unboxed])
+  -> (Int32_u.t[@unboxed])
   @@ portable
   = "%unbox_int32"
 
 external unbox_int64
   :  (int64[@local_opt])
-  -> (int64#[@unboxed])
+  -> (Int64_u.t[@unboxed])
   @@ portable
   = "%unbox_int64"
 
 external unbox_nativeint
   :  (nativeint[@local_opt])
-  -> (nativeint#[@unboxed])
+  -> (Nativeint_u.t[@unboxed])
   @@ portable
   = "%unbox_nativeint"
 
-external box_int32 : (int32#[@unboxed]) -> (int32[@local_opt]) @@ portable = "%box_int32"
-external box_int64 : (int64#[@unboxed]) -> (int64[@local_opt]) @@ portable = "%box_int64"
+external box_int32
+  :  (Int32_u.t[@unboxed])
+  -> (int32[@local_opt])
+  @@ portable
+  = "%box_int32"
+
+external box_int64
+  :  (Int64_u.t[@unboxed])
+  -> (int64[@local_opt])
+  @@ portable
+  = "%box_int64"
 
 external box_nativeint
-  :  (nativeint#[@unboxed])
+  :  (Nativeint_u.t[@unboxed])
   -> (nativeint[@local_opt])
   @@ portable
   = "%box_nativeint"
@@ -649,37 +659,42 @@ let bin_read_float_array buf ~pos_ref =
     ~pos_ref
 ;;
 
-let%template check_array_len
-  (type a : value_or_null mod separable)
+[%%template
+(* [is_float_reader reader] is [true] if an array of elements with the same type as
+   [reader] produces may take two words per element. This is only true for flat-float
+   arrays on 32-bit backends. *)
+let is_float_reader (type a : value_or_null) (reader : (a reader[@mode local])) =
+  let module Obj = Base.Obj in
+  match reader (dummy_float_buf ()) ~pos_ref:(ref 0) with
+  | el -> Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
+  | exception _ -> false
+;;
+
+(* Without extensions, behaves the same as [float] *)
+let is_float_reader _ = true [@@kind k = float64]
+
+(* Without extensions, is only ever a pointer *)
+let is_float_reader _ = false
+[@@kind k = (bits64, bits32, word, float32, value_or_null mod external64)]
+;;
+
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
+let check_array_len
+  (type a : k mod separable)
   (bin_read_el : (a reader[@mode local]))
   ~len
   ~start_pos
   =
-  let module Obj = Base.Obj in
-  if arch_sixtyfour
-  then (
-    if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long start_pos)
-  else if len > Sys.max_array_length / 2
-  then (
-    let maybe_float =
-      try
-        let el = bin_read_el (dummy_float_buf ()) ~pos_ref:(ref 0) in
-        Some el
-      with
-      | _ -> None
-    in
-    match maybe_float with
-    | None ->
-      if len > Sys.max_array_length
-      then raise_read_error ReadError.Array_too_long start_pos
-    | Some el ->
-      if Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
-         || len > Sys.max_array_length
-      then raise_read_error ReadError.Array_too_long start_pos)
+  if len > Sys.max_array_length
+     || ((not arch_sixtyfour)
+         && len > Sys.max_array_length / 2
+         && (is_float_reader [@kind k]) bin_read_el)
+  then raise_read_error ReadError.Array_too_long start_pos
 ;;
 
-let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
-  (type a : value_or_null mod separable)
+let[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
+  (type a : k mod separable)
   (bin_read_el : a reader)
   buf
   ~pos_ref
@@ -689,7 +704,7 @@ let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_ar
   if len = 0
   then [||]
   else (
-    check_array_len bin_read_el ~len ~start_pos;
+    (check_array_len [@kind k]) bin_read_el ~len ~start_pos;
     let first = bin_read_el buf ~pos_ref in
     (let res = (Base.Array.create [@alloc a]) ~len first in
      for i = 1 to len - 1 do
@@ -700,56 +715,68 @@ let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_ar
     [@exclave_if_stack a])
 ;;
 
-let%template bin_read_array
-  (type a : value_or_null mod separable)
-  (bin_read_el : a reader)
-  buf
-  ~pos_ref
-  =
+let bin_read_array (type a : k mod separable) (bin_read_el : a reader) buf ~pos_ref =
   if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
   then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
   else
-    (bin_read_array_aux__no_float_array_blit_optimization [@alloc heap])
+    (bin_read_array_aux__no_float_array_blit_optimization [@kind k] [@alloc heap])
       bin_read_el
       buf
       ~pos_ref
 ;;
 
-let%template[@alloc stack] bin_read_array bin_read_el buf ~pos_ref = exclave_
-  (bin_read_array_aux__no_float_array_blit_optimization [@alloc stack])
+let[@alloc stack] bin_read_array bin_read_el buf ~pos_ref = exclave_
+  (bin_read_array_aux__no_float_array_blit_optimization [@kind k] [@alloc stack])
     bin_read_el
     buf
     ~pos_ref
 ;;
 
-let%template[@alloc a @ m = (heap_global, stack_local)] bin_read_iarray
-  (type a : value_or_null mod separable)
+let[@alloc a @ m = (heap_global, stack_local)] bin_read_iarray
+  (type a : k mod separable)
   (bin_read_el : (a reader[@mode m]))
   buf
   ~pos_ref
   =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
-  check_array_len bin_read_el ~len ~start_pos;
-  (Base.Iarray.init [@alloc a]) len ~f:(stack_ fun _ ->
+  (check_array_len [@kind k]) bin_read_el ~len ~start_pos;
+  (Base.Iarray.init [@kind k] [@alloc a]) len ~f:(stack_ fun _ ->
     bin_read_el buf ~pos_ref [@exclave_if_stack a])
   [@nontail] [@exclave_if_stack a]
-;;
+;;]
 
 external buf_of_array1
-  :  (_ Stdlib.Bigarray.Array1.t[@local_opt])
-  -> (buf[@local_opt])
+  :  _ Stdlib.Bigarray.Array1.t @ local
+  -> buf @ local
   @@ portable
   = "%identity"
 
 external buf_of_array2
-  :  (_ Stdlib.Bigarray.Array2.t[@local_opt])
-  -> (buf[@local_opt])
+  :  _ Stdlib.Bigarray.Array2.t @ local
+  -> buf @ local
   @@ portable
   = "%identity"
 
-let bin_read_bigarray1 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout buf ~pos_ref
-  : (_, k, _) Stdlib.Bigarray.Array1.t
+external buf_of_genarray
+  :  _ Stdlib.Bigarray.Genarray.t @ local
+  -> buf @ local
+  @@ portable
+  = "%identity"
+
+let checked_multiply_bigarray_length left right ~pos =
+  if right <> 0 && left > Stdlib.max_int / right
+  then raise_read_error ReadError.Array_too_long pos;
+  left * right
+;;
+
+let%template bin_read_bigarray1
+  (type k)
+  ~(kind : (_, k) Stdlib.Bigarray.kind)
+  ~layout
+  buf
+  ~pos_ref
+  : (_, k, _) Stdlib.Bigarray.Array1.t @ l
   =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   let size = len * Stdlib.Bigarray.kind_size_in_bytes kind in
@@ -757,9 +784,13 @@ let bin_read_bigarray1 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout bu
   let next = pos + size in
   check_next buf next;
   let vec = Array1.create kind layout len in
-  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array1 vec) ~dst_pos:0 ~len:size;
+  let () =
+    let vec = borrow_ vec in
+    unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array1 vec) ~dst_pos:0 ~len:size
+  in
   pos_ref := next;
   vec
+[@@mode l = (global, local)]
 ;;
 
 let bin_read_float64_vec =
@@ -772,8 +803,13 @@ let bin_read_float32_vec =
 
 let bin_read_vec = bin_read_float64_vec
 
-let bin_read_bigarray2 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout buf ~pos_ref
-  : (_, k, _) Stdlib.Bigarray.Array2.t
+let%template bin_read_bigarray2
+  (type k)
+  ~(kind : (_, k) Stdlib.Bigarray.kind)
+  ~layout
+  buf
+  ~pos_ref
+  : (_, k, _) Stdlib.Bigarray.Array2.t @ l
   =
   let len1 = (bin_read_nat0 buf ~pos_ref :> int) in
   let len2 = (bin_read_nat0 buf ~pos_ref :> int) in
@@ -782,9 +818,56 @@ let bin_read_bigarray2 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout bu
   let next = pos + size in
   check_next buf next;
   let mat = Array2.create kind layout len1 len2 in
-  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array2 mat) ~dst_pos:0 ~len:size;
+  let () =
+    let mat = borrow_ mat in
+    unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array2 mat) ~dst_pos:0 ~len:size
+  in
   pos_ref := next;
   mat
+[@@mode l = (global, local)]
+;;
+
+let%template bin_read_genarray
+  (type k)
+  ~(kind : (_, k) Stdlib.Bigarray.kind)
+  ~layout
+  buf
+  ~pos_ref
+  : (_, k, _) Stdlib.Bigarray.Genarray.t @ l
+  =
+  let start_pos = !pos_ref in
+  let num_dims = (bin_read_nat0 buf ~pos_ref :> int) in
+  if num_dims > Sys.max_array_length
+  then raise_read_error ReadError.Array_too_long start_pos;
+  let dimensions = Base.Array.create ~len:num_dims 0 in
+  let num_elements = ref 1 in
+  for dimension = 0 to num_dims - 1 do
+    let length = (bin_read_nat0 buf ~pos_ref :> int) in
+    dimensions.(dimension) <- length;
+    num_elements := checked_multiply_bigarray_length !num_elements length ~pos:start_pos
+  done;
+  let size =
+    checked_multiply_bigarray_length
+      !num_elements
+      (Stdlib.Bigarray.kind_size_in_bytes kind)
+      ~pos:start_pos
+  in
+  let pos = !pos_ref in
+  let next = pos + size in
+  check_next_check_overflow buf pos next;
+  let array = Bigarray.Genarray.create kind layout dimensions in
+  let () =
+    let array = borrow_ array in
+    unsafe_blit_buf
+      ~src:buf
+      ~src_pos:pos
+      ~dst:(buf_of_genarray array)
+      ~dst_pos:0
+      ~len:size
+  in
+  pos_ref := next;
+  array
+[@@mode l = (global, local)]
 ;;
 
 let bin_read_float64_mat =
@@ -951,7 +1034,7 @@ external unsafe_bytes_set64
 external unsafe_bytes_set32
   :  bytes @ local write
   -> int
-  -> (int32#[@unboxed])
+  -> (Int32_u.t[@unboxed])
   -> unit
   @@ portable
   = "%caml_bytes_set32u#"
@@ -959,7 +1042,7 @@ external unsafe_bytes_set32
 external unsafe_bytes_set64
   :  bytes @ local write
   -> int
-  -> (int64#[@unboxed])
+  -> (Int64_u.t[@unboxed])
   -> unit
   @@ portable
   = "%caml_bytes_set64u#"
@@ -1050,8 +1133,14 @@ let bin_read_option = (bin_read_option [@alloc stack])
 let bin_read_or_null = (bin_read_or_null [@alloc stack])
 let bin_read_list = (bin_read_list [@alloc stack])
 let bin_read_list_with_max_len = (bin_read_list_with_max_len [@alloc stack])
-let bin_read_array = (bin_read_array [@alloc stack])
-let bin_read_iarray = (bin_read_iarray [@alloc stack])
+
+[%%template
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+[@@@mode.default local]
+
+let bin_read_array = (bin_read_array [@kind k] [@alloc stack])
+let bin_read_iarray = (bin_read_iarray [@kind k] [@alloc stack])]
+
 let bin_read_pair = (bin_read_pair [@alloc stack])
 let bin_read_triple = (bin_read_triple [@alloc stack])
 

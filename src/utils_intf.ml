@@ -91,13 +91,13 @@ module Definitions = struct
     val caller_identity : Shape.Uuid.t
 
     val module_name : string option
-    val init : len:int -> next:local_ (unit -> el) -> t
+    val init : len:int -> next:(unit -> el) @ local -> t
 
     include sig
       [@@@mode.default m = (global, m)]
 
       val length : t @ m -> int
-      val iter : t @ m -> f:local_ (el @ m -> unit) -> unit
+      val iter : t @ m -> f:(el @ m -> unit) @ local -> unit
       val bin_size_el : (el Size.sizer[@mode m])
       val bin_write_el : (el Write.writer[@mode m])
     end
@@ -112,13 +112,13 @@ module Definitions = struct
 
     val caller_identity : Shape.Uuid.t
     val module_name : string option
-    val init : len:int -> next:local_ (unit -> 'a el) -> 'a t
+    val init : len:int -> next:(unit -> 'a el) @ local -> 'a t
 
     include sig
       [@@@mode.default m = (global, m)]
 
       val length : 'a t @ m -> int
-      val iter : 'a t @ m -> f:local_ ('a el @ m -> unit) -> unit
+      val iter : 'a t @ m -> f:('a el @ m -> unit) @ local -> unit
       val bin_size_el : (('a, 'a el) Size.sizer1[@mode m])
       val bin_write_el : (('a, 'a el) Write.writer1[@mode m])
     end
@@ -133,13 +133,13 @@ module Definitions = struct
 
     val caller_identity : Shape.Uuid.t
     val module_name : string option
-    val init : len:int -> next:local_ (unit -> ('a, 'b) el) -> ('a, 'b) t
+    val init : len:int -> next:(unit -> ('a, 'b) el) @ local -> ('a, 'b) t
 
     include sig
       [@@@mode.default m = (global, m)]
 
       val length : ('a, 'b) t @ m -> int
-      val iter : ('a, 'b) t @ m -> f:local_ (('a, 'b) el @ m -> unit) -> unit
+      val iter : ('a, 'b) t @ m -> f:(('a, 'b) el @ m -> unit) @ local -> unit
       val bin_size_el : (('a, 'b, ('a, 'b) el) Size.sizer2[@mode m])
       val bin_write_el : (('a, 'b, ('a, 'b) el) Write.writer2[@mode m])
     end
@@ -154,13 +154,13 @@ module Definitions = struct
 
     val caller_identity : Shape.Uuid.t
     val module_name : string option
-    val init : len:int -> next:local_ (unit -> ('a, 'b, 'c) el) -> ('a, 'b, 'c) t
+    val init : len:int -> next:(unit -> ('a, 'b, 'c) el) @ local -> ('a, 'b, 'c) t
 
     include sig
       [@@@mode.default m = (global, m)]
 
       val length : ('a, 'b, 'c) t @ m -> int
-      val iter : ('a, 'b, 'c) t @ m -> f:local_ (('a, 'b, 'c) el @ m -> unit) -> unit
+      val iter : ('a, 'b, 'c) t @ m -> f:(('a, 'b, 'c) el @ m -> unit) @ local -> unit
       val bin_size_el : (('a, 'b, 'c, ('a, 'b, 'c) el) Size.sizer3[@mode m])
       val bin_write_el : (('a, 'b, 'c, ('a, 'b, 'c) el) Write.writer3[@mode m])
     end

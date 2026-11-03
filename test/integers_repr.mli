@@ -4,7 +4,7 @@ type%template 'a to_test =
   ; writer_local : ('a Bin_prot.Write.writer[@mode local])
   ; reader : 'a Bin_prot.Read.reader
   ; reader_local : ('a Bin_prot.Read.reader[@mode local])
-  ; globalize : local_ 'a -> 'a
+  ; globalize : 'a @ local -> 'a
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a
   ; min : 'a

@@ -1,16 +1,16 @@
 open! Base
 
 module%template Definitions = struct
-  [@@@mode.default m = (global, local)]
+  [@@@mode.default m = (global, local), r = (read, read_write)]
 
-  type ('a : any) sizer = 'a @ m -> int
-  type ('a : any, 'b : any) sizer1 = ('a sizer[@mode m]) -> ('b sizer[@mode m])
+  type ('a : any) sizer = 'a @ m r -> int
+  type ('a : any, 'b : any) sizer1 = ('a sizer[@mode m r]) -> ('b sizer[@mode m r])
 
   type ('a : any, 'b : any, 'c : any) sizer2 =
-    ('a sizer[@mode m]) -> (('b, 'c) sizer1[@mode m])
+    ('a sizer[@mode m r]) -> (('b, 'c) sizer1[@mode m r])
 
   type ('a : any, 'b : any, 'c : any, 'd : any) sizer3 =
-    ('a sizer[@mode m]) -> (('b, 'c, 'd) sizer2[@mode m])
+    ('a sizer[@mode m r]) -> (('b, 'c, 'd) sizer2[@mode m r])
 end
 
 module type Size = sig @@ portable
@@ -45,13 +45,24 @@ module type Size = sig @@ portable
   val bin_size_triple : (('a, 'b, 'c, 'a * 'b * 'c) sizer3[@mode m])
   val bin_size_list : ('a : value_or_null). (('a, 'a list) sizer1[@mode m])
 
-  val bin_size_array
-    : ('a : value_or_null mod separable).
-    (('a, 'a array) sizer1[@mode m])
+  [%%template:
+  [@@@kind.default k = (base_or_null, value_or_null mod external64)]
+  [@@@mode.default m]
 
-  val bin_size_iarray
-    : ('a : value_or_null mod separable).
-    (('a, 'a iarray) sizer1[@mode m])
+  val bin_size_array : ('a : k mod separable). (('a, 'a array) sizer1[@mode m])
+  val bin_size_iarray : ('a : k mod separable). (('a, 'a iarray) sizer1[@mode m])]
+
+  val bin_size_bigarray1
+    :  kind:('a, 'k) Stdlib.Bigarray.kind
+    -> (('a, 'k, _) Stdlib.Bigarray.Array1.t sizer[@mode m read])
+
+  val bin_size_bigarray2
+    :  kind:('a, 'k) Stdlib.Bigarray.kind
+    -> (('a, 'k, _) Stdlib.Bigarray.Array2.t sizer[@mode m read])
+
+  val bin_size_genarray
+    :  kind:('a, 'k) Stdlib.Bigarray.kind
+    -> (('a, 'k, _) Stdlib.Bigarray.Genarray.t sizer[@mode m read])
 
   val bin_size_float32_vec : (vec32 sizer[@mode m])
   val bin_size_float64_vec : (vec64 sizer[@mode m])

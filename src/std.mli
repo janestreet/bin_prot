@@ -169,8 +169,12 @@ val bin_vec : vec Type_class.t
 
 (** shapes *)
 
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
 val bin_shape_array : Bin_shape.t -> Bin_shape.t
-val bin_shape_iarray : Bin_shape.t -> Bin_shape.t
+val bin_shape_iarray : Bin_shape.t -> Bin_shape.t]
+
 val bin_shape_lazy : Bin_shape.t -> Bin_shape.t
 val bin_shape_lazy_t : Bin_shape.t -> Bin_shape.t
 val bin_shape_list : Bin_shape.t -> Bin_shape.t
@@ -180,8 +184,12 @@ val bin_shape_ref : Bin_shape.t -> Bin_shape.t
 
 (** readers *)
 
-val bin_read_array : ('a : value_or_null mod separable). ('a, 'a array) Read.reader1
-val bin_read_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) Read.reader1
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
+val bin_read_array : ('a : k mod separable). ('a, 'a array) Read.reader1
+val bin_read_iarray : ('a : k mod separable). ('a, 'a iarray) Read.reader1]
+
 val bin_read_lazy : ('a, 'a lazy_t) Read.reader1
 val bin_read_lazy_t : ('a, 'a lazy_t) Read.reader1
 val bin_read_list : ('a : value_or_null). ('a, 'a list) Read.reader1
@@ -191,13 +199,11 @@ val bin_read_ref : ('a : value_or_null). ('a, 'a ref) Read.reader1
 
 (** vtag readers *)
 
-val __bin_read_array__
-  : ('a : value_or_null mod separable).
-  ('a, 'a array) Read.vtag_reader1
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-val __bin_read_iarray__
-  : ('a : value_or_null mod separable).
-  ('a, 'a iarray) Read.vtag_reader1
+val __bin_read_array__ : ('a : k mod separable). ('a, 'a array) Read.vtag_reader1
+val __bin_read_iarray__ : ('a : k mod separable). ('a, 'a iarray) Read.vtag_reader1]
 
 val __bin_read_lazy__ : ('a, 'a lazy_t) Read.vtag_reader1
 val __bin_read_lazy_t__ : ('a, 'a lazy_t) Read.vtag_reader1
@@ -213,10 +219,15 @@ val __bin_read_ref__ : ('a : value_or_null). ('a, 'a ref) Read.vtag_reader1
 
 type ('a : any, 'b : any) writer1 := (('a : any, 'b : any) Write.writer1[@mode m])
 
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
 [@@@mode.default m]
 
-val bin_write_array : ('a : value_or_null mod separable). ('a, 'a array) writer1
-val bin_write_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) writer1
+val bin_write_array : ('a : k mod separable). ('a, 'a array) writer1
+val bin_write_iarray : ('a : k mod separable). ('a, 'a iarray) writer1]
+
+[@@@mode.default m]
+
 val bin_write_lazy : ('a, 'a lazy_t) writer1
 val bin_write_lazy_t : ('a, 'a lazy_t) writer1
 val bin_write_list : ('a : value_or_null). ('a, 'a list) writer1
@@ -228,13 +239,11 @@ val bin_write_ref : ('a : value_or_null). ('a, 'a ref) writer1
 
 (** type class readers *)
 
-val bin_reader_array
-  : ('a : value_or_null mod separable).
-  ('a, 'a array) Type_class.S1.reader
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-val bin_reader_iarray
-  : ('a : value_or_null mod separable).
-  ('a, 'a iarray) Type_class.S1.reader
+val bin_reader_array : ('a : k mod separable). ('a, 'a array) Type_class.S1.reader
+val bin_reader_iarray : ('a : k mod separable). ('a, 'a iarray) Type_class.S1.reader]
 
 val bin_reader_lazy : ('a, 'a lazy_t) Type_class.S1.reader
 val bin_reader_lazy_t : ('a, 'a lazy_t) Type_class.S1.reader
@@ -245,13 +254,11 @@ val bin_reader_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.reader
 
 (** type class writers *)
 
-val bin_writer_array
-  : ('a : value_or_null mod separable).
-  ('a, 'a array) Type_class.S1.writer
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-val bin_writer_iarray
-  : ('a : value_or_null mod separable).
-  ('a, 'a iarray) Type_class.S1.writer
+val bin_writer_array : ('a : k mod separable). ('a, 'a array) Type_class.S1.writer
+val bin_writer_iarray : ('a : k mod separable). ('a, 'a iarray) Type_class.S1.writer]
 
 val bin_writer_lazy : ('a, 'a lazy_t) Type_class.S1.writer
 val bin_writer_lazy_t : ('a, 'a lazy_t) Type_class.S1.writer
@@ -262,8 +269,12 @@ val bin_writer_ref : ('a : value_or_null). ('a, 'a ref) Type_class.S1.writer
 
 (** type classes *)
 
-val bin_array : ('a : value_or_null mod separable). ('a, 'a array) Type_class.S1.t
-val bin_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) Type_class.S1.t
+[%%template:
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
+val bin_array : ('a : k mod separable). ('a, 'a array) Type_class.S1.t
+val bin_iarray : ('a : k mod separable). ('a, 'a iarray) Type_class.S1.t]
+
 val bin_lazy : ('a, 'a lazy_t) Type_class.S1.t
 val bin_lazy_t : ('a, 'a lazy_t) Type_class.S1.t
 val bin_list : ('a : value_or_null). ('a, 'a list) Type_class.S1.t

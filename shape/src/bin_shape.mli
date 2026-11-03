@@ -104,13 +104,13 @@ end
     might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t : immutable_data [@@deriving compare ~localize, globalize, sexp]
+  type t : immutable_data [@@deriving compare ~localize, equal ~localize, globalize, sexp]
 
   val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t
-  val to_md5_local : local_ t -> local_ Md5_lib.t
+  val to_md5_local : t @ local -> Md5_lib.t @ local
   val of_md5 : Md5_lib.t -> t
-  val of_md5_local : local_ Md5_lib.t -> local_ t
+  val of_md5_local : Md5_lib.t @ local -> t @ local
 end
 
 module Expert : sig

@@ -37,8 +37,16 @@
    (import "env" "caml_floatarray_unsafe_set"
       (func $caml_floatarray_unsafe_set
          (param (ref eq)) (param (ref eq)) (param (ref eq)) (result (ref eq))))
+   (@if $portable-int
+   (@then
+      (import "env" "int_val_32_exn"
+         (func $int_val_32_exn (param (ref eq)) (param (ref eq)) (result i32)))
+   ))
+
+   (@string $bin_prot_blit "Bin_prot.blit")
 
    (type $block (array (mut (ref eq))))
+   (type $bytes (array (mut i8)))
 
    (func (export "bin_prot_blit_buf_float_array_stub")
       (param $src_pos (ref eq)) (param $src (ref eq))
@@ -46,8 +54,22 @@
       (param $vlen (ref eq)) (result (ref eq))
       (local $dst_pos i32) (local $len i32) (local $i i32)
       (local $view (ref eq)) (local $buffer (ref eq))
-      (local.set $dst_pos (i31.get_u (ref.cast (ref i31) (local.get $vdst_pos))))
-      (local.set $len (i31.get_u (ref.cast (ref i31) (local.get $vlen))))
+      (local.set $dst_pos
+         (@if $portable-int
+         (@then
+            (call $int_val_32_exn (local.get $vdst_pos)
+               (global.get $bin_prot_blit)))
+         (@else
+            (i31.get_u (ref.cast (ref i31) (local.get $vdst_pos))))
+         ))
+      (local.set $len
+         (@if $portable-int
+         (@then
+            (call $int_val_32_exn (local.get $vlen)
+               (global.get $bin_prot_blit)))
+         (@else
+            (i31.get_u (ref.cast (ref i31) (local.get $vlen))))
+         ))
       (if (i32.eqz (local.get $len))
          (then (return (ref.i31 (i32.const 0)))))
       (local.set $view
@@ -95,8 +117,22 @@
       (local $len i32) (local $i i32)
       (local $float64_array (ref eq)) (local $float64_uint8 (ref eq))
       (local $view (ref eq))
-      (local.set $src_pos (i31.get_u (ref.cast (ref i31) (local.get $vsrc_pos))))
-      (local.set $len (i31.get_u (ref.cast (ref i31) (local.get $vlen))))
+      (local.set $src_pos
+         (@if $portable-int
+         (@then
+            (call $int_val_32_exn (local.get $vsrc_pos)
+               (global.get $bin_prot_blit)))
+         (@else
+            (i31.get_u (ref.cast (ref i31) (local.get $vsrc_pos))))
+         ))
+      (local.set $len
+         (@if $portable-int
+         (@then
+            (call $int_val_32_exn (local.get $vlen)
+               (global.get $bin_prot_blit)))
+         (@else
+            (i31.get_u (ref.cast (ref i31) (local.get $vlen))))
+         ))
       (if (i32.eqz (local.get $len))
          (then (return (ref.i31 (i32.const 0)))))
       (local.set $float64_array

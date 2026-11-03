@@ -1,7 +1,7 @@
 module Reader_local : sig
   type%template ('a : value_or_null) t =
     { reader_local : ('a Bin_prot.Read.reader[@mode local])
-    ; globalize : local_ 'a -> 'a
+    ; globalize : 'a @ local -> 'a
     }
 end
 

@@ -73,12 +73,12 @@ end = struct
 end
 
 module Digest : sig @@ portable
-  type t = Md5_lib.t [@@deriving compare ~localize, globalize, sexp]
+  type t = Md5_lib.t [@@deriving compare ~localize, equal ~localize, globalize, sexp]
 
   val to_md5 : t -> Md5_lib.t
-  val to_md5_local : local_ t -> local_ Md5_lib.t
+  val to_md5_local : t @ local -> Md5_lib.t @ local
   val of_md5 : Md5_lib.t -> t
-  val of_md5_local : local_ Md5_lib.t -> local_ t
+  val of_md5_local : Md5_lib.t @ local -> t @ local
   val to_hex : t -> string
   val constructor : string -> t list -> t
   val list : t list -> t
@@ -469,7 +469,7 @@ module Expression = struct
         | Var of (Location.t * Vid.t)
         | Rec_app of Tid.t * t list
         | Top_app of t Group.t * Tid.t * t list
-      [@@unsafe_allow_any_mode_crossing] [@@deriving equal ~localize, sexp, variants]
+      [@@deriving equal ~localize, sexp, variants]
     end
   end
 

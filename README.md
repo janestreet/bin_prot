@@ -1,5 +1,4 @@
-Bin_prot - OCaml Type Converter for Binary Protocols
-====================================================
+# Bin_prot - OCaml Type Converter for Binary Protocols
 
 What is `Bin_prot`?
 -------------------

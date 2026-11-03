@@ -217,7 +217,10 @@ let bin_size_float_array ar =
   bin_size_len len + (8 * len)
 ;;
 
-let bin_size_array_loop bin_size_el ar ~total_len ~n =
+[%%template
+[@@@kind.default k = base_or_null]
+
+let bin_size_array_loop bin_size_el (ar : (_ : k mod separable) array) ~total_len ~n =
   let total_len_ref = ref total_len in
   for i = 0 to n - 1 do
     let el = Base.Array.unsafe_get ar i in
@@ -226,14 +229,21 @@ let bin_size_array_loop bin_size_el ar ~total_len ~n =
   !total_len_ref
 ;;
 
+let bin_size_array bin_size_el (ar : (_ : k mod separable) array) =
+  let n = Base.Array.length ar in
+  let total_len = bin_size_len n in
+  (bin_size_array_loop [@kind k]) bin_size_el ar ~total_len ~n
+;;]
+
+let%template bin_size_array = (bin_size_array [@kind value_or_null])
+[@@kind __ = value_or_null mod external64]
+;;
+
 let bin_size_array (type a : value_or_null mod separable) bin_size_el ar =
   let module Obj = Base.Obj in
   if (Obj.magic (bin_size_el : a sizer) : float sizer) == (bin_size_float :> float sizer)
   then bin_size_float_array (Obj.magic (ar : a array) : float array) [@nontail]
-  else (
-    let n = Base.Array.length ar in
-    let total_len = bin_size_len n in
-    bin_size_array_loop bin_size_el ar ~total_len ~n)
+  else bin_size_array bin_size_el ar
 ;;
 
 let bin_size_float_iarray ar =
@@ -244,13 +254,32 @@ let bin_size_float_iarray ar =
 [%%template
 [@@@mode.default m = (global, local)]
 
-let bin_size_iarray_loop bin_size_el ar ~total_len ~n =
+[%%template
+[@@@mode.default m]
+[@@@kind.default k = base_or_null]
+
+let bin_size_iarray_loop
+  bin_size_el
+  (ar : (_ : k mod separable) Base.Iarray.t @ m)
+  ~total_len
+  ~n
+  =
   let total_len_ref = ref total_len in
   for i = 0 to n - 1 do
     let el = Base.Iarray.unsafe_get ar i in
     total_len_ref := !total_len_ref + bin_size_el el
   done;
   !total_len_ref
+;;
+
+let bin_size_iarray bin_size_el (ar : (_ : k mod separable) Base.Iarray.t @ m) =
+  let n = Base.Iarray.length ar in
+  let total_len = bin_size_len n in
+  (bin_size_iarray_loop [@kind k] [@mode m]) bin_size_el ar ~total_len ~n
+;;]
+
+let bin_size_iarray = (bin_size_iarray [@kind value_or_null] [@mode m])
+[@@kind __ = value_or_null mod external64]
 ;;
 
 let bin_size_iarray (type a : value_or_null mod separable) bin_size_el ar =
@@ -260,10 +289,7 @@ let bin_size_iarray (type a : value_or_null mod separable) bin_size_el ar =
   then
     bin_size_float_iarray
       (Obj.magic (ar : a Base.Iarray.t) : float Base.Iarray.t) [@nontail]
-  else (
-    let n = Base.Iarray.length ar in
-    let total_len = bin_size_len n in
-    (bin_size_iarray_loop [@mode m]) bin_size_el ar ~total_len ~n)
+  else (bin_size_iarray [@mode m]) bin_size_el ar
 ;;]
 
 external array1_dim
@@ -289,8 +315,12 @@ let bin_size_gen_vec vec multiplier =
   bin_size_len len + (multiplier * len)
 ;;
 
-let bin_size_float32_vec vec = bin_size_gen_vec vec 4
-let bin_size_float64_vec vec = bin_size_gen_vec vec 8
+let bin_size_bigarray1 ~kind array =
+  bin_size_gen_vec array (Stdlib.Bigarray.kind_size_in_bytes kind)
+;;
+
+let bin_size_float32_vec = bin_size_bigarray1 ~kind:Float32
+let bin_size_float64_vec = bin_size_bigarray1 ~kind:Float64
 let bin_size_vec = bin_size_float64_vec
 
 let bin_size_gen_mat mat multiplier =
@@ -300,8 +330,24 @@ let bin_size_gen_mat mat multiplier =
   bin_size_len dim1 + bin_size_len dim2 + (multiplier * size)
 ;;
 
-let bin_size_float32_mat mat = bin_size_gen_mat mat 4
-let bin_size_float64_mat mat = bin_size_gen_mat mat 8
+let bin_size_genarray ~kind array =
+  let num_dims = Bigarray.Genarray.num_dims array in
+  let size = stack_ (ref (bin_size_len num_dims)) in
+  let num_elements = stack_ (ref 1) in
+  for dimension = 0 to num_dims - 1 do
+    let length = Bigarray.Genarray.nth_dim array dimension in
+    size := !size + bin_size_len length;
+    num_elements := !num_elements * length
+  done;
+  !size + (Stdlib.Bigarray.kind_size_in_bytes kind * !num_elements)
+;;
+
+let bin_size_bigarray2 ~kind array =
+  bin_size_gen_mat array (Stdlib.Bigarray.kind_size_in_bytes kind)
+;;
+
+let bin_size_float32_mat = bin_size_bigarray2 ~kind:Float32
+let bin_size_float64_mat = bin_size_bigarray2 ~kind:Float64
 let bin_size_mat = bin_size_float64_mat
 let bin_size_bigstring buf = bin_size_gen_vec buf 1
 let bin_size_variant_int _ = 4
@@ -334,7 +380,14 @@ let[@mode local] bin_size_nat0 = bin_size_nat0
 let[@mode local] bin_size_ref = bin_size_ref
 let[@mode local] bin_size_lazy_t = bin_size_lazy_t
 let[@mode local] bin_size_lazy = bin_size_lazy
-let[@mode local] bin_size_array = bin_size_array
+
+let[@mode local] bin_size_array = (bin_size_array [@kind k])
+[@@kind k = (base_or_null, value_or_null mod external64)]
+;;
+
+let[@mode local] bin_size_bigarray1 = bin_size_bigarray1
+let[@mode local] bin_size_bigarray2 = bin_size_bigarray2
+let[@mode local] bin_size_genarray = bin_size_genarray
 let[@mode local] bin_size_float32_vec = bin_size_float32_vec
 let[@mode local] bin_size_float64_vec = bin_size_float64_vec
 let[@mode local] bin_size_vec = bin_size_vec

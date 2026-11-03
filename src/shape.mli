@@ -41,8 +41,13 @@ val bin_shape_ref : t -> t
 val bin_shape_option : t -> t
 val bin_shape_or_null : t -> t
 val bin_shape_list : t -> t
+
+[%%template:
+[@@@kind.default __ = (base_or_null, value_or_null mod external64)]
+
 val bin_shape_array : t -> t
-val bin_shape_iarray : t -> t
+val bin_shape_iarray : t -> t]
+
 val bin_shape_lazy : t -> t
 val bin_shape_pair : t -> t -> t
 val bin_shape_triple : t -> t -> t -> t

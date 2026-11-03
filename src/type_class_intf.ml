@@ -1,10 +1,11 @@
 open! Base
 
 module Definitions = struct
-  type ('a : any) writer =
-    { size : 'a Size.sizer
-    ; write : 'a Write.writer
+  type%template ('a : any) writer =
+    { size : ('a Size.sizer[@mode m])
+    ; write : ('a Write.writer[@mode m])
     }
+  [@@mode m = (local, global)]
 
   type ('a : any) reader =
     { read : 'a Read.reader
@@ -17,25 +18,33 @@ module Definitions = struct
     ; reader : 'a reader
     }
 
-  type ('a : any) writer0 = 'a writer
+  type%template ('a : any) writer0 = ('a writer[@mode m]) [@@mode m = (local, global)]
+
   type ('a : any) reader0 = 'a reader
   type ('a : any) t0 = 'a t
 
   module S1 = struct
-    type ('a : any, 'b : any) writer = 'a writer0 -> 'b writer0
+    type%template ('a : any, 'b : any) writer =
+      ('a writer0[@mode m]) -> ('b writer0[@mode m])
+    [@@mode m = (local, global)]
+
     type ('a : any, 'b : any) reader = 'a reader0 -> 'b reader0
     type ('a : any, 'b : any) t = 'a t0 -> 'b t0
   end
 
   module S2 = struct
-    type ('a : any, 'b : any, 'c : any) writer = 'a writer0 -> ('b, 'c) S1.writer
+    type%template ('a : any, 'b : any, 'c : any) writer =
+      ('a writer0[@mode m]) -> (('b, 'c) S1.writer[@mode m])
+    [@@mode m = (local, global)]
+
     type ('a : any, 'b : any, 'c : any) reader = 'a reader0 -> ('b, 'c) S1.reader
     type ('a : any, 'b : any, 'c : any) t = 'a t0 -> ('b, 'c) S1.t
   end
 
   module S3 = struct
-    type ('a : any, 'b : any, 'c : any, 'd : any) writer =
-      'a writer0 -> ('b, 'c, 'd) S2.writer
+    type%template ('a : any, 'b : any, 'c : any, 'd : any) writer =
+      ('a writer0[@mode m]) -> (('b, 'c, 'd) S2.writer[@mode m])
+    [@@mode m = (local, global)]
 
     type ('a : any, 'b : any, 'c : any, 'd : any) reader =
       'a reader0 -> ('b, 'c, 'd) S2.reader
@@ -158,17 +167,33 @@ module type Type_class = sig @@ portable
   val bin_shape_list : Shape.t -> Shape.t
   val bin_list : ('a : value_or_null). ('a, 'a list) S1.t
 
-  (*$ mk_base1 ~layout:"value_or_null mod separable" "array" *)
-  val bin_writer_array : ('a : value_or_null mod separable). ('a, 'a array) S1.writer
-  val bin_reader_array : ('a : value_or_null mod separable). ('a, 'a array) S1.reader
-  val bin_shape_array : Shape.t -> Shape.t
-  val bin_array : ('a : value_or_null mod separable). ('a, 'a array) S1.t
+  (*$
+    mk_base1_k
+      ~layouts:"base_or_null, value_or_null mod external64"
+      ~mods:"mod separable"
+      "array"
+  *)
+  [%%template:
+  [@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-  (*$ mk_base1 ~layout:"value_or_null mod separable" "iarray" *)
-  val bin_writer_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) S1.writer
-  val bin_reader_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) S1.reader
+  val bin_writer_array : ('a : k mod separable). ('a, 'a array) S1.writer
+  val bin_reader_array : ('a : k mod separable). ('a, 'a array) S1.reader
+  val bin_shape_array : Shape.t -> Shape.t
+  val bin_array : ('a : k mod separable). ('a, 'a array) S1.t]
+
+  (*$
+    mk_base1_k
+      ~layouts:"base_or_null, value_or_null mod external64"
+      ~mods:"mod separable"
+      "iarray"
+  *)
+  [%%template:
+  [@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
+  val bin_writer_iarray : ('a : k mod separable). ('a, 'a iarray) S1.writer
+  val bin_reader_iarray : ('a : k mod separable). ('a, 'a iarray) S1.reader
   val bin_shape_iarray : Shape.t -> Shape.t
-  val bin_iarray : ('a : value_or_null mod separable). ('a, 'a iarray) S1.t
+  val bin_iarray : ('a : k mod separable). ('a, 'a iarray) S1.t]
 
   (*$ mk_base_tp "float32_vec" "vec32" *)
   val bin_writer_float32_vec : vec32 writer

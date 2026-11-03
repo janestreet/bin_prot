@@ -18,7 +18,7 @@ let run_test ~here reader_local writer values =
 let run_test_non_integer ~(here : [%call_pos]) (test : 'a Non_integers_repr.to_test) =
   match test.reader_local with
   | None -> failwith "Expected to have local reader"
-  | Some { reader_local; globalize = (_ : local_ 'a -> 'a) } ->
+  | Some { reader_local; globalize = (_ : 'a @ local -> 'a) } ->
     run_test ~here reader_local test.writer test.values
 ;;
 

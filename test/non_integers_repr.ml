@@ -21,7 +21,7 @@ module Write = Bin_prot.Write
 module Reader_local = struct
   type%template ('a : value_or_null) t =
     { reader_local : ('a Read.reader[@mode local])
-    ; globalize : local_ 'a -> 'a
+    ; globalize : 'a @ local -> 'a
     }
 end
 
@@ -49,9 +49,9 @@ module Vec = struct
   let mk_float32 = mk_gen_float float32
   let mk_float64 = mk_gen_float float64
 
-  external dim : local_ ('a, 'b, 'c) Array1.t -> int = "%caml_ba_dim_1"
-  external kind : local_ ('a, 'b, 'c) Array1.t -> ('a, 'b) kind = "caml_ba_kind"
-  external get : local_ ('a, 'b, 'c) Array1.t -> int -> 'a = "%caml_ba_ref_1"
+  external dim : ('a, 'b, 'c) Array1.t @ local -> int = "%caml_ba_dim_1"
+  external kind : ('a, 'b, 'c) Array1.t @ local -> ('a, 'b) kind = "caml_ba_kind"
+  external get : ('a, 'b, 'c) Array1.t @ local -> int -> 'a = "%caml_ba_ref_1"
 
   let globalize t =
     let copy = Array1.create (kind t) Bigarray.fortran_layout (dim t) in
@@ -82,10 +82,10 @@ module Mat = struct
   let mk_float32 = mk_gen_float float32
   let mk_float64 = mk_gen_float float64
 
-  external dim1 : local_ ('a, 'b, 'c) Array2.t -> int = "%caml_ba_dim_1"
-  external dim2 : local_ ('a, 'b, 'c) Array2.t -> int = "%caml_ba_dim_2"
-  external kind : local_ ('a, 'b, 'c) Array2.t -> ('a, 'b) kind = "caml_ba_kind"
-  external get : local_ ('a, 'b, 'c) Array2.t -> int -> int -> 'a = "%caml_ba_ref_2"
+  external dim1 : ('a, 'b, 'c) Array2.t @ local -> int = "%caml_ba_dim_1"
+  external dim2 : ('a, 'b, 'c) Array2.t @ local -> int = "%caml_ba_dim_2"
+  external kind : ('a, 'b, 'c) Array2.t @ local -> ('a, 'b) kind = "caml_ba_kind"
+  external get : ('a, 'b, 'c) Array2.t @ local -> int -> int -> 'a = "%caml_ba_ref_2"
 
   let globalize t =
     let copy = Array2.create (kind t) Bigarray.fortran_layout (dim1 t) (dim2 t) in
@@ -664,7 +664,7 @@ module%template Tests = struct
           ; x : int32
           }
       | Inner_other of unit
-    [@@deriving bin_io ~localize, sexp_of, variants]
+    [@@deriving bin_io ~localize, sexp_of, variants ~fold]
 
     let maximum_bin_size_of_inner =
       1
@@ -688,7 +688,7 @@ module%template Tests = struct
           { y : inner
           ; z : unit
           }
-    [@@deriving bin_io ~localize, sexp_of, variants]
+    [@@deriving bin_io ~localize, sexp_of, variants ~fold]
 
     let maximum_bin_size =
       1

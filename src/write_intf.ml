@@ -3,19 +3,19 @@ open! Base
 module%template Definitions = struct
   open Common
 
-  [@@@mode.default m = (global, local)]
+  [@@@mode.default m = (global, local), r = (read, read_write)]
 
   (** Type of writer functions for the binary protocol. They take a buffer, a write
       position and a value, and return the next position after writing out the value. *)
-  type ('a : any) writer = buf @ local -> pos:pos -> 'a @ m -> pos
+  type ('a : any) writer = buf @ local -> pos:pos -> 'a @ m r -> pos
 
-  type ('a : any, 'b : any) writer1 = ('a writer[@mode m]) -> ('b writer[@mode m])
+  type ('a : any, 'b : any) writer1 = ('a writer[@mode m r]) -> ('b writer[@mode m r])
 
   type ('a : any, 'b : any, 'c : any) writer2 =
-    ('a writer[@mode m]) -> (('b, 'c) writer1[@mode m])
+    ('a writer[@mode m r]) -> (('b, 'c) writer1[@mode m r])
 
   type ('a : any, 'b : any, 'c : any, 'd : any) writer3 =
-    ('a writer[@mode m]) -> (('b, 'c, 'd) writer2[@mode m])
+    ('a writer[@mode m r]) -> (('b, 'c, 'd) writer2[@mode m r])
 end
 
 module type Write = sig @@ portable
@@ -49,21 +49,24 @@ module type Write = sig @@ portable
   val bin_write_triple : (('a, 'b, 'c, 'a * 'b * 'c) writer3[@mode m])
   val bin_write_list : ('a : value_or_null). (('a, 'a list) writer1[@mode m])
 
-  val bin_write_array
-    : ('a : value_or_null mod separable).
-    (('a, 'a array) writer1[@mode m])
+  [%%template:
+  [@@@kind.default k = (base_or_null, value_or_null mod external64)]
+  [@@@mode.default m]
 
-  val bin_write_iarray
-    : ('a : value_or_null mod separable).
-    (('a, 'a iarray) writer1[@mode m])
+  val bin_write_array : ('a : k mod separable). (('a, 'a array) writer1[@mode m])
+  val bin_write_iarray : ('a : k mod separable). (('a, 'a iarray) writer1[@mode m])]
 
   val bin_write_bigarray1
     :  kind:('a, 'k) Stdlib.Bigarray.kind
-    -> (('a, 'k, _) Stdlib.Bigarray.Array1.t writer[@mode m])
+    -> (('a, 'k, _) Stdlib.Bigarray.Array1.t writer[@mode m read])
 
   val bin_write_bigarray2
     :  kind:('a, 'k) Stdlib.Bigarray.kind
-    -> (('a, 'k, _) Stdlib.Bigarray.Array2.t writer[@mode m])
+    -> (('a, 'k, _) Stdlib.Bigarray.Array2.t writer[@mode m read])
+
+  val bin_write_genarray
+    :  kind:('a, 'k) Stdlib.Bigarray.kind
+    -> (('a, 'k, _) Stdlib.Bigarray.Genarray.t writer[@mode m read])
 
   val bin_write_float32_vec : (vec32 writer[@mode m])
   val bin_write_float64_vec : (vec64 writer[@mode m])

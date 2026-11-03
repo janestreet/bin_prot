@@ -235,21 +235,6 @@ module%test _ = struct
     | s -> print_s [%sexp "unexpected valid parse?", (s : string)]
   ;;
 
-  let%expect_test ("max string len 32-bit" [@tags "32-bits-only"]) =
-    check_large_string_len ((16 * 1024 * 1024) - 4);
-    [%expect
-      {|
-      "\253\252\255\255\000"
-      <too-long>
-      |}];
-    check_large_string_len ((16 * 1024 * 1024) - 5);
-    [%expect
-      {|
-      "\253\251\255\255\000"
-      <good>
-      |}]
-  ;;
-
   let%expect_test ("max string in JS" [@tags "js-only", "no-wasm"]) =
     check_large_string_len ((2 * 1024 * 1024 * 1024) - 4);
     [%expect
@@ -265,7 +250,7 @@ module%test _ = struct
       |}]
   ;;
 
-  let%expect_test ("max string in WASM" [@tags "wasm-only"]) =
+  let%expect_test ("max string in WASM" [@tags "wasm-only", "32-bits-only"]) =
     check_large_string_len (Int.max_value_30_bits - 3);
     [%expect
       {|
@@ -280,7 +265,24 @@ module%test _ = struct
       |}]
   ;;
 
-  let%expect_test ("max string len 64-bit" [@tags "64-bits-only"]) =
+  let%expect_test ("max string in WASM portable-int (emulated 64b but only addressable \
+                    on 32b space)" [@tags "wasm-only", "64-bits-only"])
+    =
+    check_large_string_len (Base.Int.pow 2 31 - 8);
+    [%expect
+      {|
+      "\253\248\255\255\127"
+      <too-long>
+      |}];
+    check_large_string_len (Base.Int.pow 2 31 - 9);
+    [%expect
+      {|
+      "\253\247\255\255\127"
+      <good>
+      |}]
+  ;;
+
+  let%expect_test ("max string len 64-bit" [@tags "no-js", "64-bits-only"]) =
     check_large_string_len (Base.Int.pow 2 57 - 8);
     [%expect
       {|
@@ -307,7 +309,7 @@ let%expect_test "char" =
     [ 'x', "x", 1; 'y', "y", 1 ]
 ;;
 
-let%expect_test ("int" [@tags "no-js"]) =
+let%expect_test ("int" [@tags "64-bits-only"]) =
   let small_int_tests =
     [ mk_int_test ~n:~-0x01 ~len:2
     ; mk_int_test ~n:0x00 ~len:1
@@ -388,7 +390,7 @@ let%expect_test ("int" [@tags "no-js"]) =
       (fun () -> Read.bin_read_int bad_buf ~pos_ref:(ref 0)))
 ;;
 
-let%expect_test ("nat0" [@tags "no-js"]) =
+let%expect_test ("nat0" [@tags "64-bits-only"]) =
   let small_int_tests =
     [ mk_nat0_test ~n:0x00 ~len:1
     ; mk_nat0_test ~n:0x01 ~len:1
@@ -636,7 +638,7 @@ let%expect_test "nativeint" =
 let%expect_test "ref" =
   check_all_with_local
     (module struct
-      type t = int ref [@@deriving equal, sexp_of]
+      type t = int ref [@@deriving equal ~localize, sexp_of]
     end)
     1
     "ref"
@@ -649,7 +651,7 @@ let%expect_test "ref" =
 let%expect_test "option" =
   check_all_with_local
     (module struct
-      type t = int option [@@deriving equal, sexp_of]
+      type t = int option [@@deriving equal ~localize, sexp_of]
     end)
     2
     "option"
@@ -662,7 +664,7 @@ let%expect_test "option" =
 let%expect_test "or_null" =
   check_all_with_local
     (module struct
-      type t = int or_null [@@deriving equal, sexp_of]
+      type t = int or_null [@@deriving equal ~localize, sexp_of]
     end)
     2
     "or_null"
@@ -675,7 +677,7 @@ let%expect_test "or_null" =
 let%expect_test "pair" =
   check_all_with_local
     (module struct
-      type t = float * int [@@deriving equal, sexp_of]
+      type t = float * int [@@deriving equal ~localize, sexp_of]
     end)
     9
     "pair"
@@ -690,7 +692,7 @@ let%expect_test "pair" =
 let%expect_test "triple" =
   check_all_with_local
     (module struct
-      type t = float * int * string [@@deriving equal, sexp_of]
+      type t = float * int * string [@@deriving equal ~localize, sexp_of]
     end)
     14
     "triple"
@@ -709,7 +711,7 @@ let%expect_test "triple" =
 let%expect_test "list" =
   check_all_with_local
     (module struct
-      type t = int list [@@deriving equal, sexp_of]
+      type t = int list [@@deriving equal ~localize, sexp_of]
     end)
     12
     "list"
@@ -723,7 +725,7 @@ let%expect_test ("array" [@tags "no-js"]) =
   let bin_read_int_array = Read.bin_read_array Read.bin_read_int in
   check_all_with_local
     (module struct
-      type t = int array [@@deriving equal, sexp_of]
+      type t = int array [@@deriving equal ~localize, sexp_of]
     end)
     12
     "array"
@@ -756,7 +758,7 @@ let%expect_test ("iarray" [@tags "no-js"]) =
   let bin_read_int_iarray = Read.bin_read_iarray Read.bin_read_int in
   check_all_with_local
     (module struct
-      type t = int iarray [@@deriving equal, sexp_of]
+      type t = int iarray [@@deriving equal ~localize, sexp_of]
     end)
     12
     "iarray"
@@ -789,7 +791,7 @@ let%expect_test ("iarray" [@tags "no-js"]) =
 ;;
 
 module Array1_extras (M : sig
-    type t [@@deriving equal, sexp_of]
+    type%template t [@@deriving (equal [@mode.explicit global]), sexp_of]
   end) =
 struct
   let to_list : type a b c. (a, b, c) Array1.t -> a list =
@@ -864,7 +866,7 @@ let%expect_test "vec" =
 ;;
 
 module Array2_extras (M : sig
-    type t [@@deriving equal, sexp_of]
+    type%template t [@@deriving (equal [@mode.explicit global]), sexp_of]
   end) =
 struct
   let to_list : type a b c. (a, b, c) Array2.t -> a list list =
@@ -940,6 +942,53 @@ let%expect_test "mat" =
     Write.bin_write_mat
     (Write.bin_write_mat [@mode local])
     [ mat, "[| ... |]", size; mk_float64_mat 0 0, "[||]", 2 ]
+;;
+
+module Genarray_extras (M : sig
+    type%template t [@@deriving (equal [@mode.explicit global]), sexp_of]
+  end) =
+struct
+  module Flat = Array1_extras (M)
+
+  let to_repr array =
+    let dimensions = Genarray.dims array in
+    let num_elements = Array.fold dimensions ~init:1 ~f:( * ) in
+    dimensions, Flat.to_list (reshape_1 array num_elements)
+  ;;
+
+  let equal left right =
+    let left_dimensions, left_values = to_repr left in
+    let right_dimensions, right_values = to_repr right in
+    Array.equal Int.equal left_dimensions right_dimensions
+    && List.equal M.equal left_values right_values
+  ;;
+
+  let sexp_of_t array = [%sexp_of: int array * M.t list] (to_repr array)
+end
+
+let%expect_test "genarray" =
+  let open Expect_test_helpers_base in
+  let array = Genarray.create Float64 Fortran_layout [| 2; 3 |] in
+  (* [Genarray.set] traps under wasm_of_ocaml, so initialize through a 1D view. *)
+  let flat = reshape_1 array 6 in
+  for i = 1 to 6 do
+    Array1.set flat i (Float.of_int i)
+  done;
+  let size = (Size.bin_size_genarray [@mode local]) ~kind:Float64 array in
+  print_s [%sexp (size : int)];
+  [%expect {| 51 |}];
+  check_all_with_local
+    (module struct
+      type t = (float, float64_elt, fortran_layout) Genarray.t
+
+      include Genarray_extras (Float)
+    end)
+    size
+    "genarray"
+    ((Read.bin_read_genarray [@mode global]) ~kind:Float64 ~layout:Fortran_layout)
+    (Write.bin_write_genarray ~kind:Float64)
+    ((Write.bin_write_genarray [@mode local]) ~kind:Float64)
+    [ array, "<bigarray>", size ]
 ;;
 
 let%expect_test "bigstring" =

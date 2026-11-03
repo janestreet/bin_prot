@@ -1,6 +1,6 @@
 @@ portable
 
-type t = Md5_lib.t [@@deriving compare ~localize]
+type t = Md5_lib.t [@@deriving compare ~localize, equal ~localize]
 
 include Binable.Minimal.S with type t := t
 

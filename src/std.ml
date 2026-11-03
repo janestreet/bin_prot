@@ -226,35 +226,38 @@ let __bin_read_list__ _f _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "list" !pos_ref
 ;;
 
-let bin_array = Type_class.bin_array
-let bin_shape_array = Type_class.bin_shape_array
-let bin_writer_array = Type_class.bin_writer_array
+[%%template
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
 
-let%template[@mode m = (global, local)] bin_write_array =
-  (Write.bin_write_array [@mode m])
+let bin_array = (Type_class.bin_array [@kind k])
+let bin_shape_array = (Type_class.bin_shape_array [@kind k])
+let bin_writer_array = (Type_class.bin_writer_array [@kind k])
+
+let[@mode m = (global, local)] bin_write_array =
+  (Write.bin_write_array [@kind k] [@mode m])
 ;;
 
-let bin_reader_array = Type_class.bin_reader_array
-let bin_read_array = Read.bin_read_array
+let bin_reader_array = (Type_class.bin_reader_array [@kind k])
+let bin_read_array = (Read.bin_read_array [@kind k])
 
 let __bin_read_array__ _f _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "array" !pos_ref
 ;;
 
-let bin_iarray = Type_class.bin_iarray
-let bin_shape_iarray = Type_class.bin_shape_iarray
-let bin_writer_iarray = Type_class.bin_writer_iarray
+let bin_iarray = (Type_class.bin_iarray [@kind k])
+let bin_shape_iarray = (Type_class.bin_shape_iarray [@kind k])
+let bin_writer_iarray = (Type_class.bin_writer_iarray [@kind k])
 
-let%template[@mode m = (global, local)] bin_write_iarray =
-  (Write.bin_write_iarray [@mode m])
+let[@mode m = (global, local)] bin_write_iarray =
+  (Write.bin_write_iarray [@kind k] [@mode m])
 ;;
 
-let bin_reader_iarray = Type_class.bin_reader_iarray
-let bin_read_iarray = Read.bin_read_iarray
+let bin_reader_iarray = (Type_class.bin_reader_iarray [@kind k])
+let bin_read_iarray = (Read.bin_read_iarray [@kind k])
 
 let __bin_read_iarray__ _f _buf ~pos_ref _vint =
   Common.raise_variant_wrong_type "iarray" !pos_ref
-;;
+;;]
 
 let bin_bigstring = Type_class.bin_bigstring
 let bin_shape_bigstring = Type_class.bin_shape_bigstring

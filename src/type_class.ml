@@ -307,15 +307,21 @@ let bin_list bin_el =
   }
 ;;
 
-(*$ mk_base1 "array" *)
+(*$ mk_base1_k ~layouts:"base_or_null, value_or_null mod external64" "array" *)
+[%%template
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
 let bin_writer_array bin_writer_el =
-  { size = (fun v -> Size.bin_size_array bin_writer_el.size v)
-  ; write = (fun buf ~pos v -> Write.bin_write_array bin_writer_el.write buf ~pos v)
+  { size = (fun v -> (Size.bin_size_array [@kind k]) bin_writer_el.size v)
+  ; write =
+      (fun buf ~pos v -> (Write.bin_write_array [@kind k]) bin_writer_el.write buf ~pos v)
   }
 ;;
 
 let bin_reader_array bin_reader_el =
-  { read = (fun buf ~pos_ref -> Read.bin_read_array bin_reader_el.read buf ~pos_ref)
+  { read =
+      (fun buf ~pos_ref ->
+        (Read.bin_read_array [@kind k]) bin_reader_el.read buf ~pos_ref)
   ; vtag_read = variant_wrong_type "array"
   }
 ;;
@@ -323,21 +329,28 @@ let bin_reader_array bin_reader_el =
 let bin_shape_array x1 = Shape.bin_shape_array x1
 
 let bin_array bin_el =
-  { shape = bin_shape_array bin_el.shape
-  ; writer = bin_writer_array bin_el.writer
-  ; reader = bin_reader_array bin_el.reader
+  { shape = (bin_shape_array [@kind k]) bin_el.shape
+  ; writer = (bin_writer_array [@kind k]) bin_el.writer
+  ; reader = (bin_reader_array [@kind k]) bin_el.reader
   }
-;;
+;;]
 
-(*$ mk_base1 "iarray" *)
+(*$ mk_base1_k ~layouts:"base_or_null, value_or_null mod external64" "iarray" *)
+[%%template
+[@@@kind.default k = (base_or_null, value_or_null mod external64)]
+
 let bin_writer_iarray bin_writer_el =
-  { size = (fun v -> Size.bin_size_iarray bin_writer_el.size v)
-  ; write = (fun buf ~pos v -> Write.bin_write_iarray bin_writer_el.write buf ~pos v)
+  { size = (fun v -> (Size.bin_size_iarray [@kind k]) bin_writer_el.size v)
+  ; write =
+      (fun buf ~pos v ->
+        (Write.bin_write_iarray [@kind k]) bin_writer_el.write buf ~pos v)
   }
 ;;
 
 let bin_reader_iarray bin_reader_el =
-  { read = (fun buf ~pos_ref -> Read.bin_read_iarray bin_reader_el.read buf ~pos_ref)
+  { read =
+      (fun buf ~pos_ref ->
+        (Read.bin_read_iarray [@kind k]) bin_reader_el.read buf ~pos_ref)
   ; vtag_read = variant_wrong_type "iarray"
   }
 ;;
@@ -345,11 +358,11 @@ let bin_reader_iarray bin_reader_el =
 let bin_shape_iarray x1 = Shape.bin_shape_iarray x1
 
 let bin_iarray bin_el =
-  { shape = bin_shape_iarray bin_el.shape
-  ; writer = bin_writer_iarray bin_el.writer
-  ; reader = bin_reader_iarray bin_el.reader
+  { shape = (bin_shape_iarray [@kind k]) bin_el.shape
+  ; writer = (bin_writer_iarray [@kind k]) bin_el.writer
+  ; reader = (bin_reader_iarray [@kind k]) bin_el.reader
   }
-;;
+;;]
 
 (*$ mk_base "float32_vec" *)
 let bin_writer_float32_vec =
