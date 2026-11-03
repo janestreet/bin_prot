@@ -167,9 +167,6 @@ let bin_size_ref bin_size_el r = bin_size_el !r
 let bin_size_lazy_t bin_size_el lv = bin_size_el (Base.Lazy.force lv)
 let bin_size_lazy = bin_size_lazy_t
 
-[%%template
-[@@@mode.default m = (global, local)]
-
 let bin_size_option bin_size_el = function
   | None -> 1
   | Some v -> 1 + bin_size_el v
@@ -194,7 +191,7 @@ let bin_size_list =
       loop ~bin_size_el ~size_acc:(size_acc + bin_size_el hd) ~len_acc:(len_acc + 1) tl
   in
   fun bin_size_el lst -> loop ~bin_size_el ~size_acc:0 ~len_acc:0 lst
-;;]
+;;
 
 let bin_size_len len =
   let plen = Nat0.unsafe_of_int len in
@@ -213,7 +210,7 @@ let bin_size_float_array ar =
   bin_size_len len + (8 * len)
 ;;
 
-let bin_size_array_loop bin_size_el ar ~total_len ~n =
+let bin_size_array_loop bin_size_el (ar : _ array) ~total_len ~n =
   let total_len_ref = ref total_len in
   for i = 0 to n - 1 do
     let el = Base.Array.unsafe_get ar i in
@@ -222,14 +219,17 @@ let bin_size_array_loop bin_size_el ar ~total_len ~n =
   !total_len_ref
 ;;
 
+let bin_size_array bin_size_el (ar : _ array) =
+  let n = Base.Array.length ar in
+  let total_len = bin_size_len n in
+  bin_size_array_loop bin_size_el ar ~total_len ~n
+;;
+
 let bin_size_array (type a) bin_size_el ar =
   let module Obj = Base.Obj in
   if (Obj.magic (bin_size_el : a sizer) : float sizer) == (bin_size_float :> float sizer)
   then bin_size_float_array (Obj.magic (ar : a array) : float array) [@nontail]
-  else (
-    let n = Base.Array.length ar in
-    let total_len = bin_size_len n in
-    bin_size_array_loop bin_size_el ar ~total_len ~n)
+  else bin_size_array bin_size_el ar
 ;;
 
 let bin_size_float_iarray ar =
@@ -237,10 +237,7 @@ let bin_size_float_iarray ar =
   bin_size_len len + (8 * len)
 ;;
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-let bin_size_iarray_loop bin_size_el ar ~total_len ~n =
+let bin_size_iarray_loop bin_size_el (ar : _ Base.Iarray.t) ~total_len ~n =
   let total_len_ref = ref total_len in
   for i = 0 to n - 1 do
     let el = Base.Iarray.unsafe_get ar i in
@@ -249,18 +246,20 @@ let bin_size_iarray_loop bin_size_el ar ~total_len ~n =
   !total_len_ref
 ;;
 
+let bin_size_iarray bin_size_el (ar : _ Base.Iarray.t) =
+  let n = Base.Iarray.length ar in
+  let total_len = bin_size_len n in
+  bin_size_iarray_loop bin_size_el ar ~total_len ~n
+;;
+
 let bin_size_iarray (type a) bin_size_el ar =
   let module Obj = Base.Obj in
-  if (Obj.magic (bin_size_el : (a sizer[@mode m])) : float sizer)
-     == (bin_size_float :> float sizer)
+  if (Obj.magic (bin_size_el : a sizer) : float sizer) == (bin_size_float :> float sizer)
   then
     bin_size_float_iarray
       (Obj.magic (ar : a Base.Iarray.t) : float Base.Iarray.t) [@nontail]
-  else (
-    let n = Base.Iarray.length ar in
-    let total_len = bin_size_len n in
-    (bin_size_iarray_loop [@mode m]) bin_size_el ar ~total_len ~n)
-;;]
+  else bin_size_iarray bin_size_el ar
+;;
 
 external array1_dim : ('a, 'b, 'c) Stdlib.Bigarray.Array1.t -> int = "%caml_ba_dim_1"
 external array2_dim1 : ('a, 'b, 'c) Stdlib.Bigarray.Array2.t -> int = "%caml_ba_dim_1"
@@ -271,8 +270,12 @@ let bin_size_gen_vec vec multiplier =
   bin_size_len len + (multiplier * len)
 ;;
 
-let bin_size_float32_vec vec = bin_size_gen_vec vec 4
-let bin_size_float64_vec vec = bin_size_gen_vec vec 8
+let bin_size_bigarray1 ~kind array =
+  bin_size_gen_vec array (Stdlib.Bigarray.kind_size_in_bytes kind)
+;;
+
+let bin_size_float32_vec = bin_size_bigarray1 ~kind:Float32
+let bin_size_float64_vec = bin_size_bigarray1 ~kind:Float64
 let bin_size_vec = bin_size_float64_vec
 
 let bin_size_gen_mat mat multiplier =
@@ -282,8 +285,24 @@ let bin_size_gen_mat mat multiplier =
   bin_size_len dim1 + bin_size_len dim2 + (multiplier * size)
 ;;
 
-let bin_size_float32_mat mat = bin_size_gen_mat mat 4
-let bin_size_float64_mat mat = bin_size_gen_mat mat 8
+let bin_size_genarray ~kind array =
+  let num_dims = Bigarray.Genarray.num_dims array in
+  let size = ref (bin_size_len num_dims) in
+  let num_elements = ref 1 in
+  for dimension = 0 to num_dims - 1 do
+    let length = Bigarray.Genarray.nth_dim array dimension in
+    size := !size + bin_size_len length;
+    num_elements := !num_elements * length
+  done;
+  !size + (Stdlib.Bigarray.kind_size_in_bytes kind * !num_elements)
+;;
+
+let bin_size_bigarray2 ~kind array =
+  bin_size_gen_mat array (Stdlib.Bigarray.kind_size_in_bytes kind)
+;;
+
+let bin_size_float32_mat = bin_size_bigarray2 ~kind:Float32
+let bin_size_float64_mat = bin_size_bigarray2 ~kind:Float64
 let bin_size_mat = bin_size_float64_mat
 let bin_size_bigstring buf = bin_size_gen_vec buf 1
 let bin_size_variant_int _ = 4
@@ -300,41 +319,3 @@ let bin_size_network64_int _ = 8
 let bin_size_network64_int64 _ = 8
 
 (* Local versions *)
-
-[%%template
-let[@mode local] bin_size_unit = bin_size_unit
-let[@mode local] bin_size_bool = bin_size_bool
-let[@mode local] bin_size_string = bin_size_string
-let[@mode local] bin_size_bytes = bin_size_bytes
-let[@mode local] bin_size_char = bin_size_char
-let[@mode local] bin_size_int = bin_size_int
-let[@mode local] bin_size_float = bin_size_float
-let[@mode local] bin_size_int32 = bin_size_int32
-let[@mode local] bin_size_int64 = bin_size_int64
-let[@mode local] bin_size_nativeint = bin_size_nativeint
-let[@mode local] bin_size_nat0 = bin_size_nat0
-let[@mode local] bin_size_ref = bin_size_ref
-let[@mode local] bin_size_lazy_t = bin_size_lazy_t
-let[@mode local] bin_size_lazy = bin_size_lazy
-let[@mode local] bin_size_array = bin_size_array
-let[@mode local] bin_size_float32_vec = bin_size_float32_vec
-let[@mode local] bin_size_float64_vec = bin_size_float64_vec
-let[@mode local] bin_size_vec = bin_size_vec
-let[@mode local] bin_size_float32_mat = bin_size_float32_mat
-let[@mode local] bin_size_float64_mat = bin_size_float64_mat
-let[@mode local] bin_size_mat = bin_size_mat
-let[@mode local] bin_size_bigstring = bin_size_bigstring
-let[@mode local] bin_size_floatarray = bin_size_floatarray
-let[@mode local] bin_size_variant_int = bin_size_variant_int
-let[@mode local] bin_size_int_8bit = bin_size_int_8bit
-let[@mode local] bin_size_int_16bit = bin_size_int_16bit
-let[@mode local] bin_size_int_32bit = bin_size_int_32bit
-let[@mode local] bin_size_int_64bit = bin_size_int_64bit
-let[@mode local] bin_size_int32_bits = bin_size_int32_bits
-let[@mode local] bin_size_int64_bits = bin_size_int64_bits
-let[@mode local] bin_size_network16_int = bin_size_network16_int
-let[@mode local] bin_size_network32_int = bin_size_network32_int
-let[@mode local] bin_size_network32_int32 = bin_size_network32_int32
-let[@mode local] bin_size_network64_int = bin_size_network64_int
-let[@mode local] bin_size_network64_int64 = bin_size_network64_int64
-let[@mode local] bin_size_md5 = bin_size_md5]

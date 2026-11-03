@@ -1,13 +1,13 @@
 module Reader_local : sig
-  type%template 'a t =
-    { reader_local : ('a Bin_prot.Read.reader[@mode local])
+  type 'a t =
+    { reader_local : 'a Bin_prot.Read.reader
     ; globalize : 'a -> 'a
     }
 end
 
-type%template 'a to_test =
+type 'a to_test =
   { writer : 'a Bin_prot.Write.writer
-  ; writer_local : ('a Bin_prot.Write.writer[@mode local]) option
+  ; writer_local : 'a Bin_prot.Write.writer option
   ; reader : 'a Bin_prot.Read.reader
   ; reader_local : 'a Reader_local.t option
   ; values : 'a list

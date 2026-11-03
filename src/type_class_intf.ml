@@ -154,13 +154,25 @@ module type Type_class = sig
   val bin_shape_list : Shape.t -> Shape.t
   val bin_list : 'a. ('a, 'a list) S1.t
 
-  (*$ mk_base1 ~layout:"value_or_null mod separable" "array" *)
+  (*$
+    mk_base1_k
+      ~layouts:"base_or_null, value_or_null mod external64"
+      ~mods:"mod separable"
+      "array"
+  *)
+
   val bin_writer_array : 'a. ('a, 'a array) S1.writer
   val bin_reader_array : 'a. ('a, 'a array) S1.reader
   val bin_shape_array : Shape.t -> Shape.t
   val bin_array : 'a. ('a, 'a array) S1.t
 
-  (*$ mk_base1 ~layout:"value_or_null mod separable" "iarray" *)
+  (*$
+    mk_base1_k
+      ~layouts:"base_or_null, value_or_null mod external64"
+      ~mods:"mod separable"
+      "iarray"
+  *)
+
   val bin_writer_iarray : 'a. ('a, 'a iarray) S1.writer
   val bin_reader_iarray : 'a. ('a, 'a iarray) S1.reader
   val bin_shape_iarray : Shape.t -> Shape.t

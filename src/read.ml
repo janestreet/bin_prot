@@ -5,6 +5,7 @@
 
 open Bigarray
 open Common
+open! Basement.Primitives
 include Read_intf.Definitions
 
 external unsafe_get : buf -> int -> char = "%caml_ba_unsafe_ref_1"
@@ -270,14 +271,10 @@ let bin_read_nat0 buf ~pos_ref =
   | _ -> raise_read_error ReadError.Nat0_code pos
 ;;
 
-[%%template
-[@@@alloc.default a = (heap, stack)]
-
 let unsafe_bin_read_bytes buf ~pos ~len =
-  (let str = (Base.Bytes.create [@alloc a]) len in
-   unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
-   str)
-  [@exclave_if_stack a]
+  let str = Base.Bytes.create len in
+  unsafe_blit_buf_bytes ~src_pos:pos buf ~dst_pos:0 str ~len;
+  str
 ;;
 
 let bin_read_bytes buf ~pos_ref =
@@ -288,16 +285,13 @@ let bin_read_bytes buf ~pos_ref =
   let next = pos + len in
   check_next_check_overflow buf pos next;
   pos_ref := next;
-  (unsafe_bin_read_bytes [@alloc a]) buf ~pos ~len [@exclave_if_stack a]
-[@@zero_alloc_if_stack a opt]
+  unsafe_bin_read_bytes buf ~pos ~len
 ;;
 
 let bin_read_string buf ~pos_ref =
-  (let str = (bin_read_bytes [@alloc a]) buf ~pos_ref in
-   Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:str)
-  [@exclave_if_stack a]
-[@@zero_alloc_if_stack a opt]
-;;]
+  let str = bin_read_bytes buf ~pos_ref in
+  Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:str
+;;
 
 let bin_read_char buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -330,9 +324,6 @@ let bin_read_int buf ~pos_ref =
 external unbox_float : float -> float = "%identity"
 external box_float : float -> float = "%identity"
 
-[%%template
-[@@@alloc.default a = (heap, stack)]
-
 let bin_read_float buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
   assert_pos pos;
@@ -341,7 +332,7 @@ let bin_read_float buf ~pos_ref =
   pos_ref := next;
   (* No error possible either. *)
   let f = unsafe_get64le buf pos |> box_int64 |> Int64.float_of_bits |> unbox_float in
-  box_float f [@exclave_if_stack a]
+  box_float f
 ;;
 
 let bin_read_int32 buf ~pos_ref =
@@ -351,19 +342,19 @@ let bin_read_int32 buf ~pos_ref =
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Int32.of_int n [@exclave_if_stack a]
+    Int32.of_int n
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Int32.of_int n [@exclave_if_stack a]
+    Int32.of_int n
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Int32.of_int n [@exclave_if_stack a]
+    Int32.of_int n
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32 buf ~pos_ref ~pos:(pos + 1) in
-    box_int32 n [@exclave_if_stack a]
+    box_int32 n
   | _ -> raise_read_error ReadError.Int32_code pos
 ;;
 
@@ -374,23 +365,23 @@ let bin_read_int64 buf ~pos_ref =
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Int64.of_int n [@exclave_if_stack a]
+    Int64.of_int n
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Int64.of_int n [@exclave_if_stack a]
+    Int64.of_int n
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Int64.of_int n [@exclave_if_stack a]
+    Int64.of_int n
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32_as_int64 buf ~pos_ref ~pos:(pos + 1) in
-    box_int64 n [@exclave_if_stack a]
+    box_int64 n
   (*$ Code.pipe_char INT64 *)
   | '\xfc' (*$*) ->
     let n = safe_bin_read_int64 buf ~pos_ref ~pos:(pos + 1) in
-    box_int64 n [@exclave_if_stack a]
+    box_int64 n
   | _ -> raise_read_error ReadError.Int64_code pos
 ;;
 
@@ -401,48 +392,43 @@ let bin_read_nativeint buf ~pos_ref =
   | '\x00' .. '\x7f' as ch ->
     pos_ref := pos + 1;
     let n = Char.code ch in
-    Nativeint.of_int n [@exclave_if_stack a]
+    Nativeint.of_int n
   (*$ Code.pipe_char NEG_INT8 *)
   | '\xff' (*$*) ->
     let n = safe_bin_read_neg_int8 buf ~pos_ref ~pos:(pos + 1) in
-    Nativeint.of_int n [@exclave_if_stack a]
+    Nativeint.of_int n
   (*$ Code.pipe_char INT16 *)
   | '\xfe' (*$*) ->
     let n = safe_bin_read_int16 buf ~pos_ref ~pos:(pos + 1) in
-    Nativeint.of_int n [@exclave_if_stack a]
+    Nativeint.of_int n
   (*$ Code.pipe_char INT32 *)
   | '\xfd' (*$*) ->
     let n = safe_bin_read_int32_as_nativeint buf ~pos_ref ~pos:(pos + 1) in
-    box_nativeint n [@exclave_if_stack a]
+    box_nativeint n
   (*$ Code.pipe_char INT64 *)
   | '\xfc' (*$*) when arch_sixtyfour ->
     let n = safe_bin_read_int64_as_nativeint buf ~pos_ref ~pos:(pos + 1) in
-    box_nativeint n [@exclave_if_stack a]
+    box_nativeint n
   | _ -> raise_read_error ReadError.Nativeint_code pos
 ;;
 
 let bin_read_ref bin_read_el buf ~pos_ref =
   let el = bin_read_el buf ~pos_ref in
-  ref el [@exclave_if_stack a]
+  ref el
 ;;
 
 let bin_read_pair bin_read_a bin_read_b buf ~pos_ref =
-  (let a = bin_read_a buf ~pos_ref in
-   let b = bin_read_b buf ~pos_ref in
-   a, b)
-  [@exclave_if_stack a]
+  let a = bin_read_a buf ~pos_ref in
+  let b = bin_read_b buf ~pos_ref in
+  a, b
 ;;
 
 let bin_read_triple bin_read_a bin_read_b bin_read_c buf ~pos_ref =
-  (let a = bin_read_a buf ~pos_ref in
-   let b = bin_read_b buf ~pos_ref in
-   let c = bin_read_c buf ~pos_ref in
-   a, b, c)
-  [@exclave_if_stack a]
-;;]
-
-[%%template
-[@@@alloc.default a @ m = (heap_global, stack_local)]
+  let a = bin_read_a buf ~pos_ref in
+  let b = bin_read_b buf ~pos_ref in
+  let c = bin_read_c buf ~pos_ref in
+  a, b, c
+;;
 
 let[@inline] bin_read_option_like ~none ~some ~read_error bin_read_el buf ~pos_ref =
   let pos = safe_get_pos buf pos_ref in
@@ -453,31 +439,30 @@ let[@inline] bin_read_option_like ~none ~some ~read_error bin_read_el buf ~pos_r
     none
   | '\001' ->
     pos_ref := pos + 1;
-    (let el = bin_read_el buf ~pos_ref in
-     (some [@inlined hint]) el)
-    [@exclave_if_stack a]
+    let el = bin_read_el buf ~pos_ref in
+    (some [@inlined hint]) el
   | _ -> raise_read_error read_error pos
 ;;
 
 let bin_read_option bin_read_el buf ~pos_ref =
-  (bin_read_option_like [@alloc a])
+  bin_read_option_like
     ~none:None
-    ~some:(Base.Option.some [@mode m])
+    ~some:Base.Option.some
     ~read_error:Option_code
     bin_read_el
     buf
-    ~pos_ref [@exclave_if_stack a]
+    ~pos_ref
 ;;
 
 let bin_read_or_null bin_read_el buf ~pos_ref =
-  (bin_read_option_like [@alloc a])
+  bin_read_option_like
     ~none:Null
-    ~some:(Base.Or_null.this [@mode m])
+    ~some:Base.Or_null.this
     ~read_error:Or_null_code
     bin_read_el
     buf
-    ~pos_ref [@exclave_if_stack a]
-;;]
+    ~pos_ref
+;;
 
 let bin_read_lazy bin_read_el buf ~pos_ref =
   let el = bin_read_el buf ~pos_ref in
@@ -492,13 +477,6 @@ let[@tail_mod_cons] rec bin_read_n_list bin_read_el buf ~pos_ref len =
     el :: bin_read_n_list bin_read_el buf ~pos_ref (len - 1))
 ;;
 
-let%template[@mode stack] bin_read_n_rev_list bin_read_el buf ~pos_ref len =
-  let rec loop n acc =
-    if n = 0 then acc else loop (n - 1) (bin_read_el buf ~pos_ref :: acc)
-  in
-  loop len []
-;;
-
 let rev l =
   let rec loop l acc =
     match l with
@@ -508,27 +486,14 @@ let rev l =
   loop l []
 ;;
 
-let%template[@mode stack] bin_read_n_list bin_read_el buf ~pos_ref len =
-  rev ((bin_read_n_rev_list [@alloc stack]) bin_read_el buf ~pos_ref len)
-;;
-
-let%template[@alloc a = (heap, stack)] bin_read_list_with_max_len
-  ~max_len
-  bin_read_el
-  buf
-  ~pos_ref
-  =
+let bin_read_list_with_max_len ~max_len bin_read_el buf ~pos_ref =
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   if len > max_len then raise_read_error (List_too_long { len; max_len }) !pos_ref;
-  (bin_read_n_list [@alloc a]) bin_read_el buf ~pos_ref len [@exclave_if_stack a]
+  bin_read_n_list bin_read_el buf ~pos_ref len
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_list bin_read_el buf ~pos_ref =
-  (bin_read_list_with_max_len [@alloc a])
-    ~max_len:max_int
-    bin_read_el
-    buf
-    ~pos_ref [@exclave_if_stack a]
+let bin_read_list bin_read_el buf ~pos_ref =
+  bin_read_list_with_max_len ~max_len:max_int bin_read_el buf ~pos_ref
 ;;
 
 let dummy_float_buf () =
@@ -571,36 +536,29 @@ let bin_read_float_array buf ~pos_ref =
     ~pos_ref
 ;;
 
-let%template check_array_len
-  (type a)
-  (bin_read_el : (a reader[@mode local]))
-  ~len
-  ~start_pos
-  =
+(* [is_float_reader reader] is [true] if an array of elements with the same type as
+   [reader] produces may take two words per element. This is only true for flat-float
+   arrays on 32-bit backends. *)
+let is_float_reader (type a) (reader : a reader) =
   let module Obj = Base.Obj in
-  if arch_sixtyfour
-  then (
-    if len > Sys.max_array_length then raise_read_error ReadError.Array_too_long start_pos)
-  else if len > Sys.max_array_length / 2
-  then (
-    let maybe_float =
-      try
-        let el = bin_read_el (dummy_float_buf ()) ~pos_ref:(ref 0) in
-        Some el
-      with
-      | _ -> None
-    in
-    match maybe_float with
-    | None ->
-      if len > Sys.max_array_length
-      then raise_read_error ReadError.Array_too_long start_pos
-    | Some el ->
-      if Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
-         || len > Sys.max_array_length
-      then raise_read_error ReadError.Array_too_long start_pos)
+  match reader (dummy_float_buf ()) ~pos_ref:(ref 0) with
+  | el -> Obj.Nullable.tag (Obj.Nullable.repr el) = Stdlib.Obj.double_tag
+  | exception _ -> false
 ;;
 
-let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_array_blit_optimization
+(* Without extensions, behaves the same as [float] *)
+
+(* Without extensions, is only ever a pointer *)
+
+let check_array_len (type a) (bin_read_el : a reader) ~len ~start_pos =
+  if len > Sys.max_array_length
+     || ((not arch_sixtyfour)
+         && len > Sys.max_array_length / 2
+         && is_float_reader bin_read_el)
+  then raise_read_error ReadError.Array_too_long start_pos
+;;
+
+let[@inline] bin_read_array_aux__no_float_array_blit_optimization
   (type a)
   (bin_read_el : a reader)
   buf
@@ -613,55 +571,36 @@ let%template[@alloc a = (heap, stack)] [@inline] bin_read_array_aux__no_float_ar
   else (
     check_array_len bin_read_el ~len ~start_pos;
     let first = bin_read_el buf ~pos_ref in
-    (let res = (Base.Array.create [@alloc a]) ~len first in
-     for i = 1 to len - 1 do
-       let el = bin_read_el buf ~pos_ref in
-       Base.Array.unsafe_set res i el
-     done;
-     res)
-    [@exclave_if_stack a])
+    let res = Base.Array.create ~len first in
+    for i = 1 to len - 1 do
+      let el = bin_read_el buf ~pos_ref in
+      Base.Array.unsafe_set res i el
+    done;
+    res)
 ;;
 
-let%template bin_read_array (type a) (bin_read_el : a reader) buf ~pos_ref =
+let bin_read_array (type a) (bin_read_el : a reader) buf ~pos_ref =
   if (Obj.magic (bin_read_el : a reader) : float reader) == bin_read_float
   then (Obj.magic (bin_read_float_array buf ~pos_ref : float array) : a array)
-  else
-    (bin_read_array_aux__no_float_array_blit_optimization [@alloc heap])
-      bin_read_el
-      buf
-      ~pos_ref
+  else bin_read_array_aux__no_float_array_blit_optimization bin_read_el buf ~pos_ref
 ;;
 
-let%template[@alloc stack] bin_read_array bin_read_el buf ~pos_ref =
-  (bin_read_array_aux__no_float_array_blit_optimization [@alloc stack])
-    bin_read_el
-    buf
-    ~pos_ref
-;;
-
-let%template[@alloc a @ m = (heap_global, stack_local)] bin_read_iarray
-  (type a)
-  (bin_read_el : (a reader[@mode m]))
-  buf
-  ~pos_ref
-  =
+let bin_read_iarray (type a) (bin_read_el : a reader) buf ~pos_ref =
   let start_pos = !pos_ref in
   let len = (bin_read_nat0 buf ~pos_ref :> int) in
   check_array_len bin_read_el ~len ~start_pos;
-  (Base.Iarray.init [@alloc a]) len ~f:(fun _ ->
-    bin_read_el buf ~pos_ref [@exclave_if_stack a])
-  [@nontail] [@exclave_if_stack a]
+  Base.Iarray.init len ~f:(fun _ -> bin_read_el buf ~pos_ref) [@nontail]
 ;;
 
-external buf_of_array1
-  :  (_ Stdlib.Bigarray.Array1.t[@local_opt])
-  -> (buf[@local_opt])
-  = "%identity"
+external buf_of_array1 : _ Stdlib.Bigarray.Array1.t -> buf = "%identity"
+external buf_of_array2 : _ Stdlib.Bigarray.Array2.t -> buf = "%identity"
+external buf_of_genarray : _ Stdlib.Bigarray.Genarray.t -> buf = "%identity"
 
-external buf_of_array2
-  :  (_ Stdlib.Bigarray.Array2.t[@local_opt])
-  -> (buf[@local_opt])
-  = "%identity"
+let checked_multiply_bigarray_length left right ~pos =
+  if right <> 0 && left > Stdlib.max_int / right
+  then raise_read_error ReadError.Array_too_long pos;
+  left * right
+;;
 
 let bin_read_bigarray1 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout buf ~pos_ref
   : (_, k, _) Stdlib.Bigarray.Array1.t
@@ -672,7 +611,10 @@ let bin_read_bigarray1 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout bu
   let next = pos + size in
   check_next buf next;
   let vec = Array1.create kind layout len in
-  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array1 vec) ~dst_pos:0 ~len:size;
+  let () =
+    let vec = vec in
+    unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array1 vec) ~dst_pos:0 ~len:size
+  in
   pos_ref := next;
   vec
 ;;
@@ -697,9 +639,49 @@ let bin_read_bigarray2 (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout bu
   let next = pos + size in
   check_next buf next;
   let mat = Array2.create kind layout len1 len2 in
-  unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array2 mat) ~dst_pos:0 ~len:size;
+  let () =
+    let mat = mat in
+    unsafe_blit_buf ~src:buf ~src_pos:pos ~dst:(buf_of_array2 mat) ~dst_pos:0 ~len:size
+  in
   pos_ref := next;
   mat
+;;
+
+let bin_read_genarray (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout buf ~pos_ref
+  : (_, k, _) Stdlib.Bigarray.Genarray.t
+  =
+  let start_pos = !pos_ref in
+  let num_dims = (bin_read_nat0 buf ~pos_ref :> int) in
+  if num_dims > Sys.max_array_length
+  then raise_read_error ReadError.Array_too_long start_pos;
+  let dimensions = Base.Array.create ~len:num_dims 0 in
+  let num_elements = ref 1 in
+  for dimension = 0 to num_dims - 1 do
+    let length = (bin_read_nat0 buf ~pos_ref :> int) in
+    dimensions.(dimension) <- length;
+    num_elements := checked_multiply_bigarray_length !num_elements length ~pos:start_pos
+  done;
+  let size =
+    checked_multiply_bigarray_length
+      !num_elements
+      (Stdlib.Bigarray.kind_size_in_bytes kind)
+      ~pos:start_pos
+  in
+  let pos = !pos_ref in
+  let next = pos + size in
+  check_next_check_overflow buf pos next;
+  let array = Bigarray.Genarray.create kind layout dimensions in
+  let () =
+    let array = array in
+    unsafe_blit_buf
+      ~src:buf
+      ~src_pos:pos
+      ~dst:(buf_of_genarray array)
+      ~dst_pos:0
+      ~len:size
+  in
+  pos_ref := next;
+  array
 ;;
 
 let bin_read_float64_mat =
@@ -774,24 +756,24 @@ let bin_read_int_64bit buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_int32_bits buf ~pos_ref =
+let bin_read_int32_bits buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get32le buf pos in
-  box_int32 n [@exclave_if_stack a]
+  box_int32 n
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_int64_bits buf ~pos_ref =
+let bin_read_int64_bits buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get64le buf pos in
-  box_int64 n [@exclave_if_stack a]
+  box_int64 n
 ;;
 
 let bin_read_network16_int buf ~pos_ref =
@@ -813,14 +795,14 @@ let bin_read_network32_int buf ~pos_ref =
   safe_int_of_int32 pos n
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_network32_int32 buf ~pos_ref =
+let bin_read_network32_int32 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 4 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get32be buf pos in
-  box_int32 n [@exclave_if_stack a]
+  box_int32 n
 ;;
 
 let bin_read_network64_int buf ~pos_ref =
@@ -833,14 +815,14 @@ let bin_read_network64_int buf ~pos_ref =
   safe_int_of_int64 pos n
 ;;
 
-let%template[@alloc a = (heap, stack)] bin_read_network64_int64 buf ~pos_ref =
+let bin_read_network64_int64 buf ~pos_ref =
   let pos = !pos_ref in
   assert_pos pos;
   let next = pos + 8 in
   check_next buf next;
   pos_ref := next;
   let n = unsafe_get64be buf pos in
-  box_int64 n [@exclave_if_stack a]
+  box_int64 n
 ;;
 
 [%%if ocaml_version < (4, 07, 0)]
@@ -873,16 +855,11 @@ let bin_read_md5_aux res buf pos =
     unsafe_bytes_set32 res 12 d)
 ;;
 
-[%%template
-[@@@alloc.default a @ m = (heap_global, stack_local)]
-
 let unsafe_bin_read_md5 buf pos =
-  (let res = (Base.Bytes.create [@alloc a]) 16 in
-   bin_read_md5_aux res buf pos;
-   (Md5_lib.unsafe_of_binary [@mode m])
-     (Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res))
-  [@exclave_if_stack a]
-[@@zero_alloc_if_stack a opt]
+  let res = Base.Bytes.create 16 in
+  bin_read_md5_aux res buf pos;
+  Md5_lib.unsafe_of_binary
+    (Base.Bytes.unsafe_to_string ~no_mutation_while_string_reachable:res)
 ;;
 
 let bin_read_md5 buf ~pos_ref =
@@ -891,72 +868,7 @@ let bin_read_md5 buf ~pos_ref =
   let next = pos + 16 in
   check_next buf next;
   pos_ref := next;
-  (unsafe_bin_read_md5 [@alloc a]) buf pos [@exclave_if_stack a]
-[@@zero_alloc_if_stack a opt]
-;;]
+  unsafe_bin_read_md5 buf pos
+;;
 
 (* Local readers *)
-
-[%%template
-[@@@mode.default local]
-
-let[@inline] bin_read_unit buf ~pos_ref = bin_read_unit buf ~pos_ref
-let[@inline] bin_read_bool buf ~pos_ref = bin_read_bool buf ~pos_ref
-let[@inline] bin_read_char buf ~pos_ref = bin_read_char buf ~pos_ref
-let[@inline] bin_read_int buf ~pos_ref = bin_read_int buf ~pos_ref
-let[@inline] bin_read_nat0 buf ~pos_ref = bin_read_nat0 buf ~pos_ref
-let[@inline] bin_read_float buf ~pos_ref = (bin_read_float [@alloc stack]) buf ~pos_ref
-let[@inline] bin_read_int32 buf ~pos_ref = (bin_read_int32 [@alloc stack]) buf ~pos_ref
-let[@inline] bin_read_int64 buf ~pos_ref = (bin_read_int64 [@alloc stack]) buf ~pos_ref
-
-let[@inline] bin_read_nativeint buf ~pos_ref =
-  (bin_read_nativeint [@alloc stack]) buf ~pos_ref
-;;
-
-let[@inline] bin_read_bytes buf ~pos_ref = (bin_read_bytes [@alloc stack]) buf ~pos_ref
-let[@inline] bin_read_string buf ~pos_ref = (bin_read_string [@alloc stack]) buf ~pos_ref
-let[@inline] bin_read_md5 buf ~pos_ref = (bin_read_md5 [@alloc stack]) buf ~pos_ref
-let bin_read_ref = (bin_read_ref [@alloc stack])
-let bin_read_option = (bin_read_option [@alloc stack])
-let bin_read_or_null = (bin_read_or_null [@alloc stack])
-let bin_read_list = (bin_read_list [@alloc stack])
-let bin_read_list_with_max_len = (bin_read_list_with_max_len [@alloc stack])
-let bin_read_array = (bin_read_array [@alloc stack])
-let bin_read_iarray = (bin_read_iarray [@alloc stack])
-let bin_read_pair = (bin_read_pair [@alloc stack])
-let bin_read_triple = (bin_read_triple [@alloc stack])
-
-(* The vec and mat readers return bigarrays, which cannot be allocated on the stack, so we
-   make no effort to localize them *)
-let bin_read_float32_vec = bin_read_float32_vec
-let bin_read_float64_vec = bin_read_float64_vec
-let bin_read_vec = bin_read_vec
-let bin_read_float32_mat = bin_read_float32_mat
-let bin_read_float64_mat = bin_read_float64_mat
-let bin_read_mat = bin_read_mat
-let bin_read_bigstring = bin_read_bigstring
-let[@inline] bin_read_variant_int buf ~pos_ref = bin_read_variant_int buf ~pos_ref
-let[@inline] bin_read_int_8bit buf ~pos_ref = bin_read_int_8bit buf ~pos_ref
-let[@inline] bin_read_int_16bit buf ~pos_ref = bin_read_int_16bit buf ~pos_ref
-let[@inline] bin_read_int_32bit buf ~pos_ref = bin_read_int_32bit buf ~pos_ref
-let[@inline] bin_read_int_64bit buf ~pos_ref = bin_read_int_64bit buf ~pos_ref
-
-let[@inline] bin_read_int32_bits buf ~pos_ref =
-  (bin_read_int32_bits [@alloc stack]) buf ~pos_ref
-;;
-
-let[@inline] bin_read_int64_bits buf ~pos_ref =
-  (bin_read_int64_bits [@alloc stack]) buf ~pos_ref
-;;
-
-let[@inline] bin_read_network16_int buf ~pos_ref = bin_read_network16_int buf ~pos_ref
-let[@inline] bin_read_network32_int buf ~pos_ref = bin_read_network32_int buf ~pos_ref
-let[@inline] bin_read_network64_int buf ~pos_ref = bin_read_network64_int buf ~pos_ref
-
-let[@inline] bin_read_network32_int32 buf ~pos_ref =
-  (bin_read_network32_int32 [@alloc stack]) buf ~pos_ref
-;;
-
-let[@inline] bin_read_network64_int64 buf ~pos_ref =
-  (bin_read_network64_int64 [@alloc stack]) buf ~pos_ref
-;;]

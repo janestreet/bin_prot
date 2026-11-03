@@ -1,9 +1,9 @@
-type%template 'a to_test =
+type 'a to_test =
   { name : string
   ; writer : 'a Bin_prot.Write.writer
-  ; writer_local : ('a Bin_prot.Write.writer[@mode local])
+  ; writer_local : 'a Bin_prot.Write.writer
   ; reader : 'a Bin_prot.Read.reader
-  ; reader_local : ('a Bin_prot.Read.reader[@mode local])
+  ; reader_local : 'a Bin_prot.Read.reader
   ; globalize : 'a -> 'a
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a

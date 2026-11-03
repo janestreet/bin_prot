@@ -72,12 +72,7 @@ val __bin_read_vec__ : vec Read.vtag_reader
 
 (** writers *)
 
-[%%template:
-[@@@mode m = (global, local)]
-
-type 'a writer := ('a Write.writer[@mode m])
-
-[@@@mode.default m]
+type 'a writer := 'a Write.writer
 
 val bin_write_bigstring : buf writer
 val bin_write_bool : bool writer
@@ -98,7 +93,7 @@ val bin_write_string : string writer
 val bin_write_unit : unit writer
 val bin_write_vec : vec writer
 
-(* end [%%template] *)]
+(* end [%%template] *)
 
 (** type class readers *)
 
@@ -200,12 +195,7 @@ val __bin_read_ref__ : 'a. ('a, 'a ref) Read.vtag_reader1
 
 (** writers *)
 
-[%%template:
-[@@@mode m = (global, local)]
-
-type ('a, 'b) writer1 := (('a, 'b) Write.writer1[@mode m])
-
-[@@@mode.default m]
+type ('a, 'b) writer1 := ('a, 'b) Write.writer1
 
 val bin_write_array : 'a. ('a, 'a array) writer1
 val bin_write_iarray : 'a. ('a, 'a iarray) writer1
@@ -216,7 +206,7 @@ val bin_write_option : 'a. ('a, 'a option) writer1
 val bin_write_or_null : ('a, 'a or_null) writer1
 val bin_write_ref : 'a. ('a, 'a ref) writer1
 
-(* end [%%template] *)]
+(* end [%%template] *)
 
 (** type class readers *)
 

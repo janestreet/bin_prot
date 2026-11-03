@@ -31,7 +31,7 @@ end
 
 (** [Uuid.t] is used by [basetype] and [annotate]. *)
 module Uuid : sig
-  type t [@@deriving equal ~localize]
+  type t [@@deriving equal]
 
   (** [of_string s] returns a [Uuid.t] wrapping [s]. There are currently no requirements
       of the format of [s] although it is common to use string in `uuid' format:
@@ -39,7 +39,7 @@ module Uuid : sig
       duplicates *)
   val of_string : string -> t
 
-  val%template to_string : t -> string [@@alloc a @ m = (stack @ local, heap @ global)]
+  val to_string : t -> string
 end
 
 (** group of mutually recursive type definitions *)
@@ -78,7 +78,7 @@ val annotate : Uuid.t -> t -> t
 
 module Stable : sig
   module V1 : sig
-    type nonrec t = t [@@deriving equal ~localize, sexp]
+    type nonrec t = t [@@deriving equal, sexp]
   end
 end
 
@@ -101,7 +101,7 @@ end
     might be used when setting up unit tests or expected shapes. *)
 
 module Digest : sig
-  type t [@@deriving compare ~localize, globalize, sexp]
+  type t [@@deriving compare, equal, globalize, sexp]
 
   val to_hex : t -> string
   val to_md5 : t -> Md5_lib.t
@@ -112,7 +112,7 @@ end
 
 module Expert : sig
   module Sorted_table : sig
-    type 'a t [@@deriving compare ~localize, sexp_of]
+    type 'a t [@@deriving compare, sexp_of]
 
     val expose : 'a t -> (string * 'a) list
   end
@@ -129,7 +129,7 @@ module Expert : sig
       | Application of 'a * 'a list
       | Rec_app of int * 'a list
       | Var of int
-    [@@deriving compare ~localize, sexp_of]
+    [@@deriving compare, sexp_of]
 
     val map : 'a t -> f:('a -> 'b) -> 'b t
   end
@@ -137,10 +137,10 @@ module Expert : sig
   module Canonical : sig
     module Exp1 : sig
       type t0 = Exp of t0 Canonical_exp_constructor.t
-      [@@unboxed] [@@deriving compare ~localize, sexp_of]
+      [@@unboxed] [@@deriving compare, sexp_of]
     end
 
-    type t = Exp1.t0 [@@deriving compare ~localize, sexp_of]
+    type t = Exp1.t0 [@@deriving compare, sexp_of]
   end
 
   module Create_digest : sig
@@ -149,7 +149,7 @@ module Expert : sig
 end
 
 module Canonical : sig
-  type t = Expert.Canonical.t [@@deriving compare ~localize, sexp_of]
+  type t = Expert.Canonical.t [@@deriving compare, sexp_of]
 
   val to_string_hum : t -> string
   val to_digest : t -> Digest.t

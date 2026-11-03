@@ -22,5 +22,3 @@ module Stable = struct
 end
 
 include Stable.V1
-
-let%template[@mode local] to_binary = to_binary_local

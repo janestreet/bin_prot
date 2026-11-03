@@ -36,12 +36,12 @@ let test_window_len = 16L
 module Read = Bin_prot.Read
 module Write = Bin_prot.Write
 
-type%template 'a to_test =
+type 'a to_test =
   { name : string
   ; writer : 'a Write.writer
-  ; writer_local : ('a Write.writer[@mode local])
+  ; writer_local : 'a Write.writer
   ; reader : 'a Read.reader
-  ; reader_local : ('a Read.reader[@mode local])
+  ; reader_local : 'a Read.reader
   ; globalize : 'a -> 'a
   ; to_int64 : 'a -> Int64.t
   ; of_int64 : Int64.t -> 'a
@@ -61,13 +61,13 @@ let min_int_32bit, max_int_32bit, min_int_64bit, max_int_64bit =
 
 module Nat0 = Bin_prot.Nat0
 
-let%template tests =
+let tests =
   [ T
       { name = "int"
       ; writer = Write.bin_write_int
-      ; writer_local = Write.bin_write_int [@mode local]
+      ; writer_local = Write.bin_write_int
       ; reader = Read.bin_read_int
-      ; reader_local = Read.bin_read_int [@mode local]
+      ; reader_local = Read.bin_read_int
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -79,9 +79,9 @@ let%template tests =
   ; T
       { name = "int32"
       ; writer = Write.bin_write_int32
-      ; writer_local = Write.bin_write_int32 [@mode local]
+      ; writer_local = Write.bin_write_int32
       ; reader = Read.bin_read_int32
-      ; reader_local = Read.bin_read_int32 [@mode local]
+      ; reader_local = Read.bin_read_int32
       ; globalize = globalize_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
@@ -93,9 +93,9 @@ let%template tests =
   ; T
       { name = "int64"
       ; writer = Write.bin_write_int64
-      ; writer_local = Write.bin_write_int64 [@mode local]
+      ; writer_local = Write.bin_write_int64
       ; reader = Read.bin_read_int64
-      ; reader_local = Read.bin_read_int64 [@mode local]
+      ; reader_local = Read.bin_read_int64
       ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
@@ -107,9 +107,9 @@ let%template tests =
   ; T
       { name = "nat0"
       ; writer = Write.bin_write_nat0
-      ; writer_local = Write.bin_write_nat0 [@mode local]
+      ; writer_local = Write.bin_write_nat0
       ; reader = Read.bin_read_nat0
-      ; reader_local = Read.bin_read_nat0 [@mode local]
+      ; reader_local = Read.bin_read_nat0
       ; globalize = (fun x -> x)
       ; to_int64 = (fun x -> Int64.of_int (x : Nat0.t :> int))
       ; of_int64 = (fun x -> Nat0.of_int (Int64.to_int_exn x))
@@ -121,9 +121,9 @@ let%template tests =
   ; T
       { name = "variant_int"
       ; writer = Write.bin_write_variant_int
-      ; writer_local = Write.bin_write_variant_int [@mode local]
+      ; writer_local = Write.bin_write_variant_int
       ; reader = Read.bin_read_variant_int
-      ; reader_local = Read.bin_read_variant_int [@mode local]
+      ; reader_local = Read.bin_read_variant_int
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -135,9 +135,9 @@ let%template tests =
   ; T
       { name = "int_16bit"
       ; writer = Write.bin_write_int_16bit
-      ; writer_local = Write.bin_write_int_16bit [@mode local]
+      ; writer_local = Write.bin_write_int_16bit
       ; reader = Read.bin_read_int_16bit
-      ; reader_local = Read.bin_read_int_16bit [@mode local]
+      ; reader_local = Read.bin_read_int_16bit
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -149,9 +149,9 @@ let%template tests =
   ; T
       { name = "int_32bit"
       ; writer = Write.bin_write_int_32bit
-      ; writer_local = Write.bin_write_int_32bit [@mode local]
+      ; writer_local = Write.bin_write_int_32bit
       ; reader = Read.bin_read_int_32bit
-      ; reader_local = Read.bin_read_int_32bit [@mode local]
+      ; reader_local = Read.bin_read_int_32bit
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -163,9 +163,9 @@ let%template tests =
   ; T
       { name = "int_64bit"
       ; writer = Write.bin_write_int_64bit
-      ; writer_local = Write.bin_write_int_64bit [@mode local]
+      ; writer_local = Write.bin_write_int_64bit
       ; reader = Read.bin_read_int_64bit
-      ; reader_local = Read.bin_read_int_64bit [@mode local]
+      ; reader_local = Read.bin_read_int_64bit
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -177,9 +177,9 @@ let%template tests =
   ; T
       { name = "int32_bits"
       ; writer = Write.bin_write_int32_bits
-      ; writer_local = Write.bin_write_int32_bits [@mode local]
+      ; writer_local = Write.bin_write_int32_bits
       ; reader = Read.bin_read_int32_bits
-      ; reader_local = Read.bin_read_int32_bits [@mode local]
+      ; reader_local = Read.bin_read_int32_bits
       ; globalize = globalize_int32
       ; to_int64 = Int32.to_int64
       ; of_int64 = Int32.of_int64_exn
@@ -191,9 +191,9 @@ let%template tests =
   ; T
       { name = "int64_bits"
       ; writer = Write.bin_write_int64_bits
-      ; writer_local = Write.bin_write_int64_bits [@mode local]
+      ; writer_local = Write.bin_write_int64_bits
       ; reader = Read.bin_read_int64_bits
-      ; reader_local = Read.bin_read_int64_bits [@mode local]
+      ; reader_local = Read.bin_read_int64_bits
       ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id
@@ -205,9 +205,9 @@ let%template tests =
   ; T
       { name = "network16_int"
       ; writer = Write.bin_write_network16_int
-      ; writer_local = Write.bin_write_network16_int [@mode local]
+      ; writer_local = Write.bin_write_network16_int
       ; reader = Read.bin_read_network16_int
-      ; reader_local = Read.bin_read_network16_int [@mode local]
+      ; reader_local = Read.bin_read_network16_int
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -219,9 +219,9 @@ let%template tests =
   ; T
       { name = "network32_int"
       ; writer = Write.bin_write_network32_int
-      ; writer_local = Write.bin_write_network32_int [@mode local]
+      ; writer_local = Write.bin_write_network32_int
       ; reader = Read.bin_read_network32_int
-      ; reader_local = Read.bin_read_network32_int [@mode local]
+      ; reader_local = Read.bin_read_network32_int
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -233,9 +233,9 @@ let%template tests =
   ; T
       { name = "network64_int"
       ; writer = Write.bin_write_network64_int
-      ; writer_local = Write.bin_write_network64_int [@mode local]
+      ; writer_local = Write.bin_write_network64_int
       ; reader = Read.bin_read_network64_int
-      ; reader_local = Read.bin_read_network64_int [@mode local]
+      ; reader_local = Read.bin_read_network64_int
       ; globalize = globalize_int
       ; to_int64 = Int64.of_int
       ; of_int64 = Int64.to_int_exn
@@ -247,9 +247,9 @@ let%template tests =
   ; T
       { name = "network32_int32"
       ; writer = Write.bin_write_network32_int32
-      ; writer_local = Write.bin_write_network32_int32 [@mode local]
+      ; writer_local = Write.bin_write_network32_int32
       ; reader = Read.bin_read_network32_int32
-      ; reader_local = Read.bin_read_network32_int32 [@mode local]
+      ; reader_local = Read.bin_read_network32_int32
       ; globalize = globalize_int32
       ; to_int64 = Int64.of_int32
       ; of_int64 = Int64.to_int32_exn
@@ -261,9 +261,9 @@ let%template tests =
   ; T
       { name = "network64_int64"
       ; writer = Write.bin_write_network64_int64
-      ; writer_local = Write.bin_write_network64_int64 [@mode local]
+      ; writer_local = Write.bin_write_network64_int64
       ; reader = Read.bin_read_network64_int64
-      ; reader_local = Read.bin_read_network64_int64 [@mode local]
+      ; reader_local = Read.bin_read_network64_int64
       ; globalize = globalize_int64
       ; to_int64 = Fn.id
       ; of_int64 = Fn.id

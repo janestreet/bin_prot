@@ -56,6 +56,21 @@ val bin_%{name} : %{layout} ('a, 'a %{typ}) S1.t
 
   let mk_base1 ?layout name = mk_base1_tp ?layout name name
 
+  let mk_base1_k ~layouts ~mods name =
+    print_string
+      [%string
+        {|
+[%%template:
+[@@@kind.default k = (%{layouts})]
+
+val bin_writer_%{name} : ('a : k %{mods}). ('a, 'a %{name}) S1.writer
+val bin_reader_%{name} : ('a : k %{mods}). ('a, 'a %{name}) S1.reader
+val bin_shape_%{name} : Shape.t -> Shape.t
+val bin_%{name} : ('a : k %{mods}). ('a, 'a %{name}) S1.t
+]
+|}]
+  ;;
+
   let mk_base2_tp name typ =
     print_string
       [%string
@@ -114,6 +129,34 @@ let bin_%{name} bin_el =
   ; writer = bin_writer_%{name} bin_el.writer
   ; reader = bin_reader_%{name} bin_el.reader
   }
+|}]
+  ;;
+
+  let mk_base1_k ~layouts name =
+    let quoted_name = Printf.sprintf "%S" name in
+    print_string
+      [%string
+        {|
+[%%template
+[@@@kind.default k = (%{layouts})]
+
+let bin_writer_%{name} bin_writer_el =
+  { size = (fun v -> (Size.bin_size_%{name} [@kind k]) bin_writer_el.size v)
+  ; write = (fun buf ~pos v ->
+      (Write.bin_write_%{name} [@kind k]) bin_writer_el.write buf ~pos v)
+  }
+let bin_reader_%{name} bin_reader_el =
+  { read = (fun buf ~pos_ref ->
+      (Read.bin_read_%{name} [@kind k]) bin_reader_el.read buf ~pos_ref)
+  ; vtag_read = variant_wrong_type %{quoted_name};
+  }
+let bin_shape_%{name} = fun x1 -> Shape.bin_shape_%{name} x1
+let bin_%{name} bin_el =
+  { shape = (bin_shape_%{name} [@kind k]) bin_el.shape
+  ; writer = (bin_writer_%{name} [@kind k]) bin_el.writer
+  ; reader = (bin_reader_%{name} [@kind k]) bin_el.reader
+  }
+]
 |}]
   ;;
 

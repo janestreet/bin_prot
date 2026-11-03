@@ -19,15 +19,15 @@ module Read = Bin_prot.Read
 module Write = Bin_prot.Write
 
 module Reader_local = struct
-  type%template 'a t =
-    { reader_local : ('a Read.reader[@mode local])
+  type 'a t =
+    { reader_local : 'a Read.reader
     ; globalize : 'a -> 'a
     }
 end
 
-type%template 'a to_test =
+type 'a to_test =
   { writer : 'a Write.writer
-  ; writer_local : ('a Write.writer[@mode local]) option
+  ; writer_local : 'a Write.writer option
   ; reader : 'a Read.reader
   ; reader_local : 'a Reader_local.t option
   ; values : 'a list
@@ -106,17 +106,14 @@ module Mat = struct
   let equal t1 t2 = Array.equal (Array.equal Float.equal) (to_array t1) (to_array t2)
 end
 
-module%template Tests = struct
+module Tests = struct
   (* max and min *)
   let unit =
     { writer = Write.bin_write_unit
-    ; writer_local = Some (Write.bin_write_unit [@mode local])
+    ; writer_local = Some Write.bin_write_unit
     ; reader = Read.bin_read_unit
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_unit [@mode local]
-          ; globalize = [%globalize: unit]
-          }
+        Some { reader_local = Read.bin_read_unit; globalize = [%globalize: unit] }
     ; values = [ () ]
     ; equal = Unit.equal
     ; sexp_of = [%sexp_of: unit]
@@ -127,13 +124,10 @@ module%template Tests = struct
 
   let bool =
     { writer = Write.bin_write_bool
-    ; writer_local = Some (Write.bin_write_bool [@mode local])
+    ; writer_local = Some Write.bin_write_bool
     ; reader = Read.bin_read_bool
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_bool [@mode local]
-          ; globalize = [%globalize: bool]
-          }
+        Some { reader_local = Read.bin_read_bool; globalize = [%globalize: bool] }
     ; values = [ true; false ]
     ; equal = Bool.equal
     ; sexp_of = [%sexp_of: bool]
@@ -144,13 +138,10 @@ module%template Tests = struct
 
   let char =
     { writer = Write.bin_write_char
-    ; writer_local = Some (Write.bin_write_char [@mode local])
+    ; writer_local = Some Write.bin_write_char
     ; reader = Read.bin_read_char
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_char [@mode local]
-          ; globalize = [%globalize: char]
-          }
+        Some { reader_local = Read.bin_read_char; globalize = [%globalize: char] }
     ; values = [ '\x00'; 'A'; 'z'; ';'; '\xFF' ]
     ; equal = Char.equal
     ; sexp_of = [%sexp_of: char]
@@ -161,13 +152,10 @@ module%template Tests = struct
 
   let digest =
     { writer = Write.bin_write_md5
-    ; writer_local = Some (Write.bin_write_md5 [@mode local])
+    ; writer_local = Some Write.bin_write_md5
     ; reader = Read.bin_read_md5
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_md5 [@mode local]
-          ; globalize = [%globalize: Md5_lib.t]
-          }
+        Some { reader_local = Read.bin_read_md5; globalize = [%globalize: Md5_lib.t] }
     ; values = [ Md5_lib.of_hex_exn "0123456789abcdef0123456789ABCDEF" ]
     ; equal = (fun d1 d2 -> Md5_lib.compare d1 d2 = 0)
     ; sexp_of = (fun md5 -> Atom (Md5_lib.to_hex md5))
@@ -178,13 +166,10 @@ module%template Tests = struct
 
   let float =
     { writer = Write.bin_write_float
-    ; writer_local = Some (Write.bin_write_float [@mode local])
+    ; writer_local = Some Write.bin_write_float
     ; reader = Read.bin_read_float
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_float [@mode local]
-          ; globalize = [%globalize: float]
-          }
+        Some { reader_local = Read.bin_read_float; globalize = [%globalize: float] }
     ; values =
         [ Float.epsilon_float
         ; Float.infinity
@@ -211,13 +196,10 @@ module%template Tests = struct
   (* min only *)
   let vec =
     { writer = Write.bin_write_vec
-    ; writer_local = Some (Write.bin_write_vec [@mode local])
+    ; writer_local = Some Write.bin_write_vec
     ; reader = Read.bin_read_vec
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_vec [@mode local]
-          ; globalize = [%globalize: Vec.t]
-          }
+        Some { reader_local = Read.bin_read_vec; globalize = [%globalize: Vec.t] }
     ; values = [ Vec.mk_float64 0; Vec.mk_float64 1 ]
     ; equal = Vec.equal
     ; sexp_of = [%sexp_of: Vec.t]
@@ -228,13 +210,10 @@ module%template Tests = struct
 
   let float32_vec =
     { writer = Write.bin_write_float32_vec
-    ; writer_local = Some (Write.bin_write_float32_vec [@mode local])
+    ; writer_local = Some Write.bin_write_float32_vec
     ; reader = Read.bin_read_float32_vec
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_float32_vec [@mode local]
-          ; globalize = [%globalize: Vec.t]
-          }
+        Some { reader_local = Read.bin_read_float32_vec; globalize = [%globalize: Vec.t] }
     ; values = [ Vec.mk_float32 0; Vec.mk_float32 1 ]
     ; equal = Vec.equal
     ; sexp_of = [%sexp_of: Vec.t]
@@ -245,13 +224,10 @@ module%template Tests = struct
 
   let float64_vec =
     { writer = Write.bin_write_float64_vec
-    ; writer_local = Some (Write.bin_write_float64_vec [@mode local])
+    ; writer_local = Some Write.bin_write_float64_vec
     ; reader = Read.bin_read_float64_vec
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_float64_vec [@mode local]
-          ; globalize = [%globalize: Vec.t]
-          }
+        Some { reader_local = Read.bin_read_float64_vec; globalize = [%globalize: Vec.t] }
     ; values = [ Vec.mk_float64 0; Vec.mk_float64 1 ]
     ; equal = Vec.equal
     ; sexp_of = [%sexp_of: Vec.t]
@@ -262,13 +238,10 @@ module%template Tests = struct
 
   let mat =
     { writer = Write.bin_write_mat
-    ; writer_local = Some (Write.bin_write_mat [@mode local])
+    ; writer_local = Some Write.bin_write_mat
     ; reader = Read.bin_read_mat
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_mat [@mode local]
-          ; globalize = [%globalize: Mat.t]
-          }
+        Some { reader_local = Read.bin_read_mat; globalize = [%globalize: Mat.t] }
     ; values = [ Mat.mk_float64 0 0; Mat.mk_float64 1 1 ]
     ; equal = Mat.equal
     ; sexp_of = [%sexp_of: Mat.t]
@@ -279,13 +252,10 @@ module%template Tests = struct
 
   let float32_mat =
     { writer = Write.bin_write_float32_mat
-    ; writer_local = Some (Write.bin_write_float32_mat [@mode local])
+    ; writer_local = Some Write.bin_write_float32_mat
     ; reader = Read.bin_read_float32_mat
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_float32_mat [@mode local]
-          ; globalize = [%globalize: Mat.t]
-          }
+        Some { reader_local = Read.bin_read_float32_mat; globalize = [%globalize: Mat.t] }
     ; values = [ Mat.mk_float32 0 0; Mat.mk_float32 1 1 ]
     ; equal = Mat.equal
     ; sexp_of = [%sexp_of: Mat.t]
@@ -296,13 +266,10 @@ module%template Tests = struct
 
   let float64_mat =
     { writer = Write.bin_write_float64_mat
-    ; writer_local = Some (Write.bin_write_float64_mat [@mode local])
+    ; writer_local = Some Write.bin_write_float64_mat
     ; reader = Read.bin_read_float64_mat
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_float64_mat [@mode local]
-          ; globalize = [%globalize: Mat.t]
-          }
+        Some { reader_local = Read.bin_read_float64_mat; globalize = [%globalize: Mat.t] }
     ; values = [ Mat.mk_float64 0 0; Mat.mk_float64 1 1 ]
     ; equal = Mat.equal
     ; sexp_of = [%sexp_of: Mat.t]
@@ -313,11 +280,11 @@ module%template Tests = struct
 
   let bigstring =
     { writer = Write.bin_write_bigstring
-    ; writer_local = Some (Write.bin_write_bigstring [@mode local])
+    ; writer_local = Some Write.bin_write_bigstring
     ; reader = Read.bin_read_bigstring
     ; reader_local =
         Some
-          { reader_local = Read.bin_read_bigstring [@mode local]
+          { reader_local = Read.bin_read_bigstring
           ; globalize = [%globalize: Base_bigstring.t]
           }
     ; values = [ Base_bigstring.of_string ""; Base_bigstring.of_string "hello" ]
@@ -332,7 +299,7 @@ module%template Tests = struct
 
   let floatarray =
     { writer = Write.bin_write_floatarray
-    ; writer_local = Some (Write.bin_write_floatarray [@mode local])
+    ; writer_local = Some Write.bin_write_floatarray
     ; reader = Read.bin_read_floatarray
     ; reader_local = None
     ; values = [ Float_array.empty; Float_array.create ~len:1 0.0 ]
@@ -345,12 +312,11 @@ module%template Tests = struct
 
   let ref =
     { writer = Write.bin_write_ref Write.bin_write_int32
-    ; writer_local =
-        Some ((Write.bin_write_ref [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_ref Write.bin_write_int32)
     ; reader = Read.bin_read_ref Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local = (Read.bin_read_ref [@mode local]) Read.bin_read_int32
+          { reader_local = Read.bin_read_ref Read.bin_read_int32
           ; globalize = [%globalize: int32 ref]
           }
     ; values = [ ref 0l; ref 1l; ref (-1l); ref Int32.max_value; ref Int32.min_value ]
@@ -363,8 +329,7 @@ module%template Tests = struct
 
   let lazy_t =
     { writer = Write.bin_write_lazy Write.bin_write_int32
-    ; writer_local =
-        Some ((Write.bin_write_lazy [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_lazy Write.bin_write_int32)
     ; reader = Read.bin_read_lazy Read.bin_read_int32
     ; reader_local = None
     ; values =
@@ -378,14 +343,11 @@ module%template Tests = struct
 
   let option =
     { writer = Write.bin_write_option Write.bin_write_int32
-    ; writer_local =
-        Some
-          ((Write.bin_write_option [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_option Write.bin_write_int32)
     ; reader = Read.bin_read_option Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local =
-              (Read.bin_read_option [@mode local]) (Read.bin_read_int32 [@mode local])
+          { reader_local = Read.bin_read_option Read.bin_read_int32
           ; globalize = [%globalize: int32 option]
           }
     ; values =
@@ -399,14 +361,11 @@ module%template Tests = struct
 
   let or_null =
     { writer = Write.bin_write_or_null Write.bin_write_int32
-    ; writer_local =
-        Some
-          ((Write.bin_write_or_null [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_or_null Write.bin_write_int32)
     ; reader = Read.bin_read_or_null Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local =
-              (Read.bin_read_or_null [@mode local]) (Read.bin_read_int32 [@mode local])
+          { reader_local = Read.bin_read_or_null Read.bin_read_int32
           ; globalize = [%globalize: int32 or_null]
           }
     ; values =
@@ -421,17 +380,11 @@ module%template Tests = struct
   let pair =
     { writer = Write.bin_write_pair Write.bin_write_int32 Write.bin_write_int32
     ; writer_local =
-        Some
-          ((Write.bin_write_pair [@mode local])
-             (Write.bin_write_int32 [@mode local])
-             (Write.bin_write_int32 [@mode local]))
+        Some (Write.bin_write_pair Write.bin_write_int32 Write.bin_write_int32)
     ; reader = Read.bin_read_pair Read.bin_read_int32 Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local =
-              (Read.bin_read_pair [@mode local])
-                (Read.bin_read_int32 [@mode local])
-                (Read.bin_read_int32 [@mode local])
+          { reader_local = Read.bin_read_pair Read.bin_read_int32 Read.bin_read_int32
           ; globalize = [%globalize: int32 * int32]
           }
     ; values =
@@ -456,19 +409,19 @@ module%template Tests = struct
           Write.bin_write_int32
     ; writer_local =
         Some
-          ((Write.bin_write_triple [@mode local])
-             (Write.bin_write_int32 [@mode local])
-             (Write.bin_write_int32 [@mode local])
-             (Write.bin_write_int32 [@mode local]))
+          (Write.bin_write_triple
+             Write.bin_write_int32
+             Write.bin_write_int32
+             Write.bin_write_int32)
     ; reader =
         Read.bin_read_triple Read.bin_read_int32 Read.bin_read_int32 Read.bin_read_int32
     ; reader_local =
         Some
           { reader_local =
-              (Read.bin_read_triple [@mode local])
-                (Read.bin_read_int32 [@mode local])
-                (Read.bin_read_int32 [@mode local])
-                (Read.bin_read_int32 [@mode local])
+              Read.bin_read_triple
+                Read.bin_read_int32
+                Read.bin_read_int32
+                Read.bin_read_int32
           ; globalize = [%globalize: int32 * int32 * int32]
           }
     ; values =
@@ -487,13 +440,11 @@ module%template Tests = struct
 
   let list =
     { writer = Write.bin_write_list Write.bin_write_int32
-    ; writer_local =
-        Some ((Write.bin_write_list [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_list Write.bin_write_int32)
     ; reader = Read.bin_read_list Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local =
-              (Read.bin_read_list [@mode local]) (Read.bin_read_int32 [@mode local])
+          { reader_local = Read.bin_read_list Read.bin_read_int32
           ; globalize = [%globalize: int32 list]
           }
     ; values =
@@ -513,12 +464,11 @@ module%template Tests = struct
 
   let array =
     { writer = Write.bin_write_array Write.bin_write_int32
-    ; writer_local =
-        Some ((Write.bin_write_array [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_array Write.bin_write_int32)
     ; reader = Read.bin_read_array Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local = (Read.bin_read_array [@mode local]) Read.bin_read_int32
+          { reader_local = Read.bin_read_array Read.bin_read_int32
           ; globalize = [%globalize: int32 array]
           }
     ; values =
@@ -538,13 +488,11 @@ module%template Tests = struct
 
   let iarray =
     { writer = Write.bin_write_iarray Write.bin_write_int32
-    ; writer_local =
-        Some
-          ((Write.bin_write_iarray [@mode local]) (Write.bin_write_int32 [@mode local]))
+    ; writer_local = Some (Write.bin_write_iarray Write.bin_write_int32)
     ; reader = Read.bin_read_iarray Read.bin_read_int32
     ; reader_local =
         Some
-          { reader_local = (Read.bin_read_iarray [@mode local]) Read.bin_read_int32
+          { reader_local = Read.bin_read_iarray Read.bin_read_int32
           ; globalize = [%globalize: int32 iarray]
           }
     ; values =
@@ -567,7 +515,7 @@ module%template Tests = struct
       { x : int32
       ; y : float
       }
-    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
+    [@@deriving bin_io, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size =
       Fields.fold
@@ -587,7 +535,7 @@ module%template Tests = struct
   let record1 =
     let open R1 in
     { writer = bin_write_t
-    ; writer_local = Some (bin_write_t [@mode local])
+    ; writer_local = Some bin_write_t
     ; reader = bin_read_t
     ; reader_local = None
     ; values = [ { x = 0l; y = 0.0 }; { x = Int32.max_value; y = Float.max_value } ]
@@ -603,7 +551,7 @@ module%template Tests = struct
       { w : int64
       ; x : int32
       }
-    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
+    [@@deriving bin_io, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size_of_inner =
       Fields_of_inner.fold
@@ -623,7 +571,7 @@ module%template Tests = struct
       { y : inner
       ; z : unit
       }
-    [@@deriving bin_io ~localize, fields ~iterators:fold, sexp_of]
+    [@@deriving bin_io, fields ~iterators:fold, sexp_of]
 
     let maximum_bin_size =
       Fields.fold
@@ -643,7 +591,7 @@ module%template Tests = struct
   let record2 =
     let open R2 in
     { writer = bin_write_t
-    ; writer_local = Some (bin_write_t [@mode local])
+    ; writer_local = Some bin_write_t
     ; reader = bin_read_t
     ; reader_local = None
     ; values =
@@ -664,7 +612,7 @@ module%template Tests = struct
           ; x : int32
           }
       | Inner_other of unit
-    [@@deriving bin_io ~localize, sexp_of, variants]
+    [@@deriving bin_io, sexp_of, variants ~fold]
 
     let maximum_bin_size_of_inner =
       1
@@ -688,7 +636,7 @@ module%template Tests = struct
           { y : inner
           ; z : unit
           }
-    [@@deriving bin_io ~localize, sexp_of, variants]
+    [@@deriving bin_io, sexp_of, variants ~fold]
 
     let maximum_bin_size =
       1
@@ -712,7 +660,7 @@ module%template Tests = struct
   let inline_record =
     let open Inline_record in
     { writer = bin_write_t
-    ; writer_local = Some (bin_write_t [@mode local])
+    ; writer_local = Some bin_write_t
     ; reader = bin_read_t
     ; reader_local = None
     ; values =

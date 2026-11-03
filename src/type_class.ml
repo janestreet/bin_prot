@@ -307,7 +307,8 @@ let bin_list bin_el =
   }
 ;;
 
-(*$ mk_base1 "array" *)
+(*$ mk_base1_k ~layouts:"base_or_null, value_or_null mod external64" "array" *)
+
 let bin_writer_array bin_writer_el =
   { size = (fun v -> Size.bin_size_array bin_writer_el.size v)
   ; write = (fun buf ~pos v -> Write.bin_write_array bin_writer_el.write buf ~pos v)
@@ -329,7 +330,8 @@ let bin_array bin_el =
   }
 ;;
 
-(*$ mk_base1 "iarray" *)
+(*$ mk_base1_k ~layouts:"base_or_null, value_or_null mod external64" "iarray" *)
+
 let bin_writer_iarray bin_writer_el =
   { size = (fun v -> Size.bin_size_iarray bin_writer_el.size v)
   ; write = (fun buf ~pos v -> Write.bin_write_iarray bin_writer_el.write buf ~pos v)

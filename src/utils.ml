@@ -89,23 +89,18 @@ let raise_read_not_enough =
   with_module_name (fun str -> failwith (str ^ ": didn't read all elements"))
 ;;
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module%template.portable Of_minimal (S : Binable.Minimal.S [@mode m]) :
-  Binable.S [@mode m] with type t := S.t = struct
+module Of_minimal (S : Binable.Minimal.S) : Binable.S with type t := S.t = struct
   include S
 
-  let bin_writer_t = { size = bin_size_t; write = bin_write_t }
+  let bin_writer_t : _ Type_class.writer = { size = bin_size_t; write = bin_write_t }
   let bin_reader_t = { read = bin_read_t; vtag_read = __bin_read_t__ }
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
-module%template.portable Of_minimal1 (S : Binable.Minimal.S1 [@mode m]) :
-  Binable.S1 [@mode m] with type 'a t := 'a S.t = struct
+module Of_minimal1 (S : Binable.Minimal.S1) : Binable.S1 with type 'a t := 'a S.t = struct
   include S
 
-  let bin_writer_t bin_writer_a =
+  let bin_writer_t (bin_writer_a : _ Type_class.writer) : _ Type_class.writer =
     { size = bin_size_t bin_writer_a.size; write = bin_write_t bin_writer_a.write }
   ;;
 
@@ -119,19 +114,15 @@ module%template.portable Of_minimal1 (S : Binable.Minimal.S1 [@mode m]) :
     ; reader = bin_reader_t bin_a.reader
     }
   ;;
-end]
+end
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module%template.portable
-  [@modality p] Make_binable_gen (S : sig
-    include Make_binable_without_uuid_spec [@mode m]
+module Make_binable_gen (S : sig
+    include Make_binable_without_uuid_spec
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
 struct
-  include Of_minimal [@mode m] [@modality p] (struct
+  include Of_minimal (struct
       module B = S.Binable
 
       type t = S.t
@@ -139,18 +130,15 @@ struct
       let bin_shape_t = maybe_annotate_shape S.maybe_caller_identity B.bin_shape_t
 
       include struct
-        [@@@mode.default m = (global, m)]
-
         let bin_size_t t =
-          (B.bin_size_t [@inlined hint] [@mode m])
-            ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+          (B.bin_size_t [@inlined hint]) ((S.to_binable [@inlined hint]) t) [@nontail]
         ;;
 
         let bin_write_t buf ~pos t =
-          (B.bin_write_t [@inlined hint] [@mode m])
+          (B.bin_write_t [@inlined hint])
             buf
             ~pos
-            ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+            ((S.to_binable [@inlined hint]) t) [@nontail]
         ;;
       end
 
@@ -159,10 +147,8 @@ struct
     end)
 end
 
-[@@@kind.default.explicit ka = (value, value_or_null, any)]
-
-module%template.portable Make_binable1_gen (S : sig
-    include Make_binable1_without_uuid_spec [@kind.explicit ka] [@mode m]
+module Make_binable1_gen (S : sig
+    include Make_binable1_without_uuid_spec
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -174,20 +160,18 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_el t =
-      (B.bin_size_t [@inlined hint] [@mode m])
+      (B.bin_size_t [@inlined hint])
         bin_size_el
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el buf ~pos t =
-      (B.bin_write_t [@inlined hint] [@mode m])
+      (B.bin_write_t [@inlined hint])
         bin_write_el
         buf
         ~pos
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
   end
 
@@ -199,7 +183,7 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer =
+  let bin_writer_t (bin_writer : _ Type_class.writer) : _ Type_class.writer =
     { size = (fun v -> bin_size_t bin_writer.size v)
     ; write = (fun buf ~pos v -> bin_write_t bin_writer.write buf ~pos v)
     }
@@ -221,10 +205,8 @@ struct
   ;;
 end
 
-[@@@kind.default.explicit kb = (value, any)]
-
-module%template.portable Make_binable2_gen (S : sig
-    include Make_binable2_without_uuid_spec [@kind.explicit ka kb] [@mode m]
+module Make_binable2_gen (S : sig
+    include Make_binable2_without_uuid_spec
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -238,22 +220,20 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_el1 bin_size_el2 t =
-      (B.bin_size_t [@inlined hint] [@mode m])
+      (B.bin_size_t [@inlined hint])
         bin_size_el1
         bin_size_el2
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el1 bin_write_el2 buf ~pos t =
-      (B.bin_write_t [@inlined hint] [@mode m])
+      (B.bin_write_t [@inlined hint])
         bin_write_el1
         bin_write_el2
         buf
         ~pos
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
   end
 
@@ -265,7 +245,9 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 =
+  let bin_writer_t (bin_writer1 : _ Type_class.writer) (bin_writer2 : _ Type_class.writer)
+    : _ Type_class.writer
+    =
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v)
     ; write =
         (fun buf ~pos v -> bin_write_t bin_writer1.write bin_writer2.write buf ~pos v)
@@ -289,12 +271,8 @@ struct
   ;;
 end
 
-[@@@kind.default.explicit kc = (value, any)]
-
-module%template.portable Make_binable3_gen (S : sig
-    include
-      Make_binable3_without_uuid_spec
-    [@kind.explicit_plus_unmangled ka kb kc] [@mode m]
+module Make_binable3_gen (S : sig
+    include Make_binable3_without_uuid_spec
 
     val maybe_caller_identity : Shape.Uuid.t option
   end) =
@@ -308,24 +286,22 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_el1 bin_size_el2 bin_size_el3 t =
-      (B.bin_size_t [@inlined hint] [@mode m])
+      (B.bin_size_t [@inlined hint])
         bin_size_el1
         bin_size_el2
         bin_size_el3
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
 
     let bin_write_t bin_write_el1 bin_write_el2 bin_write_el3 buf ~pos t =
-      (B.bin_write_t [@inlined hint] [@mode m])
+      (B.bin_write_t [@inlined hint])
         bin_write_el1
         bin_write_el2
         bin_write_el3
         buf
         ~pos
-        ((S.to_binable [@inlined hint] [@mode m]) t) [@nontail]
+        ((S.to_binable [@inlined hint]) t) [@nontail]
     ;;
   end
 
@@ -337,7 +313,12 @@ struct
     S.of_binable (B.__bin_read_t__ bin_read_el1 bin_read_el2 bin_read_el3 buf ~pos_ref n)
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
+  let bin_writer_t
+    (bin_writer1 : _ Type_class.writer)
+    (bin_writer2 : _ Type_class.writer)
+    (bin_writer3 : _ Type_class.writer)
+    : _ Type_class.writer
+    =
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
@@ -361,105 +342,64 @@ struct
     ; reader = bin_reader_t type_class1.reader type_class2.reader type_class3.reader
     }
   ;;
-end]
+end
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module%template.portable
-  [@modality p] Make_binable_with_uuid
-    (S : Make_binable_with_uuid_spec
-  [@mode m]) =
-Make_binable_gen [@mode m] [@modality p] (struct
+module Make_binable_with_uuid (S : Make_binable_with_uuid_spec) = Make_binable_gen (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module%template.portable
-  [@modality p] Make_binable_without_uuid
-    (S : Make_binable_without_uuid_spec
-  [@mode m]) =
-Make_binable_gen [@mode m] [@modality p] (struct
+module Make_binable_without_uuid (S : Make_binable_without_uuid_spec) =
+Make_binable_gen (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-[@@@kind.default.explicit_plus_unmangled ka = (value, value_or_null, any)]
-
-module%template.portable
-  [@modality p] Make_binable1_with_uuid
-    (S : Make_binable1_with_uuid_spec
-  [@kind.explicit ka] [@mode m]) =
-Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
+module Make_binable1_with_uuid (S : Make_binable1_with_uuid_spec) =
+Make_binable1_gen (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module%template.portable
-  [@modality p] Make_binable1_without_uuid
-    (S : Make_binable1_without_uuid_spec
-  [@kind.explicit ka] [@mode m]) =
-Make_binable1_gen [@kind.explicit ka] [@mode m] [@modality p] (struct
+module Make_binable1_without_uuid (S : Make_binable1_without_uuid_spec) =
+Make_binable1_gen (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-[@@@kind.default.explicit_plus_unmangled kb = (value, any)]
-
-module%template.portable
-  [@modality p] Make_binable2_with_uuid
-    (S : Make_binable2_with_uuid_spec
-  [@kind.explicit ka kb] [@mode m]) =
-Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
+module Make_binable2_with_uuid (S : Make_binable2_with_uuid_spec) =
+Make_binable2_gen (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module%template.portable
-  [@modality p] Make_binable2_without_uuid
-    (S : Make_binable2_without_uuid_spec
-  [@kind.explicit ka kb] [@mode m]) =
-Make_binable2_gen [@kind.explicit ka kb] [@mode m] [@modality p] (struct
+module Make_binable2_without_uuid (S : Make_binable2_without_uuid_spec) =
+Make_binable2_gen (struct
     include S
 
     let maybe_caller_identity = None
   end)
 
-[@@@kind.default.explicit_plus_unmangled kc = (value, any)]
-
-module%template.portable
-  [@modality p] Make_binable3_with_uuid
-    (S : Make_binable3_with_uuid_spec
-  [@kind.explicit ka kb kc] [@mode m]) =
-Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
+module Make_binable3_with_uuid (S : Make_binable3_with_uuid_spec) =
+Make_binable3_gen (struct
     include S
 
     let maybe_caller_identity = Some S.caller_identity
   end)
 
-module%template.portable
-  [@modality p] Make_binable3_without_uuid
-    (S : Make_binable3_without_uuid_spec
-  [@kind.explicit ka kb kc] [@mode m]) =
-Make_binable3_gen [@kind.explicit ka kb kc] [@mode m] [@modality p] (struct
+module Make_binable3_without_uuid (S : Make_binable3_without_uuid_spec) =
+Make_binable3_gen (struct
     include S
 
     let maybe_caller_identity = None
-  end)]
+  end)
 
-[%%template
-[@@@mode.default m = (global, local)]
-
-module%template.portable
-  [@modality p] Make_iterable_binable
-    (S : Make_iterable_binable_spec
-  [@mode m]) =
-struct
+module Make_iterable_binable (S : Make_iterable_binable_spec) = struct
   open S
 
   let bin_shape_t =
@@ -473,27 +413,25 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t t =
       let size_ref = ref 0 in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        size_ref := !size_ref + (bin_size_el [@mode m]) el;
+      iter t ~f:(fun el ->
+        size_ref := !size_ref + bin_size_el el;
         Int.incr cnt_ref);
-      let len = (length [@mode m]) t in
+      let len = length t in
       if !cnt_ref = len
-      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
       else raise_concurrent_modification ~module_name "bin_size_t"
     ;;
 
     let bin_write_t buf ~pos t =
-      let len = (length [@mode m]) t in
+      let len = length t in
       let plen = Nat0.unsafe_of_int len in
-      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        pos_ref := (bin_write_el [@mode m]) buf ~pos:!pos_ref el;
+      iter t ~f:(fun el ->
+        pos_ref := bin_write_el buf ~pos:!pos_ref el;
         Int.incr cnt_ref);
       if !cnt_ref = len
       then !pos_ref
@@ -515,15 +453,12 @@ struct
   ;;
 
   let __bin_read_t__ _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
-  let bin_writer_t = { size = bin_size_t; write = bin_write_t }
+  let bin_writer_t = ({ size = bin_size_t; write = bin_write_t } : _ Type_class.writer)
   let bin_reader_t = { read = bin_read_t; vtag_read = __bin_read_t__ }
   let bin_t = { shape = bin_shape_t; writer = bin_writer_t; reader = bin_reader_t }
 end
 
-module%template.portable Make_iterable_binable1
-    (S : Make_iterable_binable1_spec
-  [@mode m]) =
-struct
+module Make_iterable_binable1 (S : Make_iterable_binable1_spec) = struct
   open S
 
   let bin_shape_t t =
@@ -537,27 +472,25 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_a t =
       let size_ref = ref 0 in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        size_ref := !size_ref + (bin_size_el [@mode m]) bin_size_a el;
+      iter t ~f:(fun el ->
+        size_ref := !size_ref + bin_size_el bin_size_a el;
         Int.incr cnt_ref);
-      let len = (length [@mode m]) t in
+      let len = length t in
       if !cnt_ref = len
-      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
       else raise_concurrent_modification ~module_name "bin_size_t"
     ;;
 
     let bin_write_t bin_write_a buf ~pos t =
-      let len = (length [@mode m]) t in
+      let len = length t in
       let plen = Nat0.unsafe_of_int len in
-      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        pos_ref := (bin_write_el [@mode m]) bin_write_a buf ~pos:!pos_ref el;
+      iter t ~f:(fun el ->
+        pos_ref := bin_write_el bin_write_a buf ~pos:!pos_ref el;
         Int.incr cnt_ref);
       if !cnt_ref = len
       then !pos_ref
@@ -580,7 +513,7 @@ struct
 
   let __bin_read_t__ _bin_read_a _buf ~pos_ref _n = raise_variant_wrong_type "t" !pos_ref
 
-  let bin_writer_t bin_writer =
+  let bin_writer_t (bin_writer : _ Type_class.writer) : _ Type_class.writer =
     { size = (fun v -> bin_size_t bin_writer.size v)
     ; write = (fun buf ~pos v -> bin_write_t bin_writer.write buf ~pos v)
     }
@@ -600,10 +533,7 @@ struct
   ;;
 end
 
-module%template.portable Make_iterable_binable2
-    (S : Make_iterable_binable2_spec
-  [@mode m]) =
-struct
+module Make_iterable_binable2 (S : Make_iterable_binable2_spec) = struct
   open S
 
   let bin_shape_t t1 t2 =
@@ -617,27 +547,25 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_a bin_size_b t =
       let size_ref = ref 0 in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        size_ref := !size_ref + (bin_size_el [@mode m]) bin_size_a bin_size_b el;
+      iter t ~f:(fun el ->
+        size_ref := !size_ref + bin_size_el bin_size_a bin_size_b el;
         Int.incr cnt_ref);
-      let len = (length [@mode m]) t in
+      let len = length t in
       if !cnt_ref = len
-      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
       else raise_concurrent_modification ~module_name "bin_size_t"
     ;;
 
     let bin_write_t bin_write_a bin_write_b buf ~pos t =
-      let len = (length [@mode m]) t in
+      let len = length t in
       let plen = Nat0.unsafe_of_int len in
-      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        pos_ref := (bin_write_el [@mode m]) bin_write_a bin_write_b buf ~pos:!pos_ref el;
+      iter t ~f:(fun el ->
+        pos_ref := bin_write_el bin_write_a bin_write_b buf ~pos:!pos_ref el;
         Int.incr cnt_ref);
       if !cnt_ref = len
       then !pos_ref
@@ -662,7 +590,9 @@ struct
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 =
+  let bin_writer_t (bin_writer1 : _ Type_class.writer) (bin_writer2 : _ Type_class.writer)
+    : _ Type_class.writer
+    =
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size v)
     ; write =
         (fun buf ~pos v -> bin_write_t bin_writer1.write bin_writer2.write buf ~pos v)
@@ -686,10 +616,7 @@ struct
   ;;
 end
 
-module%template.portable Make_iterable_binable3
-    (S : Make_iterable_binable3_spec
-  [@mode m]) =
-struct
+module Make_iterable_binable3 (S : Make_iterable_binable3_spec) = struct
   open S
 
   let bin_shape_t t1 t2 t3 =
@@ -703,35 +630,25 @@ struct
   ;;
 
   include struct
-    [@@@mode.default m = (global, m)]
-
     let bin_size_t bin_size_a bin_size_b bin_size_c t =
       let size_ref = ref 0 in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        size_ref
-        := !size_ref + (bin_size_el [@mode m]) bin_size_a bin_size_b bin_size_c el;
+      iter t ~f:(fun el ->
+        size_ref := !size_ref + bin_size_el bin_size_a bin_size_b bin_size_c el;
         Int.incr cnt_ref);
-      let len = (length [@mode m]) t in
+      let len = length t in
       if !cnt_ref = len
-      then (bin_size_nat0 [@mode m]) (Nat0.unsafe_of_int len) + !size_ref
+      then bin_size_nat0 (Nat0.unsafe_of_int len) + !size_ref
       else raise_concurrent_modification ~module_name "bin_size_t"
     ;;
 
     let bin_write_t bin_write_a bin_write_b bin_write_c buf ~pos t =
-      let len = (length [@mode m]) t in
+      let len = length t in
       let plen = Nat0.unsafe_of_int len in
-      let pos_ref = ref ((Write.bin_write_nat0 [@mode m]) buf ~pos plen) in
+      let pos_ref = ref (Write.bin_write_nat0 buf ~pos plen) in
       let cnt_ref = ref 0 in
-      (iter [@mode m]) t ~f:(fun el ->
-        pos_ref
-        := (bin_write_el [@mode m])
-             bin_write_a
-             bin_write_b
-             bin_write_c
-             buf
-             ~pos:!pos_ref
-             el;
+      iter t ~f:(fun el ->
+        pos_ref := bin_write_el bin_write_a bin_write_b bin_write_c buf ~pos:!pos_ref el;
         Int.incr cnt_ref);
       if !cnt_ref = len
       then !pos_ref
@@ -756,7 +673,12 @@ struct
     raise_variant_wrong_type "t" !pos_ref
   ;;
 
-  let bin_writer_t bin_writer1 bin_writer2 bin_writer3 =
+  let bin_writer_t
+    (bin_writer1 : _ Type_class.writer)
+    (bin_writer2 : _ Type_class.writer)
+    (bin_writer3 : _ Type_class.writer)
+    : _ Type_class.writer
+    =
     { size = (fun v -> bin_size_t bin_writer1.size bin_writer2.size bin_writer3.size v)
     ; write =
         (fun buf ~pos v ->
@@ -780,4 +702,4 @@ struct
     ; reader = bin_reader_t type_class1.reader type_class2.reader type_class3.reader
     }
   ;;
-end]
+end

@@ -25,18 +25,15 @@ let run_test_non_integer
     run_test ~here reader_local test.writer test.values
 ;;
 
-module%template Extra_tests = struct
+module Extra_tests = struct
   open Non_integers_repr
 
   let string =
     { writer = Write.bin_write_string
-    ; writer_local = Some (Write.bin_write_string [@mode local])
+    ; writer_local = Some Write.bin_write_string
     ; reader = Read.bin_read_string
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_string [@mode local]
-          ; globalize = [%globalize: string]
-          }
+        Some { reader_local = Read.bin_read_string; globalize = [%globalize: string] }
     ; values = [ ""; "hello world"; "\000" ]
     ; equal = String.equal
     ; sexp_of = [%sexp_of: string]
@@ -47,13 +44,10 @@ module%template Extra_tests = struct
 
   let bytes =
     { writer = Write.bin_write_bytes
-    ; writer_local = Some (Write.bin_write_bytes [@mode local])
+    ; writer_local = Some Write.bin_write_bytes
     ; reader = Read.bin_read_bytes
     ; reader_local =
-        Some
-          { reader_local = Read.bin_read_bytes [@mode local]
-          ; globalize = [%globalize: bytes]
-          }
+        Some { reader_local = Read.bin_read_bytes; globalize = [%globalize: bytes] }
     ; values =
         [ Bytes.of_string ""; Bytes.of_string "hello world"; Bytes.of_string "\000" ]
     ; equal = Bytes.equal

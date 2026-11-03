@@ -47,9 +47,9 @@ type 'a id = 'a
 (*_ This type synonym is introduced because older versions of OCaml do not support
     destructive substitutions with `type 'a t1 = t2`. *)
 
-type 'a t = 'a [@@deriving compare ~localize, sexp_of]
+type 'a t = 'a [@@deriving compare, sexp_of]
 
-include%template Binable.S1 [@kind.explicit value_or_null] with type 'a t := 'a id
+include Binable.S1 with type 'a t := 'a id
 
 (** An [Opaque.Bigstring.t] or [Opaque.String.t] is an arbitrary piece of bin-prot. The
     bin-prot (de-)serializers simply read/write the data, prefixed with its size.
@@ -65,7 +65,7 @@ include%template Binable.S1 [@kind.explicit value_or_null] with type 'a t := 'a 
     [Opaque.String.t] is a string. *)
 module Opaque : sig
   module Bigstring : sig
-    type t [@@deriving compare ~localize, sexp_of]
+    type t [@@deriving compare, sexp_of]
 
     include Binable.S with type t := t
 
@@ -74,7 +74,7 @@ module Opaque : sig
   end
 
   module String : sig
-    type t [@@deriving compare ~localize, sexp_of]
+    type t [@@deriving compare, sexp_of]
 
     include Binable.S with type t := t
 

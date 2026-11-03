@@ -3,7 +3,7 @@ open! Base
 module Location : sig
   type t
 
-  include%template Identifiable.S [@mode local] with type t := t
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
@@ -11,12 +11,11 @@ end
 module Uuid : sig
   type t
 
-  include%template Identifiable.S [@mode local] with type t := t
-  val%template to_string : t -> string [@@alloc a @ m = (stack @ local, heap @ global)]
+  include Identifiable.S with type t := t
+
+  val to_string : t -> string
 end = struct
   include String
-
-  let%template[@alloc a @ m = stack @ local] to_string (x : t) : string = x
 end
 
 let eval_fail loc fmt =
@@ -31,14 +30,13 @@ let equal_option equal a b =
 ;;
 
 module Sorted_table : sig
-  type 'a t [@@deriving compare ~localize, sexp]
+  type 'a t [@@deriving compare, sexp]
 
   val create : Location.t -> eq:('a -> 'a -> bool) -> (string * 'a) list -> 'a t
   val expose : 'a t -> (string * 'a) list
   val map : 'a t -> f:('a -> 'b) -> 'b t
 end = struct
-  type 'a t = { sorted : (string * 'a) list }
-  [@@unboxed] [@@deriving compare ~localize, sexp]
+  type 'a t = { sorted : (string * 'a) list } [@@unboxed] [@@deriving compare, sexp]
 
   let merge_check_adjacent_dups
     :  eq:('a -> 'a -> bool) -> (string * 'a) list
@@ -71,7 +69,7 @@ end = struct
 end
 
 module Digest : sig
-  type t = Md5_lib.t [@@deriving compare ~localize, globalize, sexp]
+  type t = Md5_lib.t [@@deriving compare, equal, globalize, sexp]
 
   val to_md5 : t -> Md5_lib.t
   val to_md5_local : t -> Md5_lib.t
@@ -126,7 +124,7 @@ module Canonical_exp_constructor = struct
     | Application of 'a * 'a list
     | Rec_app of int * 'a list
     | Var of int
-  [@@deriving sexp, compare ~localize]
+  [@@deriving sexp, compare]
 
   let map x ~f =
     match x with
@@ -328,11 +326,11 @@ module Canonical_full = struct
 
   module Exp1 = struct
     type t0 = Exp of t0 Canonical_exp_constructor.t
-    [@@deriving compare ~localize, sexp] [@@unboxed]
+    [@@deriving compare, sexp] [@@unboxed]
 
     let equal_t0 x y = compare_t0 x y = 0
 
-    type 'a t = t0 [@@deriving compare ~localize, sexp]
+    type 'a t = t0 [@@deriving compare, sexp]
 
     let var x = Exp (Canonical_exp_constructor.Var x)
     let apply d xs = Exp (Canonical_exp_constructor.Application (d, xs))
@@ -358,11 +356,11 @@ module Canonical_full = struct
 
   module Def = struct
     (* A [Def.t] is an expression which may be applied *)
-    type t = Exp1.t0 [@@deriving compare ~localize, sexp]
+    type t = Exp1.t0 [@@deriving compare, sexp]
   end
 
   (* A canonical shape [t] is an [Exp1.t]. *)
-  type t = Exp1.t0 [@@deriving compare ~localize, sexp]
+  type t = Exp1.t0 [@@deriving compare, sexp]
 
   let to_digest e = Exp1.to_digest e
 
@@ -387,7 +385,7 @@ end
 module Tid : sig
   type t
 
-  include%template Identifiable.S [@mode local] with type t := t
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
@@ -395,18 +393,18 @@ end
 module Vid : sig
   type t
 
-  include%template Identifiable.S [@mode local] with type t := t
+  include Identifiable.S with type t := t
 end = struct
   include String
 end
 
 module Gid : sig
   (* unique group-id, used as key for Tenv below *)
-  type t [@@deriving compare ~localize, equal ~localize, sexp]
+  type t [@@deriving compare, equal, sexp]
 
   val create : unit -> t
 end = struct
-  type t = int [@@deriving compare ~localize, equal ~localize, sexp]
+  type t = int [@@deriving compare, equal, sexp]
 
   let r = Stdlib.Atomic.make 0
   let create () = Stdlib.Atomic.fetch_and_add r 1
@@ -417,10 +415,10 @@ module Expression = struct
     [ `Constr of string * 't option
     | `Inherit of Location.t * 't
     ]
-  [@@deriving compare ~localize, equal ~localize, sexp]
+  [@@deriving compare, equal, sexp]
 
   module Group : sig
-    type 'a t [@@deriving compare ~localize, equal ~localize, sexp]
+    type 'a t [@@deriving compare, equal, sexp]
 
     val create : Location.t -> (Tid.t * Vid.t list * 'a) list -> 'a t
     val id : 'a t -> Gid.t
@@ -431,8 +429,7 @@ module Expression = struct
       ; loc : Location.t
       ; members : (Tid.t * (Vid.t list * 'a)) list
       }
-    [@@unsafe_allow_any_mode_crossing]
-    [@@deriving compare ~localize, equal ~localize, sexp]
+    [@@unsafe_allow_any_mode_crossing] [@@deriving compare, equal, sexp]
 
     let create loc trips =
       let gid = Gid.create () in
@@ -467,7 +464,7 @@ module Expression = struct
         | Var of (Location.t * Vid.t)
         | Rec_app of Tid.t * t list
         | Top_app of t Group.t * Tid.t * t list
-      [@@unsafe_allow_any_mode_crossing] [@@deriving equal ~localize, sexp, variants]
+      [@@deriving equal, sexp, variants]
     end
   end
 
@@ -571,12 +568,11 @@ module Evaluation (Canonical : Canonical) = struct
   end = struct
     module Key = struct
       module T = struct
-        type t = Gid.t * Tid.t [@@deriving compare ~localize, sexp_of]
+        type t = Gid.t * Tid.t [@@deriving compare, sexp_of]
       end
 
       include T
-
-      include%template Comparator.Make [@modality portable] (T)
+      include Comparator.Make (T)
     end
 
     type key = Key.t

@@ -1,7 +1,7 @@
 open Common
 
 module T = struct
-  type 'a t = 'a [@@deriving compare ~localize, sexp_of]
+  type 'a t = 'a [@@deriving compare, sexp_of]
 
   let bin_shape_t t =
     Shape.(basetype (Uuid.of_string "85a2557e-490a-11e6-98ac-4b8953d525fe") [ t ])
@@ -40,12 +40,7 @@ type 'a id = 'a
 
 include T
 
-include%template
-  Utils.Make_binable1_without_uuid
-    [@kind.explicit value_or_null]
-    [@modality portable]
-    [@alert "-legacy"]
-    (struct
+include Utils.Make_binable1_without_uuid [@alert "-legacy"] (struct
     module Binable = T
 
     type 'a t = 'a T.t
@@ -93,16 +88,13 @@ module Opaque = struct
     end
 
     include T
-
-    include%template Utils.Of_minimal [@modality portable] (T)
+    include Utils.Of_minimal (T)
 
     let to_opaque blob bin_writer = Utils.bin_dump bin_writer blob
     let of_opaque_exn (t : t) bin_reader = bin_reader.Type_class.read t ~pos_ref:(ref 0)
 
     (* Bigstrings are a primitive type that polymorphic compare handles well. *)
-    let%template compare = (Stdlib.compare : buf -> buf -> int)
-    [@@mode m = (local, global)]
-    ;;
+    let compare = (Stdlib.compare : buf -> buf -> int)
 
     let sexp_of_t t =
       Ppx_sexp_conv_lib.Sexp.Atom (of_opaque_exn t Type_class.bin_reader_string)
@@ -142,8 +134,7 @@ module Opaque = struct
     end
 
     include T
-
-    include%template Utils.Of_minimal [@modality portable] (T)
+    include Utils.Of_minimal (T)
 
     let length t = String.length t
 
@@ -171,10 +162,7 @@ module Opaque = struct
     ;;
 
     (* Strings are a primitive type that polymorphic compare handles well. *)
-    let%template compare = (Stdlib.compare : string -> string -> int)
-    [@@mode m = (local, global)]
-    ;;
-
+    let compare = (Stdlib.compare : string -> string -> int)
     let sexp_of_t = Ppx_sexp_conv_lib.Conv.sexp_of_string
   end
 end
