@@ -652,8 +652,9 @@ let bin_read_genarray (type k) ~(kind : (_, k) Stdlib.Bigarray.kind) ~layout buf
   =
   let start_pos = !pos_ref in
   let num_dims = (bin_read_nat0 buf ~pos_ref :> int) in
-  if num_dims > Sys.max_array_length
-  then raise_read_error ReadError.Array_too_long start_pos;
+  (* A [Genarray.t] has at most 16 dimensions ([CAML_BA_MAX_NUM_DIMS] in the runtime), so
+     any larger count is malformed: reject it before allocating anything sized by it. *)
+  if num_dims > 16 then raise_read_error ReadError.Array_too_long start_pos;
   let dimensions = Base.Array.create ~len:num_dims 0 in
   let num_elements = ref 1 in
   for dimension = 0 to num_dims - 1 do

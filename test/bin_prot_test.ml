@@ -988,6 +988,30 @@ let%expect_test "genarray" =
     [ array, "<bigarray>", size ]
 ;;
 
+let%expect_test "genarray rejects more than 16 dimensions" =
+  let print_s = Expect_test_helpers_base.print_s in
+  let read str =
+    Read.bin_read_genarray
+      ~kind:Float64
+      ~layout:Fortran_layout
+      (Bigstring.of_string str)
+      ~pos_ref:(ref 0)
+  in
+  (* 16 dimensions of length 1, then the 8 bytes of 1.0: the largest valid count. *)
+  let one = "\000\000\000\000\000\000\240\063" in
+  let array = read ("\016" ^ String.make 16 '\001' ^ one) in
+  print_s [%sexp (Genarray.dims array : int array)];
+  [%expect {| (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1) |}];
+  (* 17 dimensions of length 0. *)
+  require_does_raise [%here] (Read_error (Array_too_long, 0)) (fun () ->
+    read ("\017" ^ String.make 17 '\000'));
+  (* A 5-byte header that claims 2^24 dimensions, with nothing after it: rejected before
+     an array of 2^24 words is allocated. *)
+  require_does_raise [%here] (Read_error (Array_too_long, 0)) (fun () ->
+    read "\253\000\000\000\001");
+  [%expect {| |}]
+;;
+
 let%expect_test "bigstring" =
   let module Random = Random () in
   let n = 128 in
